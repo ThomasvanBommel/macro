@@ -2,24 +2,24 @@
 simple full stack macro tracking application
 
 # how to
-build and run container, clean up afterwards:
+build and run container:
 ```bash
-make build run clean
+make run
 ```
 
 # todo
-## backend (Go)
+## backend
 - [ ] RESTful API
 - [ ] db connectivity
 - [ ] db CRUD
 - [ ] authentication
 
-## frontend (React)
+## frontend
 - [ ] home
 - [ ] login
 - [ ] profile
 
-## database (Postgres)
+## database
 - [ ] food
 - [ ] meals
 - [ ] recipes

@@ -1,4 +1,4 @@
-.PHONY: help dev run build clean
+.PHONY: help dev fmt run build clean
 
 help:
 	@echo "Available targets:"
@@ -10,6 +10,11 @@ help:
 
 dev:
 	docker compose up --build
+
+golang:
+	docker run -it --rm \
+		-v "$(PWD)/backend":/app \
+		-w /app golang:1.26-alpine sh
 
 fmt:
 	docker run --rm \
