@@ -2,16 +2,19 @@
 simple full stack macro tracking application
 
 ## using
-- docker
-- make
+- [make](https://www.gnu.org/software/make/manual/make.html)
+- [docker](https://www.docker.com/)
+  - [node:20-alpine](https://hub.docker.com/_/node)
+  - [golang:1.26-alpine](https://hub.docker.com/_/golang)
+  - [alpine:latest](https://hub.docker.com/_/alpine)
 - backend
-  - go
-    - goose
-    - sqlite
+  - [go](https://go.dev/)
+    - [goose](https://pkg.go.dev/github.com/pressly/goose/v3)
+    - [sqlite](https://pkg.go.dev/modernc.org/sqlite)
 - frontend
   - javascript
   - css
   - html
-  - react
-    - react-dom
-    - vite
+  - [react](https://react.dev/)
+    - [react-dom]()
+    - [vite](https://vite.dev/)
