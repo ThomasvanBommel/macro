@@ -30,8 +30,8 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/users" && r.Method == "POST" {
-			handleCreateUser(w, r, db)
+		if r.URL.Path == "/api/register" && r.Method == "POST" {
+			handleRegisterUser(w, r, db)
 			return
 		}
 

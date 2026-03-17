@@ -30,19 +30,19 @@ func initDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func createUser(db *sql.DB, req CreateUserRequest) (CreateUserResponse, error) {
+func registerUser(db *sql.DB, req RegisterUserRequest) (RegisterUserResponse, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return CreateUserResponse{}, err
+		return RegisterUserResponse{}, err
 	}
 
 	result, err := db.Exec("INSERT INTO users (username, password_hash) VALUES (?, ?)", req.Username, string(hash))
 	if err != nil {
-		return CreateUserResponse{}, err
+		return RegisterUserResponse{}, err
 	}
 
 	id, _ := result.LastInsertId()
-	return CreateUserResponse{
+	return RegisterUserResponse{
 		ID:       int(id),
 		Username: req.Username,
 		Message:  "User created successfully",

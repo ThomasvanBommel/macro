@@ -9,18 +9,20 @@ import (
 	"strings"
 )
 
-func handleCreateUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	var req CreateUserRequest
+func handleRegisterUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
+	var req RegisterUserRequest
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+
 	if req.Username == "" || req.Password == "" {
 		http.Error(w, "Username and password required", http.StatusBadRequest)
 		return
 	}
-
-	resp, err := createUser(db, req)
+	
+	resp, err := registerUser(db, req)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
 			http.Error(w, "Username already exists", http.StatusConflict)
