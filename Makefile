@@ -9,7 +9,7 @@ help:
 	@echo "  cleanup        - Clean up build artifacts and stop Docker containers."
 
 dev:
-	docker compose up --build
+	docker compose up --build frontend
 
 golang:
 	docker run -it --rm \
@@ -22,11 +22,19 @@ fmt:
 		-w /app golang:1.26-alpine \
 		gofmt -s -w .
 
-run: build
-	docker run -it --rm -p 8080:8080 macro-production
+goose:
+	docker compose run --rm \
+		--user "$(shell id -u):$(shell id -g)" \
+		goose -dir migrations $(cmd)
 
-build:
-	docker build -t macro-production .
+# run: build
+# 	docker run -it --rm -p 8080:8080 macro-production
+
+# build:
+# 	docker build -t macro-production .
+
+production:
+	docker compose up --build production
 
 frontend/build:
 	docker run -it --rm \

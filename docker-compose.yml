@@ -15,3 +15,24 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - "8080:8080"
+  
+  goose:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.goose
+    volumes:
+      - ./backend/migrations:/app/migrations
+    environment:
+      - GOOSE_DRIVER=sqlite3
+      - GOOSE_DBSTRING=macro.db
+
+  production:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DB_PATH=/app/database/macro.db
+    volumes:
+      - ./database:/app/database
+    ports:
+      - "8080:8080"
