@@ -7,6 +7,26 @@ services:
       - ./backend/macro.db:/app/macro.db
     ports:
       - "8080:8080"
+  
+  golang:
+    image: golang:1.26-alpine
+    volumes:
+      - ./backend/app:/app
+    working_dir: /app
+  
+  goose:
+    build:
+      context: .
+      dockerfile: Dockerfile.goose
+    volumes:
+      - ./backend/macro.db:/app/macro.db
+      - ./backend/migrations:/app/migrations
+    environment:
+      - GOOSE_DRIVER=sqlite3
+      - GOOSE_DBSTRING=/app/macro.db
+      - GOOSE_MIGRATION_DIR=/app/migrations
+    working_dir: /app
+    command: sh
 
   frontend:
     build:
@@ -21,14 +41,13 @@ services:
     ports:
       - "5173:5173"
   
-  goose:
-    build:
-      context: .
-      dockerfile: Dockerfile.goose
+  npm:
+    image: node:20-alpine
     volumes:
-      - ./backend/macro.db:/app/macro.db
-      - ./backend/migrations:/app/migrations
-    environment:
-      - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=/app/macro.db
-      - GOOSE_MIGRATION_DIR=/app/migrations
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+      - ./frontend/package.json:/app/package.json
+    working_dir: /app
+    command: sh
