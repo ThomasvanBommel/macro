@@ -15,7 +15,7 @@ make build run clean
 - [ ] authentication
 
 ## frontend (React)
-- [ ] homepage
+- [ ] home
 - [ ] login
 - [ ] profile
 
