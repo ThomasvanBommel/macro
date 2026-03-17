@@ -6,7 +6,12 @@ simple full stack macro tracking application
 - make
 - backend
   - go
-  - sqlite
+    - goose
+    - sqlite
 - frontend
+  - javascript
+  - css
+  - html
   - react
-  - vite
+    - react-dom
+    - vite
