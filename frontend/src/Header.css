@@ -1,0 +1,18 @@
+header {
+    background: var(--bg-color);
+    padding: .5rem;
+    display: flex;
+}
+
+header div#logo {
+    flex: 1 0;
+}
+
+#nav a {
+    color: var(--fg-color);
+    margin-left: 1rem;
+}
+
+#nav a:hover {
+    opacity: 0.6;
+}

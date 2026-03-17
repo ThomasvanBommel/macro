@@ -1,38 +1,33 @@
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "5173:5173"
-
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: Dockerfile.backend
+    volumes:
+      - ./backend/macro.db:/app/macro.db
     ports:
       - "8080:8080"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.js:/app/vite.config.js
+      - ./frontend/package.json:/app/package.json
+    ports:
+      - "5173:5173"
   
   goose:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile.goose
     volumes:
-      - ./backend/migrations:/app/migrations
+      - ./backend/database:/app
     environment:
       - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=macro.db
-
-  production:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      - DB_PATH=/app/database/macro.db
-    volumes:
-      - ./database:/app/database
-    ports:
-      - "8080:8080"
+      - GOOSE_DBSTRING=/app/db/macro.db
+      - GOOSE_MIGRATION_DIR=/app/migrations

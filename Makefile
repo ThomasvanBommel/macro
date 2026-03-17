@@ -1,47 +1,39 @@
-.PHONY: help dev fmt run build clean
+.PHONY: help backend frontend goose npm golang fmt clean
 
 help:
 	@echo "Available targets:"
-	@echo "  dev            - Start the development environment using Docker Compose."
-	@echo "  run            - Run the production Docker container."
-	@echo "  build          - Build the production Docker image, macro-production."
-	@echo "  frontend/build - Build the frontend assets using a Node.js Docker container."
-	@echo "  cleanup        - Clean up build artifacts and stop Docker containers."
+	@echo "  backend   - Build and run the backend service"
+	@echo "  frontend  - Build and run the frontend service"
+	@echo "  goose     - Run a shell in the goose container for database migrations"
+	@echo "  npm       - Run a shell in a Node.js container with the frontend code mounted"
+	@echo "  golang    - Run a shell in a Golang container with the backend code mounted"
+	@echo "  fmt       - Format the Go code using gofmt"
+	@echo "  clean     - Stop and remove all containers and networks created by docker-compose"
 
-dev:
+backend:
+	docker compose up --build backend
+
+frontend:
 	docker compose up --build frontend
+
+goose:
+	docker compose run -it --rm goose sh
+
+npm:
+	docker run -it --rm \
+		-v "$(PWD)/frontend":/app \
+		-w /app node:20-alpine sh
 
 golang:
 	docker run -it --rm \
-		-v "$(PWD)/backend":/app \
+		-v "$(PWD)/backend/app":/app \
 		-w /app golang:1.26-alpine sh
 
 fmt:
 	docker run --rm \
-		-v "$(PWD)/backend":/app \
+		-v "$(PWD)/backend/app":/app \
 		-w /app golang:1.26-alpine \
 		gofmt -s -w .
 
-goose:
-	docker compose run --rm \
-		--user "$(shell id -u):$(shell id -g)" \
-		goose -dir migrations $(cmd)
-
-# run: build
-# 	docker run -it --rm -p 8080:8080 macro-production
-
-# build:
-# 	docker build -t macro-production .
-
-production:
-	docker compose up --build production
-
-frontend/build:
-	docker run -it --rm \
-		-v "$(PWD)/frontend":/app \
-		-w /app node:20-alpine \
-		sh -c "npm install && npm run build && chown -R $(shell id -u):$(shell id -g) ."
-
 clean:
-	rm -rf frontend/build frontend/node_modules
 	docker compose down --remove-orphans

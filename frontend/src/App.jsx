@@ -1,18 +1,14 @@
-import { useState } from 'react'
 import './App.css'
+import Header from './Header'
 
-function App() {
+export default function App() {
 
   return (
     <>
-      <header>
-        <h1>macro</h1>
-      </header>
+      <Header />
       <main>
         <p>Welcome to macro! Your tracking adventure starts here.</p>
       </main>
     </>
   )
 }
-
-export default App

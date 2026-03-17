@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/pressly/goose/v3"
@@ -21,7 +20,7 @@ var frontendFS embed.FS
 var migrationsFS embed.FS
 
 func init_db() (*sql.DB, error) {
-	db, err := sql.Open("sqlite", os.Getenv("DB_PATH"))
+	db, err := sql.Open("sqlite", "/app/macro.db")
 	if err != nil {
 		return nil, err
 	}

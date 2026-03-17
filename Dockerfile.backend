@@ -9,9 +9,10 @@ RUN npm run build
 # backend
 FROM golang:1.26-alpine AS backend-builder
 WORKDIR /app
-COPY backend/go.mod backend/go.sum ./
+COPY backend/app/go.mod backend/app/go.sum ./
 RUN go mod download
-COPY backend/ ./
+COPY backend/app/ ./
+COPY backend/migrations ./migrations
 COPY --from=frontend-builder /app/build ./frontend/build
 RUN go build \
     -tags='no_postgres no_clickhouse no_mssql no_mysql' \
@@ -22,6 +23,4 @@ FROM alpine:latest
 WORKDIR /app
 COPY --from=backend-builder /app/macro .
 EXPOSE 8080
-# RUN adduser -D macrouser
-# USER macrouser
 CMD ["./macro"]
