@@ -26,8 +26,9 @@ services:
       context: .
       dockerfile: Dockerfile.goose
     volumes:
-      - ./backend/database:/app
+      - ./backend/macro.db:/app/macro.db
+      - ./backend/migrations:/app/migrations
     environment:
       - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=/app/db/macro.db
+      - GOOSE_DBSTRING=/app/macro.db
       - GOOSE_MIGRATION_DIR=/app/migrations
