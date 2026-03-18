@@ -29,6 +29,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.goose
+    user: "1000:1000"
     volumes:
       - ./backend/macro.db:/app/macro.db
       - ./backend/migrations:/app/migrations
