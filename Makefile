@@ -6,6 +6,7 @@ help:
 	@echo "  golang    - Run a shell in the golang container for development"
 	@echo "  goose     - Run goose CLI for database migrations"
 	@echo "  fmt       - Format Go code using gofmt"
+	@echo "  sqlite    - Run a shell in the sqlite container for database management"
 
 	@echo "  frontend  - Build and run the frontend development server"
 	@echo "  npm       - Run npm CLI for frontend package management"
@@ -25,6 +26,9 @@ goose:
 
 fmt:
 	docker compose run -it --rm golang gofmt -s -w .
+
+sqlite:
+	docker compose run -it --rm sqlite
 
 # --
 

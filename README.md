@@ -7,6 +7,7 @@ simple full stack macro tracking application
   - [node:20-alpine](https://hub.docker.com/_/node)
   - [golang:1.26-alpine](https://hub.docker.com/_/golang)
   - [alpine:latest](https://hub.docker.com/_/alpine)
+  - [alpine/sqlite:latest](https://hub.docker.com/r/alpine/sqlite)
 - backend
   - [go](https://go.dev/)
     - [goose](https://pkg.go.dev/github.com/pressly/goose/v3)

@@ -51,3 +51,10 @@ services:
       - ./frontend/package.json:/app/package.json
     working_dir: /app
     command: sh
+
+  sqlite:
+    image: alpine/sqlite:latest
+    volumes:
+      - ./backend/macro.db:/app/macro.db
+    working_dir: /app
+    command: macro.db
