@@ -13,6 +13,7 @@ simple full stack macro tracking application
     - [goose](https://pkg.go.dev/github.com/pressly/goose/v3)
     - [sqlite](https://pkg.go.dev/modernc.org/sqlite)
     - [gin](https://gin-gonic.com)
+      - [sessions](https://github.com/gin-contrib/sessions)
 - frontend
   - javascript
   - css

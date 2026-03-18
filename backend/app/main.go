@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gin-contrib/sessions"
+  	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )
@@ -33,6 +35,23 @@ func main() {
 	h := &Handler{db: db}
 
 	router := gin.Default()
+	store := cookie.NewStore([]byte("secret"))
+	router.Use(sessions.Sessions("macro_session", store))
+
+	router.GET("/incr", func(c *gin.Context) {
+		session := sessions.Default(c)
+		var count int
+		v := session.Get("count")
+		if v == nil {
+			count = 0
+		} else {
+			count = v.(int)
+			count++
+		}
+		session.Set("count", count)
+		session.Save()
+		c.JSON(http.StatusOK, gin.H{"count": count})
+	})
 
 	api := router.Group("/api")
 	api.POST("/register", h.registerUser)
