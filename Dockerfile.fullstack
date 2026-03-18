@@ -28,6 +28,5 @@ RUN --mount=type=cache,target=/go-cache \
 FROM alpine:latest
 WORKDIR /app
 COPY --from=backend-builder /app/macro .
-# COPY --from=frontend-builder /app/build ./frontend/build
 EXPOSE 8080
 CMD ["./macro"]
