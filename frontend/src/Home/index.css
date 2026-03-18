@@ -1,0 +1,32 @@
+.logo {
+    font-family:'Courier New', Courier, monospace
+}
+
+#main-header {
+    display: flex;
+    border-bottom: .2rem solid black;
+}
+
+#main-header h1 {
+    flex: 1 0;
+}
+
+#main-header nav {
+    display: flex;
+    align-items: center;
+}
+
+#main-header nav a {
+  margin-right: 1em;
+  text-decoration: none;
+  color: black;
+}
+
+#main-header nav a:hover {
+  text-decoration: underline;
+}
+
+#main-header nav .active {
+  font-weight: bold;
+  text-decoration: underline;
+}

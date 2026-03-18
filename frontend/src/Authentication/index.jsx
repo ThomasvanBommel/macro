@@ -1,27 +1,15 @@
+import { Outlet } from 'react-router';
 import React, { useState } from 'react'
 
-export default function AuthenticatedPage({ setIsAuthenticated }) {
-  const [isLogin, setIsLogin] = useState(true);
-  const toggleForm = () => setIsLogin(!isLogin);
-
-  return (
-    <div>
-      {isLogin ? 
-        <LoginForm setIsAuthenticated={setIsAuthenticated} /> : 
-        <RegisterForm setIsAuthenticated={setIsAuthenticated} />}
-      <p>
-          {isLogin ? "Don't already have an account? " : "Already have an account? "} 
-          <a href="#" onClick={toggleForm}>{isLogin ? "Sign up" : "Login"}</a>
-      </p>
-      <p style={{ color: 'red' }}>
-        This is a public project. 
-        Please assume all data is publicly accessible, including passwords.
-      </p>
-    </div>
-  );
+export default function AuthLayout() {
+    return (
+        <div>
+            <Outlet />
+        </div>
+    )
 }
 
-function LoginForm({ setIsAuthenticated }) {
+export function Login({ setIsAuthenticated }) {
   return (
     <form action="/api/login" method="POST">
       <div>
@@ -37,7 +25,7 @@ function LoginForm({ setIsAuthenticated }) {
   )
 }
 
-function RegisterForm({ setIsAuthenticated }) {
+export function Register({ setIsAuthenticated }) {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
