@@ -9,6 +9,10 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+type Handler struct {
+	db *sql.DB
+}
+
 func initDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite", "/app/macro.db")
 	if err != nil {
@@ -30,21 +34,16 @@ func initDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func registerUser(db *sql.DB, req RegisterUserRequest) (RegisterUserResponse, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+func createUser(db *sql.DB, username string, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return RegisterUserResponse{}, err
+		return err
 	}
 
-	result, err := db.Exec("INSERT INTO users (username, password_hash) VALUES (?, ?)", req.Username, string(hash))
+	_, err = db.Exec("INSERT INTO users (username, password_hash) VALUES (?, ?)", username, string(hash))
 	if err != nil {
-		return RegisterUserResponse{}, err
+		return err
 	}
 
-	id, _ := result.LastInsertId()
-	return RegisterUserResponse{
-		ID:       int(id),
-		Username: req.Username,
-		Message:  "User created successfully",
-	}, nil
+	return nil
 }

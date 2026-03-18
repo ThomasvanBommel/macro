@@ -9,12 +9,18 @@ RUN npm run build
 # backend
 FROM golang:1.26-alpine AS backend-builder
 WORKDIR /app
+
+RUN go env -w GOCACHE=/go-cache
+RUN go env -w GOMODCACHE=/go-mod-cache
+
 COPY backend/app/go.mod backend/app/go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go-mod-cache go mod download
 COPY backend/app/ ./
 COPY backend/migrations ./migrations
 COPY --from=frontend-builder /app/build ./frontend/build
-RUN go build \
+RUN --mount=type=cache,target=/go-cache \
+    --mount=type=cache,target=/go-mod-cache \
+    go build \
     -tags='no_postgres no_clickhouse no_mssql no_mysql' \
     -o macro .
 
@@ -22,5 +28,6 @@ RUN go build \
 FROM alpine:latest
 WORKDIR /app
 COPY --from=backend-builder /app/macro .
+# COPY --from=frontend-builder /app/build ./frontend/build
 EXPOSE 8080
 CMD ["./macro"]

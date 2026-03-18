@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
+	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )
 
 //go:embed frontend/build/*
-var frontendFS embed.FS
+var frontendFiles embed.FS
 
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
@@ -25,30 +25,35 @@ func main() {
 	defer db.Close()
 	log.Println("Database initialized successfully")
 
-	buildFS, err := fs.Sub(frontendFS, "frontend/build")
+	assetFS, err := fs.Sub(frontendFiles, "frontend/build/assets")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/register" && r.Method == "POST" {
-			handleRegisterUser(w, r, db)
-			return
-		}
+	h := &Handler{db: db}
 
-		if strings.HasPrefix(r.URL.Path, "/api/") {
-			handleAPI(w, r)
-			return
-		}
+	router := gin.Default()
 
-		if os.Getenv("DEVMODE") == "true" {
-			http.NotFound(w, r)
-			return
-		}
+	api := router.Group("/api")
+	api.POST("/register", h.registerUser)
 
-		handleStatic(w, r, buildFS)
-	})
+	if os.Getenv("DEVMODE") == "true" {
+		router.NoRoute(func(c *gin.Context) {
+			c.String(http.StatusTeapot, "This is dev mode, goof. Use the Vite server :5173")
+		})
+	} else {
+		router.StaticFS("/assets", http.FS(assetFS))
+
+		router.NoRoute(func(c *gin.Context) {
+			file, err := frontendFiles.ReadFile("frontend/build/index.html")
+			if err != nil {
+				c.String(http.StatusInternalServerError, "Failed to load index.html")
+				return
+			}
+			c.Data(http.StatusOK, "text/html; charset=utf-8", file)
+		})
+	}
 
 	log.Println("macro backend is running on http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	router.Run()
 }
