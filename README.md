@@ -16,5 +16,7 @@ simple full stack macro tracking application
   - javascript
   - css
   - html
-  - [react](https://react.dev/)
-    - [vite](https://vite.dev/)
+  - [react](https://react.dev)
+    - [vite](https://vite.dev)
+    - [react-router](https://reactrouter.com)
+    - [axios](https://axios-http.com/)
