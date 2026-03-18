@@ -8,4 +8,12 @@ export default defineConfig({
     outDir: 'build',
     emptyOutDir: true,
   },
+  server: process.env.DEVMODE === 'true' ? {
+    proxy: {
+      '/api': {
+        target: 'http://backend:8080',
+        changeOrigin: true,
+      }
+    }
+  }: {}
 })

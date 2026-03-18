@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -37,6 +38,11 @@ func main() {
 
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			handleAPI(w, r)
+			return
+		}
+
+		if os.Getenv("DEVMODE") == "true" {
+			http.NotFound(w, r)
 			return
 		}
 

@@ -2,7 +2,10 @@
 
 help:
 	@echo "Available targets:"
-	@echo "  backend   - Build and run the backend server (also builds frontend)"
+	@echo "  fullstack - Build and run the entire application"
+	@echo "  devmode   - Build and run both backend and frontend in development mode"
+
+	@echo "  backend   - Build and run the backend server in development mode"
 	@echo "  golang    - Run a shell in the golang container for development"
 	@echo "  goose     - Run goose CLI for database migrations"
 	@echo "  fmt       - Format Go code using gofmt"
@@ -11,7 +14,13 @@ help:
 	@echo "  frontend  - Build and run the frontend development server"
 	@echo "  npm       - Run npm CLI for frontend package management"
 
-	@echo "  clean     - Stop and remove all containers, networks, and volumes"
+	@echo "  down      - Stop and remove all containers, networks, and volumes"
+
+fullstack:
+	docker compose up --build fullstack
+
+devmode:
+	docker compose up --build backend frontend
 
 # --
 
@@ -40,5 +49,5 @@ npm:
 
 # --
 
-clean:
+down:
 	docker compose down --remove-orphans

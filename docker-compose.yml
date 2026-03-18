@@ -1,10 +1,21 @@
 services:
+  fullstack:
+    build:
+      context: .
+      dockerfile: Dockerfile.fullstack
+    volumes:
+      - ./backend/macro.db:/app/macro.db
+    ports:
+      - "8080:8080"
+
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
     volumes:
       - ./backend/macro.db:/app/macro.db
+    environment:
+      - DEVMODE=true
     ports:
       - "8080:8080"
   
@@ -38,6 +49,8 @@ services:
       - ./frontend/index.html:/app/index.html
       - ./frontend/vite.config.js:/app/vite.config.js
       - ./frontend/package.json:/app/package.json
+    environment:
+      - DEVMODE=true
     ports:
       - "5173:5173"
   

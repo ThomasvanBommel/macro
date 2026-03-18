@@ -21,7 +21,7 @@ func handleRegisterUser(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 		http.Error(w, "Username and password required", http.StatusBadRequest)
 		return
 	}
-	
+
 	resp, err := registerUser(db, req)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
