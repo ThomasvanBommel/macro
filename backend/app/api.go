@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"strings"
-	"log"
 )
 
 type RegisterUserRequest struct {
@@ -101,7 +101,7 @@ func (h *Handler) delSession(c *gin.Context) {
 		return
 	}
 
-	err := deleteSession(h.db, token.(string));
+	err := deleteSession(h.db, token.(string))
 	if err != nil {
 		log.Printf("Error deleting session: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove session"})

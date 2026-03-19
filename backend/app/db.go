@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"log"
+	"time"
 
 	"github.com/pressly/goose/v3"
 	"golang.org/x/crypto/bcrypt"
@@ -32,6 +33,16 @@ func initDB() (*sql.DB, error) {
 	if err := goose.Up(db, "migrations"); err != nil {
 		return nil, err
 	}
+
+	ticker := time.NewTicker(10 * time.Minute)
+	go func() {
+		for range ticker.C {
+			log.Println("Cleaning up expired sessions...")
+			if err := cleanupExpiredSessions(db); err != nil {
+				log.Printf("Failed to clean up expired sessions: %v", err)
+			}
+		}
+	}()
 
 	return db, nil
 }
@@ -69,6 +80,16 @@ func createSession(db *sql.DB, user_id int) (string, error) {
 	}
 
 	return token, nil
+}
+
+func cleanupExpiredSessions(db *sql.DB) error {
+	q := `
+		DELETE
+		FROM sessions
+		WHERE expires_at <= datetime('now');
+	`
+	_, err := db.Exec(q)
+	return err
 }
 
 func loginUser(db *sql.DB, username string, password string) (string, error) {
