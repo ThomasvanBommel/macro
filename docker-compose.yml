@@ -31,8 +31,7 @@ services:
       dockerfile: Dockerfile.goose
     user: "1000:1000"
     volumes:
-      - ./backend/macro.db:/app/macro.db
-      - ./backend/migrations:/app/migrations
+      - ./backend:/app
     environment:
       - GOOSE_DRIVER=sqlite3
       - GOOSE_DBSTRING=/app/macro.db

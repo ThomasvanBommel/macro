@@ -1,26 +1,18 @@
-import { Outlet, useNavigate } from 'react-router';
+import { useNavigate, Navigate } from 'react-router';
 import axios from 'axios';
-
-import React, { useState } from 'react'
-
-export default function AuthLayout() {
-    return (
-        <div>
-            <Outlet />
-        </div>
-    )
-}
+import React, { Outlet, useState } from 'react';
 
 export function Login({ onSuccess }) {
     const navigate = useNavigate();
+
     const handleSubmit = e => {
         e.preventDefault();
         axios.post("/api/login", e.target, { headers: { 'Content-Type': 'application/json' } })
             .then(res => {
                 if(res.status === 200) {
                     // alert('Login successful!');
-                    onSuccess?.();
-                    navigate('/profile');
+                    onSuccess?.()
+                        .then(() => navigate('/profile'));
                 } else {
                     alert(`Login failed: ${res.data.message}`);
                 }

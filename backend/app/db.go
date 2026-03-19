@@ -122,7 +122,7 @@ func selectSession(db *sql.DB, token string) (*Session, error) {
 		WHERE token = ?
 		  AND expires_at > datetime('now');
 	`
-	err := db.QueryRow(q, token).Scan(&s.User_ID, &s.Username, &s.ExpiresAt)
+	err := db.QueryRow(q, token).Scan(&s.UserID, &s.Username, &s.ExpiresAt)
 	if err != nil {
 		return nil, err
 	}
@@ -141,10 +141,38 @@ func deleteSession(db *sql.DB, token string) error {
 
 func insertFood(db *sql.DB, food Food) error {
 	q := `
-		INSERT INTO food (name, brand, created_by, calories, carbs, protein, fat)
+		INSERT INTO food (name, brand, created_by, calories, carbs, protein, fat, serving_size)
 		VALUES (?, ?, ?, ?, ?, ?, ?);
 	`
 	_, err := db.Exec(q, food.Name, food.Brand, food.CreatedBy, food.Calories, food.Carbs, 
-		food.Protein, food.Fat)
+		food.Protein, food.Fat, food.ServingSize)
+	return err
+}
+
+func selectMeals(db *sql.DB) ([]Meal, error) {
+	q := "SELECT id, name FROM meals;"
+	rows, err := db.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var meals []Meal
+	for rows.Next() {
+		var m Meal
+		if err := rows.Scan(&m.ID, &m.Name); err != nil {
+			return nil, err
+		}
+		meals = append(meals, m)
+	}
+	return meals, nil
+}
+
+func insertEntry(db *sql.DB, e Entry) error {
+	q := `
+		INSERT INTO entries (user_id, food_id, meal_id, servings, date)
+		VALUES (?, ?, ?, ?);
+	`
+	_, err := db.Exec(q, e.UserID, e.FoodID, e.MealID, e.Servings, e.Date)
 	return err
 }

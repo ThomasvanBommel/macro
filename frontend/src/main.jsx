@@ -1,12 +1,20 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { Outlet, BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { useState, useEffect, useRef } from 'react';
 
 import { fetchSession } from './api';
 import Home from './Home';
-import AuthLayout, { Login, Register } from './Authentication';
+import { Login, Register } from './Authentication';
 import Profile from './Profile';
+
+function AuthorizedOnly({ session }) {
+    return session ? <Outlet /> : <Navigate to="/login" replace />;
+}
+
+function UnAuthorizedOnly({ session }) {
+    return !session ? <Outlet /> : <Navigate to="/profile" replace />;
+}
 
 function App() {
     const [session, setSession] = useState(null);
@@ -32,12 +40,20 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home session={ session } authCheck={ authCheck } />}>
 
-                    <Route element={<AuthLayout />}>
-                        <Route path="login" element={<Login onSuccess={ authCheck } />} />
-                        <Route path="register" element={<Register />} />
+                    {/* <Route element={<AuthLayout />}> */}
+                    <Route element={<UnAuthorizedOnly session={ session } />}>
+                        <Route path="login" 
+                               element={<Login onSuccess={ authCheck } />}
+                               session={ session }
+                               authCheck={ authCheck } />
+                        <Route path="register" 
+                               element={<Register />}
+                               session={ session } />
                     </Route>
 
-                    <Route path="profile" element={<Profile session={ session } />} />
+                    <Route element={<AuthorizedOnly session={ session } />}>
+                        <Route path="profile" element={<Profile session={ session } />} />
+                    </Route>
 
                 </Route>
             </Routes>

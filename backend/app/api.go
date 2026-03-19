@@ -64,7 +64,7 @@ func (h *Handler) getSession(c *gin.Context) {
 
 	log.Printf("Session token: %s", token.(string))
 	s, err := selectSession(h.db, token.(string))
-	if err != nil && !strings.Contains(err.Error(), "no rows in result set") {
+	if err != nil {
 		log.Printf("Error retrieving session token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
 		return
