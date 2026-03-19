@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/gin-contrib/sessions"
-  	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )
@@ -38,23 +38,11 @@ func main() {
 	store := cookie.NewStore([]byte("secret"))
 	router.Use(sessions.Sessions("macro_session", store))
 
-	router.GET("/incr", func(c *gin.Context) {
-		session := sessions.Default(c)
-		var count int
-		v := session.Get("count")
-		if v == nil {
-			count = 0
-		} else {
-			count = v.(int)
-			count++
-		}
-		session.Set("count", count)
-		session.Save()
-		c.JSON(http.StatusOK, gin.H{"count": count})
-	})
-
 	api := router.Group("/api")
 	api.POST("/register", h.registerUser)
+	api.POST("/login", h.loginUser)
+	api.POST("/session", h.getSession)
+	api.DELETE("/session", h.delSession)
 
 	if os.Getenv("DEVMODE") == "true" {
 		router.NoRoute(func(c *gin.Context) {
@@ -69,6 +57,7 @@ func main() {
 				c.String(http.StatusInternalServerError, "Failed to load index.html")
 				return
 			}
+
 			c.Data(http.StatusOK, "text/html; charset=utf-8", file)
 		})
 	}

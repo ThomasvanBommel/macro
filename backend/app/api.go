@@ -1,9 +1,11 @@
 package main
 
 import (
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
+	"log"
 )
 
 type RegisterUserRequest struct {
@@ -45,5 +47,65 @@ func (h *Handler) loginUser(c *gin.Context) {
 		return
 	}
 
-	// todo
+	token, err := loginUser(h.db, req.Username, req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
+		return
+	}
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+		return
+	}
+
+	session := sessions.Default(c)
+	session.Set("token", token)
+	session.Save()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+}
+
+type Session struct {
+	User_ID   int    `json:"user_id"`
+	Username  string `json:"username"`
+	ExpiresAt string `json:"expires_at"`
+}
+
+func (h *Handler) getSession(c *gin.Context) {
+	session := sessions.Default(c)
+	token := session.Get("token")
+	if token == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	log.Printf("Session token: %s", token.(string))
+	s, err := selectSession(h.db, token.(string))
+	if err != nil && !strings.Contains(err.Error(), "no rows in result set") {
+		log.Printf("Error retrieving session token: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
+		return
+	}
+	if s == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Session expired or invalid"})
+		return
+	}
+
+	c.JSON(http.StatusOK, s)
+}
+
+func (h *Handler) delSession(c *gin.Context) {
+	session := sessions.Default(c)
+	token := session.Get("token")
+	if token == nil {
+		c.JSON(http.StatusOK, gin.H{"message": "No active session"})
+		return
+	}
+
+	err := deleteSession(h.db, token.(string));
+	if err != nil {
+		log.Printf("Error deleting session: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove session"})
+	}
+
+	c.JSON(http.StatusOK, session)
 }

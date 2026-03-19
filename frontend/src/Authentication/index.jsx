@@ -11,33 +11,38 @@ export default function AuthLayout() {
     )
 }
 
-export function Login() {
+export function Login({ onSuccess }) {
+    const navigate = useNavigate();
     const handleSubmit = e => {
         e.preventDefault();
         axios.post("/api/login", e.target, { headers: { 'Content-Type': 'application/json' } })
             .then(res => {
                 if(res.status === 200) {
                     alert('Login successful!');
+                    onSuccess?.();
+                    navigate('/');
                 } else {
                     alert(`Login failed: ${res.data.message}`);
                 }
             })
             .catch(err => {
-                alert(`An error occurred: ${err.message}${'\n' + err.response.data ?? ''}`);
+                console.log(err);
+                alert("An error occurred");
+                // alert(`An error occurred: ${err.message}${'\n' + err.response.data.error ?? ''}`);
             });
     };
 
     return (
-        <form action="/api/login" onSubmit={handleSubmit}>
-        <div>
-            <label htmlFor="username">Username:</label>
-            <input type="text" id="username" name="username" required />
-        </div>
-        <div>
-            <label htmlFor="password">Password:</label>
-            <input type="password" id="password" name="password" required />
-        </div>
-        <button type="submit">Login</button>
+        <form onSubmit={handleSubmit}>
+            <div>
+                <label htmlFor="username">Username:</label>
+                <input type="text" id="username" name="username" required />
+            </div>
+            <div>
+                <label htmlFor="password">Password:</label>
+                <input type="password" id="password" name="password" required />
+            </div>
+            <button type="submit">Login</button>
         </form>
     )
 }
@@ -60,7 +65,7 @@ export function Register() {
                 }
             })
             .catch(err => {
-                alert(`An error occurred: ${err.message}${'\n' + err.response.data ?? ''}`);
+                alert(`An error occurred: ${err.message}${'\n' + err.response.data.error ?? ''}`);
             });
     };
 
