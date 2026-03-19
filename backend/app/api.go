@@ -8,11 +8,6 @@ import (
 	"strings"
 )
 
-type RegisterUserRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
 func (h *Handler) registerUser(c *gin.Context) {
 	var req RegisterUserRequest
 
@@ -32,11 +27,6 @@ func (h *Handler) registerUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
-}
-
-type LoginUserRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
 }
 
 func (h *Handler) loginUser(c *gin.Context) {
@@ -62,12 +52,6 @@ func (h *Handler) loginUser(c *gin.Context) {
 	session.Save()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
-}
-
-type Session struct {
-	User_ID   int    `json:"user_id"`
-	Username  string `json:"username"`
-	ExpiresAt string `json:"expires_at"`
 }
 
 func (h *Handler) getSession(c *gin.Context) {
@@ -108,4 +92,20 @@ func (h *Handler) delSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, session)
+}
+
+func (h *Handler) addFood(c *gin.Context) {
+	var food Food
+	if err := c.ShouldBindJSON(&food); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
+
+	err := insertFood(h.db, food)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add food"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Food added successfully"})
 }

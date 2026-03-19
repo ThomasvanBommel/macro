@@ -138,3 +138,13 @@ func deleteSession(db *sql.DB, token string) error {
 	_, err := db.Exec(q, token)
 	return err
 }
+
+func insertFood(db *sql.DB, food Food) error {
+	q := `
+		INSERT INTO food (name, brand, created_by, calories, carbs, protein, fat)
+		VALUES (?, ?, ?, ?, ?, ?, ?);
+	`
+	_, err := db.Exec(q, food.Name, food.Brand, food.CreatedBy, food.Calories, food.Carbs, 
+		food.Protein, food.Fat)
+	return err
+}
