@@ -18,9 +18,9 @@ export function Login({ onSuccess }) {
         axios.post("/api/login", e.target, { headers: { 'Content-Type': 'application/json' } })
             .then(res => {
                 if(res.status === 200) {
-                    alert('Login successful!');
+                    // alert('Login successful!');
                     onSuccess?.();
-                    navigate('/');
+                    navigate('/profile');
                 } else {
                     alert(`Login failed: ${res.data.message}`);
                 }

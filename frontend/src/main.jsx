@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import { fetchSession } from './api';
 import Home from './Home';
 import AuthLayout, { Login, Register } from './Authentication';
+import Profile from './Profile';
 
 function App() {
     const [session, setSession] = useState(null);
@@ -36,7 +37,7 @@ function App() {
                         <Route path="register" element={<Register />} />
                     </Route>
 
-                    <Route path="profile" element={<div>User profile here</div>} />
+                    <Route path="profile" element={<Profile session={ session } />} />
 
                 </Route>
             </Routes>
