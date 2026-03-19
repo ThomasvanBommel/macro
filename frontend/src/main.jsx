@@ -42,13 +42,8 @@ function App() {
 
                     {/* <Route element={<AuthLayout />}> */}
                     <Route element={<UnAuthorizedOnly session={ session } />}>
-                        <Route path="login" 
-                               element={<Login onSuccess={ authCheck } />}
-                               session={ session }
-                               authCheck={ authCheck } />
-                        <Route path="register" 
-                               element={<Register />}
-                               session={ session } />
+                        <Route path="login" element={<Login onSuccess={ authCheck } />} />
+                        <Route path="register" element={<Register />} />
                     </Route>
 
                     <Route element={<AuthorizedOnly session={ session } />}>

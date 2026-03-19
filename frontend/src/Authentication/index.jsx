@@ -63,22 +63,22 @@ export function Register() {
 
     return (
         <form onSubmit={handleSubmit}>
-        <div>
-            <label htmlFor="username">Username:</label>
-            <input type="text" id="username" name="username" required />
-        </div>
-        <div>
-            <label htmlFor="password">Password:</label>
-            <input type="password" id="password" name="password" required 
-            onChange={e => setPassword(e.target.value)} />
-        </div>
-        <div>
-            <label htmlFor="confirm">Confirm :</label>
-            <input type="password" id="confirm" name="confirm" required 
-            onChange={e => setConfirm(e.target.value)} />
-        </div>
-        <button type="submit" disabled={password !== confirm}>Register</button>
-        {password !== confirm && <span style={{ color: 'red' }}> Passwords do not match!</span>}
+            <div>
+                <label htmlFor="username">Username:</label>
+                <input type="text" id="username" name="username" required />
+            </div>
+            <div>
+                <label htmlFor="password">Password:</label>
+                <input type="password" id="password" name="password" required 
+                onChange={e => setPassword(e.target.value)} />
+            </div>
+            <div>
+                <label htmlFor="confirm">Confirm :</label>
+                <input type="password" id="confirm" name="confirm" required 
+                onChange={e => setConfirm(e.target.value)} />
+            </div>
+            <button type="submit" disabled={password !== confirm}>Register</button>
+            {password !== confirm && <span style={{ color: 'red' }}> Passwords do not match!</span>}
         </form>
     )
 }
