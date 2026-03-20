@@ -37,7 +37,7 @@
 - [ ] explain tech choices
 
 ### Deployment
-- [ ] deploy and provide link in readme
+- [x] deploy and provide link in readme
 
 ## OPTIONAL
 - [ ] automate deployment
