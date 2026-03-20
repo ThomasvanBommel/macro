@@ -33,7 +33,7 @@
 
 ## MISC
 ### Readme
-- [ ] explain make commands
+- [x] explain make commands
 - [ ] explain tech choices
 
 ### Deployment

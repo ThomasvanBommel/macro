@@ -20,10 +20,72 @@ https://macro-292620794122.us-east1.run.app
     - [gin](https://gin-gonic.com)
       - [sessions](https://github.com/gin-contrib/sessions)
 - frontend
-  - javascript
-  - css
-  - html
   - [react](https://react.dev)
     - [vite](https://vite.dev)
     - [react-router](https://reactrouter.com)
     - [axios](https://axios-http.com/)
+
+# Make Commands
+```bash
+# lists these commands and their descriptions
+make help # or
+make
+```
+
+```sh
+# build and run the entire application
+# exposed on :8080
+make fullstack
+```
+
+```bash
+# build and run both backend and frontend in parallel
+# enables frontend's live edit
+# exposed on :5173, backend proxied to :8080 via Vite config
+make devmode
+```
+
+```bash
+# build and run or restart only the backend
+# exposed on :8080
+make backend
+```
+
+```bash
+# run shell in golang container for backend management
+# copies backend project files you can execute go commands on
+make golang
+```
+
+```bash
+# run goose cli in container for database migrations
+# copies database and migration files for modification
+make goose
+```
+
+```bash
+# format go code using gofmt via container
+make fmt
+```
+
+```bash
+# manage database via sqlite container
+make sqlite
+```
+
+```bash
+# build and run or refresh frontend service
+# enables live edit
+# exposed on :5173
+make frontend
+```
+
+```bash
+# run npm cli for frontend package management
+make npm
+```
+
+```bash
+# stop and remove all containers, networks, and volumes
+make down
+```
