@@ -39,7 +39,7 @@ CREATE TABLE entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     food_id INTEGER NOT NULL,
-    meal_id INTEGER NOT NULL,
+    meal_id INTEGER NOT NULL, -- change to just meal
     date DATE NOT NULL,
     servings REAL NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

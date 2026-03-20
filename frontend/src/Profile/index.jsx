@@ -1,24 +1,27 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import "./index.css";
+import { createPortal } from 'react-dom';
 
 export default function Profile({ session }) {
+    const [timeLeft, setTimeLeft] = useState("-");
+    const expiry = new Date(session?.expires_at);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const diff = expiry - new Date();
+            setTimeLeft(diff > 0 ? `${Math.floor(diff/60000)}m ${Math.floor((diff%60000)/1000)}s` : "Expired");
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <>  
             <div>
                 <h2>Profile Page</h2>
                 <p>Welcome to your profile, {session?.username}!</p>
                 <p>Your user ID is: {session?.user_id}</p>
-                <p>Session expires at: {session?.expires_at}</p>
-            </div>
-
-            <div>
-                <h3>Add Food</h3>
-                <AddFoodForm session={ session } />
-            </div>
-
-            <div>
-                <h3>Add Food Entry</h3>
-                <AddEntryForm session={ session } />
+                <p>Session expires in: {timeLeft} ({new Date(session?.expires_at).toLocaleString()})</p>
             </div>
 
             <EntryList session={ session } />
@@ -26,7 +29,7 @@ export default function Profile({ session }) {
     )
 }
 
-function AddEntryForm() {
+function AddEntryForm({ onSuccess }) {
     const initialState = {
         date: new Date().toLocaleString().split(',')[0],
         meal: 'breakfast',
@@ -37,6 +40,8 @@ function AddEntryForm() {
     const [formData, setFormData] = useState(initialState);
     const [foods, setFoods] = useState([]);
     const [loadingFoods, setLoadingFoods] = useState(true);
+    const [foodModalOpen, setFoodModalOpen] = useState(false);
+    const [foodUpdate, setFoodUpdate] = useState(null);
 
     useEffect(() => {
         axios.get("/api/food")
@@ -48,15 +53,17 @@ function AddEntryForm() {
                 setLoadingFoods(false);
             })
             .catch(console.error);
-    }, []);
+    }, [foodUpdate]);
 
     const handleSubmit = e => {
         e.preventDefault();
+        e.stopPropagation();
 
         axios.put("/api/entry", formData )
             .then(res => {
                 if(res.status === 201) {
                     setFormData(initialState);
+                    onSuccess?.();
                 } else {
                     alert(`Failed to add entry: ${res.data.message}`);
                 }
@@ -99,6 +106,10 @@ function AddEntryForm() {
                         </select>
                     </>
                 ) }
+                <button onClick={ () => setFoodModalOpen(true) }>+Food</button>
+                <ModalForm isOpen={ foodModalOpen }>
+                    <AddFoodForm onSuccess={ () => { setFoodModalOpen(false); setLoadingFoods(true); setFoodUpdate(Date.now()); } } />
+                </ModalForm>
             </div>
             <div>
                 <label htmlFor="servings">Servings:</label>
@@ -114,6 +125,9 @@ function AddEntryForm() {
 function EntryList({ session }) {
     const [date, setDate] = useState(new Date().toLocaleString().split(',')[0]);
     const [entries, setEntries] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [entryUpdate, setEntryUpdate] = useState(null);
+    const [EntryModalOpen, setEntryModalOpen] = useState(false);
 
     const addDays = n => {
         const d = new Date(date + " 00:00");
@@ -122,30 +136,40 @@ function EntryList({ session }) {
     }
 
     useEffect(() => {
-        axios.get("/api/entry", { params: { UserID: session?.user_id, Date: date } })
+        axios.get("/api/entry", { params: { UserID: +(session?.user_id), Date: date } })
             .then(res => {
+                console.log(res.data);
                 setEntries(res.data);
             })
-            .catch(console.error);
-    }, [date]);
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [entryUpdate]);
+    
+    if(loading) return <p>Loading entries...</p>;
 
     return (
         <div>
             <h3>Your Food Entries</h3>
             <div>
-                <button onClick={ () => addDays(-1) }>Previous</button>
+                <button onClick={ () => { addDays(-1); setLoading(true); setEntryUpdate(Date.now()); } }>-1</button>
                 <input type="date" value={ date } onChange={ e => setDate(e.target.value) } />
-                <button onClick={ () => addDays(1) }>Next</button>
+                <button onClick={ () => { addDays(1); setLoading(true); setEntryUpdate(Date.now()); } }>+1</button>
             </div>
             <div>
-                { entries.length === 0 ? (
+                <button onClick={ () => setEntryModalOpen(true) }>Insert New Entry</button>
+            </div>
+            <ModalForm isOpen={ EntryModalOpen }>
+                <AddEntryForm onSuccess={ () => { setEntryModalOpen(false); setLoading(true); setEntryUpdate(Date.now()); } } />
+            </ModalForm>
+            <div>
+                { !entries || entries.length === 0 ? (
                     <p>No entries for this date.</p>
                 ) : (
                     <ul>
                         { entries.map(e => (
-                            <li key={ e.ID }>
-                                { e.Meal.Name }: { e.Servings } serving(s) of food ID { e.FoodID }
-                            </li>
+                            <div>
+                                <li key={ e.id }>{ e.food.name } - { e.servings } serving(s) - { e.food.calories * e.servings } calories</li>
+                            </div>
                         )) }
                     </ul>
                 ) }
@@ -154,7 +178,7 @@ function EntryList({ session }) {
     )
 }
 
-function AddFoodForm() {
+function AddFoodForm({ onSuccess }) {
     const [name, setName] = useState('');
     const [brand, setBrand] = useState('');
     const [calories, setCalories] = useState(0);
@@ -165,6 +189,7 @@ function AddFoodForm() {
 
     const handleSubmit = e => {
         e.preventDefault();
+        e.stopPropagation();
         axios.put("/api/food", { name: name, brand: brand, calories: Number(calories), carbs: Number(carbs), 
             protein: Number(protein), fat: Number(fat), serving_size: Number(servingSize) })
             .then(res => {
@@ -176,6 +201,7 @@ function AddFoodForm() {
                     setProtein(0);
                     setFat(0);
                     setServingSize(1);
+                    onSuccess?.();
                 } else {
                     alert(`Failed to add food: ${res.data.message}`);
                 }
@@ -223,4 +249,16 @@ function AddFoodForm() {
             <button type="submit">Add Food</button>
         </form>
     )
+}
+
+function ModalForm({ isOpen, children }) {
+    if(!isOpen) return null;
+
+    return createPortal(
+        <div className="modal-form">
+            <div className="modal-content" onClick={ e => e.stopPropagation() }>
+                { children }
+            </div>
+        </div>, document.body
+    );
 }

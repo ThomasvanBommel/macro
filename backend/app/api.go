@@ -157,31 +157,17 @@ func (h *Handler) addEntry(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Entry added successfully"})
 }
 
-// func (h *Handler) addEntry(c *gin.Context) {
-// 	var entry Entry
-// 	if err := c.ShouldBindJSON(&entry); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-// 		return
-// 	}
-
-// 	err := insertEntry(h.db, entry)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add entry"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, gin.H{"message": "Entry added successfully"})
-// }
-
 func (h *Handler) getEntries(c *gin.Context) {
 	var req EntryRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+	if err := c.ShouldBindQuery(&req); err != nil {
+		log.Printf("Error parsing query parameters: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters"})
 		return
 	}
 
 	entries, err := selectEntries(h.db, req.UserID, req.Date)
 	if err != nil {
+		log.Printf("Error retrieving entries: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve entries"})
 		return
 	}

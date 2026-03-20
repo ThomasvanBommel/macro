@@ -206,21 +206,14 @@ func insertEntry(db *sql.DB, req PutEntryRequest) error {
 	return err
 }
 
-// func insertEntry(db *sql.DB, e Entry) error {
-// 	q := `
-// 		INSERT INTO entries (user_id, food_id, meal, servings, date)
-// 		VALUES (?, ?, ?, ?);
-// 	`
-// 	_, err := db.Exec(q, e.UserID, e.FoodID, e.Meal.Name, e.Servings, e.Date)
-// 	return err
-// }
-
-func selectEntries(db *sql.DB, user_id int, date string) ([]Entry, error) {
+func selectEntries(db *sql.DB, user_id int, date string) ([]EntryResponse, error) {
 	q := `
-		SELECT id, food_id, meal, servings, date
-		FROM entries
-		WHERE user_id = ?
-		  AND date = ?;
+		SELECT e.id, f.id, f.name, f.brand, f.calories, f.carbs, f.protein, f.fat, f.serving_size,
+		       e.meal_id, e.servings, e.date, e.created_at
+		FROM entries e
+		JOIN food f ON e.food_id = f.id
+		WHERE e.user_id = ?
+		  AND e.date = ?;
 	`
 	rows, err := db.Query(q, user_id, date)
 	if err != nil {
@@ -228,13 +221,39 @@ func selectEntries(db *sql.DB, user_id int, date string) ([]Entry, error) {
 	}
 	defer rows.Close()
 
-	var entries []Entry
+	var entries []EntryResponse
 	for rows.Next() {
-		var e Entry
-		if err := rows.Scan(&e.ID, &e.FoodID, &e.Meal.Name, &e.Servings, &e.Date); err != nil {
+		var er EntryResponse
+		if err := rows.Scan(&er.ID, &er.Food.ID, &er.Food.Name, &er.Food.Brand,
+			&er.Food.Calories, &er.Food.Carbs, &er.Food.Protein, &er.Food.Fat, &er.Food.ServingSize, 
+			&er.Meal.Name, &er.Servings, &er.Date, &er.CreatedAt); err != nil {
 			return nil, err
 		}
-		entries = append(entries, e)
+		entries = append(entries, er)
 	}
 	return entries, nil
 }
+
+// func selectEntries(db *sql.DB, user_id int, date string) ([]Entry, error) {
+// 	q := `
+// 		SELECT id, food_id, meal_id, servings, date
+// 		FROM entries
+// 		WHERE user_id = ?
+// 		  AND date = ?;
+// 	`
+// 	rows, err := db.Query(q, user_id, date)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
+
+// 	var entries []Entry
+// 	for rows.Next() {
+// 		var e Entry
+// 		if err := rows.Scan(&e.ID, &e.FoodID, &e.Meal.Name, &e.Servings, &e.Date); err != nil {
+// 			return nil, err
+// 		}
+// 		entries = append(entries, e)
+// 	}
+// 	return entries, nil
+// }

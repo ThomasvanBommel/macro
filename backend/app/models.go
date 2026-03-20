@@ -32,11 +32,11 @@ type Food struct {
 type PutFoodRequest struct {
 	Name         string `json:"name" binding:"required"`
 	Brand        string `json:"brand"`
-	Calories     int    `json:"calories" binding:"required"`
-	Carbs        int    `json:"carbs" binding:"required"`
-	Fat          int    `json:"fat" binding:"required"`
-	Protein      int    `json:"protein" binding:"required"`
-	ServingSize  int    `json:"serving_size" binding:"required"`
+	Calories     int    `json:"calories" binding:"gte=0"`
+	Carbs        int    `json:"carbs" binding:"gte=0"`
+	Fat          int    `json:"fat" binding:"gte=0"`
+	Protein      int    `json:"protein" binding:"gte=0"`
+	ServingSize  int    `json:"serving_size" binding:"gte=0"`
 	SessionToken string `json:"session_token"`
 }
 
@@ -63,6 +63,21 @@ type PutEntryRequest struct {
 }
 
 type EntryRequest struct {
-	UserID int    `json:"user_id"`
-	Date   string `json:"date"`
+	UserID int    `json:"user_id" binding:"required"`
+	Date   string `json:"date" binding:"required"`
 }
+
+type EntryResponse struct {
+	ID        int     `json:"id"`
+	Food      Food    `json:"food"`
+	Meal      Meal    `json:"meal"`
+	Date      string  `json:"log_date"`
+	Servings  float64 `json:"servings"`
+	CreatedAt string  `json:"created_at"`
+}
+
+
+// type EntryRequestByToken struct {
+// 	SessionToken string `json:"session_token" binding:"required"`
+// 	Date         string `json:"date" binding:"required"`
+// }
