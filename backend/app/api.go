@@ -95,13 +95,23 @@ func (h *Handler) delSession(c *gin.Context) {
 }
 
 func (h *Handler) addFood(c *gin.Context) {
-	var food Food
-	if err := c.ShouldBindJSON(&food); err != nil {
+	var req PutFoodRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("Error parsing JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}
 
-	err := insertFood(h.db, food)
+	session := sessions.Default(c)
+	token := session.Get("token")
+
+	if token == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	req.SessionToken = token.(string)
+	err := insertFood(h.db, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add food"})
 		return
@@ -121,20 +131,47 @@ func (h *Handler) getFoods(c *gin.Context) {
 }
 
 func (h *Handler) addEntry(c *gin.Context) {
-	var entry Entry
-	if err := c.ShouldBindJSON(&entry); err != nil {
+	var req PutEntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("Error parsing JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
 		return
 	}
 
-	err := insertEntry(h.db, entry)
+	session := sessions.Default(c)
+	token := session.Get("token")
+
+	if token == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	req.SessionToken = token.(string)
+	err := insertEntry(h.db, req)
 	if err != nil {
+		log.Printf("Error inserting entry: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add entry"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Entry added successfully"})
 }
+
+// func (h *Handler) addEntry(c *gin.Context) {
+// 	var entry Entry
+// 	if err := c.ShouldBindJSON(&entry); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+// 		return
+// 	}
+
+// 	err := insertEntry(h.db, entry)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add entry"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusCreated, gin.H{"message": "Entry added successfully"})
+// }
 
 func (h *Handler) getEntries(c *gin.Context) {
 	var req EntryRequest

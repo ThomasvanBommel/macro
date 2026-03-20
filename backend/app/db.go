@@ -139,13 +139,16 @@ func deleteSession(db *sql.DB, token string) error {
 	return err
 }
 
-func insertFood(db *sql.DB, food Food) error {
+func insertFood(db *sql.DB, req PutFoodRequest) error {
 	q := `
 		INSERT INTO food (name, brand, created_by, calories, carbs, protein, fat, serving_size)
-		VALUES (?, ?, ?, ?, ?, ?, ?);
+		VALUES (?, ?, (
+			SELECT user_id FROM sessions WHERE token = ?
+		), ?, ?, ?, ?, ?);
 	`
-	_, err := db.Exec(q, food.Name, food.Brand, food.CreatedBy, food.Calories, food.Carbs, 
-		food.Protein, food.Fat, food.ServingSize)
+	_, err := db.Exec(q, req.Name, req.Brand, req.SessionToken, req.Calories, req.Carbs,
+		req.Protein, req.Fat, req.ServingSize)
+
 	return err
 }
 
@@ -191,14 +194,26 @@ func selectMeals(db *sql.DB) ([]Meal, error) {
 	return meals, nil
 }
 
-func insertEntry(db *sql.DB, e Entry) error {
+func insertEntry(db *sql.DB, req PutEntryRequest) error {
 	q := `
-		INSERT INTO entries (user_id, food_id, meal, servings, date)
-		VALUES (?, ?, ?, ?);
+		INSERT INTO entries (user_id, food_id, meal_id, servings, date)
+		VALUES (
+			(SELECT user_id FROM sessions WHERE token = ?),
+			?, ?, ?, ?
+		);
 	`
-	_, err := db.Exec(q, e.UserID, e.FoodID, e.Meal.Name, e.Servings, e.Date)
+	_, err := db.Exec(q, req.SessionToken, req.FoodID, req.Meal, req.Servings, req.Date)
 	return err
 }
+
+// func insertEntry(db *sql.DB, e Entry) error {
+// 	q := `
+// 		INSERT INTO entries (user_id, food_id, meal, servings, date)
+// 		VALUES (?, ?, ?, ?);
+// 	`
+// 	_, err := db.Exec(q, e.UserID, e.FoodID, e.Meal.Name, e.Servings, e.Date)
+// 	return err
+// }
 
 func selectEntries(db *sql.DB, user_id int, date string) ([]Entry, error) {
 	q := `

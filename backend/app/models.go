@@ -11,7 +11,7 @@ type LoginUserRequest struct {
 }
 
 type Session struct {
-	UserID   int    `json:"user_id"`
+	UserID    int    `json:"user_id"`
 	Username  string `json:"username"`
 	ExpiresAt string `json:"expires_at"`
 }
@@ -29,6 +29,17 @@ type Food struct {
 	ServingSize int    `json:"serving_size"`
 }
 
+type PutFoodRequest struct {
+	Name         string `json:"name" binding:"required"`
+	Brand        string `json:"brand"`
+	Calories     int    `json:"calories" binding:"required"`
+	Carbs        int    `json:"carbs" binding:"required"`
+	Fat          int    `json:"fat" binding:"required"`
+	Protein      int    `json:"protein" binding:"required"`
+	ServingSize  int    `json:"serving_size" binding:"required"`
+	SessionToken string `json:"session_token"`
+}
+
 type Meal struct {
 	Name string `json:"name"`
 }
@@ -43,7 +54,15 @@ type Entry struct {
 	CreatedAt string  `json:"created_at"`
 }
 
+type PutEntryRequest struct {
+	FoodID	     int     `json:"food_id" binding:"required"`
+	Meal         string  `json:"meal" binding:"required"`
+	Date         string  `json:"date" binding:"required"`
+	Servings     float64 `json:"servings" binding:"required"`
+	SessionToken string  `json:"session_token"`
+}
+
 type EntryRequest struct {
-	UserID   int     `json:"user_id"`
-	Date	 string  `json:"date"`
+	UserID int    `json:"user_id"`
+	Date   string `json:"date"`
 }
