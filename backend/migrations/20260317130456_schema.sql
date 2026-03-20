@@ -30,8 +30,7 @@ CREATE TABLE food (
 );
 
 CREATE TABLE meals (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT PRIMARY KEY
 );
 
 INSERT INTO meals (name) VALUES ('Breakfast'), ('Lunch'), ('Dinner'), ('Snack');

@@ -173,7 +173,7 @@ func selectFoods(db *sql.DB) ([]Food, error) {
 }
 
 func selectMeals(db *sql.DB) ([]Meal, error) {
-	q := "SELECT id, name FROM meals;"
+	q := "SELECT name FROM meals;"
 	rows, err := db.Query(q)
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func selectMeals(db *sql.DB) ([]Meal, error) {
 	var meals []Meal
 	for rows.Next() {
 		var m Meal
-		if err := rows.Scan(&m.ID, &m.Name); err != nil {
+		if err := rows.Scan(&m.Name); err != nil {
 			return nil, err
 		}
 		meals = append(meals, m)
@@ -193,16 +193,16 @@ func selectMeals(db *sql.DB) ([]Meal, error) {
 
 func insertEntry(db *sql.DB, e Entry) error {
 	q := `
-		INSERT INTO entries (user_id, food_id, meal_id, servings, date)
+		INSERT INTO entries (user_id, food_id, meal, servings, date)
 		VALUES (?, ?, ?, ?);
 	`
-	_, err := db.Exec(q, e.UserID, e.FoodID, e.MealID, e.Servings, e.Date)
+	_, err := db.Exec(q, e.UserID, e.FoodID, e.Meal.Name, e.Servings, e.Date)
 	return err
 }
 
 func selectEntries(db *sql.DB, user_id int, date string) ([]Entry, error) {
 	q := `
-		SELECT id, food_id, meal_id, servings, date
+		SELECT id, food_id, meal, servings, date
 		FROM entries
 		WHERE user_id = ?
 		  AND date = ?;
@@ -216,7 +216,7 @@ func selectEntries(db *sql.DB, user_id int, date string) ([]Entry, error) {
 	var entries []Entry
 	for rows.Next() {
 		var e Entry
-		if err := rows.Scan(&e.ID, &e.FoodID, &e.MealID, &e.Servings, &e.Date); err != nil {
+		if err := rows.Scan(&e.ID, &e.FoodID, &e.Meal.Name, &e.Servings, &e.Date); err != nil {
 			return nil, err
 		}
 		entries = append(entries, e)

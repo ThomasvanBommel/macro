@@ -30,7 +30,6 @@ type Food struct {
 }
 
 type Meal struct {
-	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -38,7 +37,7 @@ type Entry struct {
 	ID        int     `json:"id"`
 	UserID    int     `json:"user_id"`
 	FoodID    int     `json:"food_id"`
-	MealID    Meal    `json:"meal"`
+	Meal      Meal    `json:"meal"`
 	Date      string  `json:"log_date"`
 	Servings  float64 `json:"servings"`
 	CreatedAt string  `json:"created_at"`
