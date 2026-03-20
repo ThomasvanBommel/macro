@@ -31,6 +31,9 @@
   - [ ]  update db
   - [ ]  reset database
 
+### Api
+- [ ] logging
+
 ## MISC
 ### Readme
 - [x] explain make commands
