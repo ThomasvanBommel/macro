@@ -43,6 +43,10 @@ func main() {
 	api.POST("/login", h.loginUser)
 	api.POST("/session", h.getSession)
 	api.DELETE("/session", h.delSession)
+	api.PUT("/food", h.addFood);
+	api.GET("/food", h.getFoods);
+	api.PUT("/entry", h.addEntry);
+	api.GET("/entry", h.getEntries);
 
 	if os.Getenv("DEVMODE") == "true" {
 		router.NoRoute(func(c *gin.Context) {

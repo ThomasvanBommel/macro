@@ -149,6 +149,29 @@ func insertFood(db *sql.DB, food Food) error {
 	return err
 }
 
+func selectFoods(db *sql.DB) ([]Food, error) {
+	q := `
+		SELECT id, name, brand, created_at, created_by, calories, carbs, protein, fat, serving_size 
+		FROM food;
+	`
+	rows, err := db.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var foods []Food
+	for rows.Next() {
+		var f Food
+		if err := rows.Scan(&f.ID, &f.Name, &f.Brand, &f.CreatedAt, &f.CreatedBy, &f.Calories,
+			&f.Carbs, &f.Protein, &f.Fat, &f.ServingSize); err != nil {
+			return nil, err
+		}
+		foods = append(foods, f)
+	}
+	return foods, nil
+}
+
 func selectMeals(db *sql.DB) ([]Meal, error) {
 	q := "SELECT id, name FROM meals;"
 	rows, err := db.Query(q)
