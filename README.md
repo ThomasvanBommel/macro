@@ -64,6 +64,12 @@ make goose
 ```
 
 ```bash
+# create a migration using goose container
+# also changes owner of migration to 1000:1000
+make migration name="schema_name"
+```
+
+```bash
 # format go code using gofmt via container
 make fmt
 ```

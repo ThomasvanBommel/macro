@@ -29,7 +29,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.goose
-    user: "1000:1000"
     volumes:
       - ./backend:/app
     environment:
@@ -37,7 +36,6 @@ services:
       - GOOSE_DBSTRING=/app/macro.db
       - GOOSE_MIGRATION_DIR=/app/migrations
     working_dir: /app
-    command: sh
 
   frontend:
     build:
