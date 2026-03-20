@@ -176,3 +176,27 @@ func insertEntry(db *sql.DB, e Entry) error {
 	_, err := db.Exec(q, e.UserID, e.FoodID, e.MealID, e.Servings, e.Date)
 	return err
 }
+
+func selectEntries(db *sql.DB, user_id int, date string) ([]Entry, error) {
+	q := `
+		SELECT id, food_id, meal_id, servings, date
+		FROM entries
+		WHERE user_id = ?
+		  AND date = ?;
+	`
+	rows, err := db.Query(q, user_id, date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []Entry
+	for rows.Next() {
+		var e Entry
+		if err := rows.Scan(&e.ID, &e.FoodID, &e.MealID, &e.Servings, &e.Date); err != nil {
+			return nil, err
+		}
+		entries = append(entries, e)
+	}
+	return entries, nil
+}

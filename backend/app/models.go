@@ -43,3 +43,8 @@ type Entry struct {
 	Servings  float64 `json:"servings"`
 	CreatedAt string  `json:"created_at"`
 }
+
+type EntryRequest struct {
+	UserID   int     `json:"user_id"`
+	Date	 string  `json:"date"`
+}

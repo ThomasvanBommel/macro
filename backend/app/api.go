@@ -109,3 +109,19 @@ func (h *Handler) addFood(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Food added successfully"})
 }
+
+func (h *Handler) getEntries(c *gin.Context) {
+	var req EntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
+		return
+	}
+
+	entries, err := selectEntries(h.db, req.UserID, req.Date)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve entries"})
+		return
+	}
+
+	c.JSON(http.StatusOK, entries)
+}
