@@ -1,6 +1,8 @@
 # macro
 simple full stack macro tracking application
 
+image now available @ https://hub.docker.com/repository/docker/cekeh/macro
+
 ## using
 - [make](https://www.gnu.org/software/make/manual/make.html)
 - [docker](https://www.docker.com/)
