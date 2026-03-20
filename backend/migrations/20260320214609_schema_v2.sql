@@ -21,14 +21,14 @@ CREATE TABLE food (
     name TEXT NOT NULL,
     brand TEXT,
     created DATETIME DEFAULT CURRENT_TIMESTAMP,
-    created_by_user_name TEXT NOT NULL,
+    user_name TEXT NOT NULL, -- person who created the food entry
     calories INTEGER NOT NULL,
     carbs INTEGER NOT NULL,
     protein INTEGER NOT NULL,
     fat INTEGER NOT NULL,
     serving_size TEXT NOT NULL,
     serving_count INTEGER NOT NULL,
-    FOREIGN KEY (created_by_user_name) REFERENCES user(name)
+    FOREIGN KEY (user_name) REFERENCES user(name)
 );
 
 CREATE TABLE meal (name TEXT PRIMARY KEY);
