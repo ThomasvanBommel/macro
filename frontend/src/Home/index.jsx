@@ -26,6 +26,11 @@ export default function Home({ session, authCheck }) {
             </header>
 
             <br />
+
+            <p style={{ textAlign: 'center', color: 'red' }}>
+                This is a development version of the app. It's subject to extreme change and
+                frequent database resets.
+            </p>
     
             <Outlet />
         </>
