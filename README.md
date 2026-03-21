@@ -4,7 +4,7 @@ simple full stack macro tracking application
 image now available @ https://hub.docker.com/repository/docker/cekeh/macro
 
 it's live!
-https://macro-292620794122.us-east1.run.app
+https://macro.cekeh.com
 
 ## using
 - [make](https://www.gnu.org/software/make/manual/make.html)
