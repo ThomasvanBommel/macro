@@ -70,11 +70,6 @@ make migration name="schema_name"
 ```
 
 ```bash
-# format go code using gofmt via container
-make fmt
-```
-
-```bash
 # manage database via sqlite container
 make sqlite
 ```

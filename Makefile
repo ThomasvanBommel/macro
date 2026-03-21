@@ -10,7 +10,6 @@ help:
 	@echo "  goose     - Run goose CLI for database migrations"
 	@echo "  migration - Create a new database migration with goose (usage: make migration " \
 	                    "name=your_migration_name)"
-	@echo "  fmt       - Format Go code using gofmt"
 	@echo "  sqlite    - Run a shell in the sqlite container for database management"
 
 	@echo "  frontend  - Build and run the frontend development server"
@@ -38,9 +37,6 @@ goose:
 migration:
 	docker compose run --rm goose sh -c "goose create $(name) sql && \
 		chown -R 1000:1000 /app/migrations"
-
-fmt:
-	docker compose run -it --rm golang gofmt -s -w .
 
 sqlite:
 	docker compose run -it --rm sqlite
