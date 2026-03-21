@@ -90,7 +90,8 @@ func (db *DatabaseWrapper) getSessionInfo(token string) (*ResponseSessionModel, 
 	var s ResponseSessionModel
 	q := `SELECT user_name, created, expires
 		  FROM session
-		  WHERE token = ?;`
+		  WHERE token = ?
+		    AND expires > datetime('now');`
 	err := db.QueryRow(q, token).Scan(&s.UserName, &s.Created, &s.Expires)
 	if err != nil {
 		return nil, err
@@ -119,7 +120,8 @@ func (db *DatabaseWrapper) getEntries(req RequestEntriesModel) ([]ResponseEntryM
 	}
 	defer rows.Close()
 
-	var entries []ResponseEntryModel
+	// var entries []ResponseEntryModel
+	entries := make([]ResponseEntryModel, 0)
 	for rows.Next() {
 		var e ResponseEntryModel
 		var f ResponseFoodModel
@@ -183,4 +185,29 @@ func (db *DatabaseWrapper) addEntry(req RequestAddEntryModel, token string) (*Re
 	}
 
 	return &e, nil
+}
+
+func (db *DatabaseWrapper) getFoods() ([]ResponseFoodModel, error) {
+	q := `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
+	     	serving_count
+		 FROM food;`
+
+	rows, err := db.Query(q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var foods []ResponseFoodModel
+	for rows.Next() {
+		var f ResponseFoodModel
+		err := rows.Scan(&f.ID, &f.Name, &f.Brand, &f.Created, &f.UserName, &f.Calories,
+			&f.Carbs, &f.Protein, &f.Fat, &f.ServingSize, &f.ServingCount)
+		if err != nil {
+			return nil, err
+		}
+		foods = append(foods, f)
+	}
+
+	return foods, nil
 }

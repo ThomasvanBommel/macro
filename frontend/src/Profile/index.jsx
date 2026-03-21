@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import "./index.css";
 import { ModalForm } from '../Modal';
-import { fetchEntries } from '../api';
+import { fetchEntries, fetchFoods } from '../api';
 
 export default function Profile({ session }) {
     const [timeLeft, setTimeLeft] = useState("-");
@@ -32,7 +32,9 @@ export default function Profile({ session }) {
 }
 
 function EntryList({ session }) {
-    const [date, setDate] = useState(new Date().toLocaleString().split(',')[0]);
+    // const [date, setDate] = useState(new Date().toLocaleString().split(',')[0]);
+    const toInputDate = d => new Date(d).toISOString().slice(0, 10);
+    const [date, setDate] = useState(toInputDate(new Date()));
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [entryUpdate, setEntryUpdate] = useState(null);
@@ -45,9 +47,12 @@ function EntryList({ session }) {
 
     // Helper to add days to current date and trigger entry reload
     const addDays = n => {
-        const d = new Date(date + " 00:00");
+        // const d = new Date(date + " 00:00");
+        // d.setDate(d.getDate() + n);
+        // setDate(d.toLocaleString().split(',')[0]);
+        const d = new Date(date + "T00:00:00");
         d.setDate(d.getDate() + n);
-        setDate(d.toLocaleString().split(',')[0]);
+        setDate(toInputDate(d));
         reloadEntries();
     }
 
@@ -57,7 +62,8 @@ function EntryList({ session }) {
             .then(setEntries)
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [entryUpdate]);
+    }, [date, entryUpdate, session.user_name]);
+    // }, [entryUpdate]);
     
     return (
         <div>
@@ -66,7 +72,13 @@ function EntryList({ session }) {
                 <div className="spacer"></div>
                 <input type="submit" value="Previous Day" onClick={ () => { addDays(-1) } } />
                 <div>
-                    <input type="date" value={ date } onChange={ e => setDate(e.target.value) } />
+                    {/* <input type="date" value={ date } onChange={ e => setDate(e.target.value) } /> */}
+                    <input type="date"
+                        value={date}
+                        onChange={e => {
+                            setLoading(true);
+                            setDate(e.target.value);
+                        }} />
                 </div>
                 <input type="submit" value="Next Day" onClick={ () => { addDays(1) } } />
                 <div className="spacer"></div>
@@ -88,19 +100,59 @@ function EntryList({ session }) {
             </ModalForm>
 
             { loading ? <p>Loading entries...</p> : 
-                <div>
-                    { !entries || entries.length === 0 ? (
-                        <p>No entries for this date.</p>
-                    ) : (
-                        <ul>
-                            { entries.map(e => (
-                                <div>
-                                    <li key={ e.id }>{ e.food.name } - { e.servings } serving(s) - { e.food.calories * e.servings } calories</li>
-                                </div>
-                            )) }
-                        </ul>
-                    ) }
+                <> 
+                <div className="totals">
+                    <div className="calories">Calories: { entries.reduce((sum, e) => sum + e.food.calories * e.servings, 0) }</div>
+                    <div className="carbs">Carbs: { entries.reduce((sum, e) => sum + e.food.carbs * e.servings, 0) }g</div>
+                    <div className="protein">Protein: { entries.reduce((sum, e) => sum + e.food.protein * e.servings, 0) }g</div>
+                    <div className="fat">Fat: { entries.reduce((sum, e) => sum + e.food.fat * e.servings, 0) }g</div>
                 </div>
+                {
+                    ["breakfast", "lunch", "dinner", "snack"].map(meal => {
+                        const mealEntries = entries.filter(e => e.meal_name === meal);
+                        if(mealEntries.length === 0) return null;
+
+                        return (
+                            <div className={ meal + " meal" }>
+                                <h4>{ meal.charAt(0).toUpperCase() + meal.slice(1) }</h4>
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Food</th>
+                                            <th>Calories</th>
+                                            <th>Carbs (g)</th>
+                                            <th>Protein (g)</th>
+                                            <th>Fat (g)</th>
+                                            <th>Servings</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        { mealEntries.map(e => (
+                                            <tr key={ e.id }>
+                                                <td>{ e.food.name }</td>
+                                                <td>{ e.food.calories }</td>
+                                                <td>{ e.food.carbs }</td>
+                                                <td>{ e.food.protein }</td>
+                                                <td>{ e.food.fat }</td>
+                                                <td>{ e.servings }</td>
+                                            </tr>
+                                        )) }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Total</th>
+                                            <th>{ mealEntries.reduce((sum, e) => sum + e.food.calories * e.servings, 0) }</th>
+                                            <th>{ mealEntries.reduce((sum, e) => sum + e.food.carbs * e.servings, 0) }</th>
+                                            <th>{ mealEntries.reduce((sum, e) => sum + e.food.protein * e.servings, 0) }</th>
+                                            <th>{ mealEntries.reduce((sum, e) => sum + e.food.fat * e.servings, 0) }</th>
+                                            <th>{ mealEntries.reduce((sum, e) => sum + e.servings, 0) }</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        )  
+                    })
+                } </>
             }
         </div>
     )
@@ -118,22 +170,13 @@ function AddEntryForm({ onSuccess, entryDate }) {
     const [foods, setFoods] = useState([]);
     const [loadingFoods, setLoadingFoods] = useState(true);
     const [foodModalOpen, setFoodModalOpen] = useState(false);
-    const [foodUpdate, setFoodUpdate] = useState(null);
 
     useEffect(() => {
-        axios.get("/api/food")
-            .then(res => {
-                if(res.data) {
-                    console.log(res.data)
-                    setFoods(res.data);
-                }
-                setLoadingFoods(false);
-            })
-            .catch( e => {
-                setLoadingFoods(false);
-                console.error(e);
-            });
-    }, [foodUpdate]);
+        fetchFoods()
+            .then(setFoods)
+            .catch(console.error)
+            .finally(() => setLoadingFoods(false));
+    }, []);
 
     const handleSubmit = e => {
         e.preventDefault();
@@ -233,7 +276,7 @@ function AddFoodForm({ formData, setFormData }) {
             ...p,
             food: {
                 ...p.food,
-                [name]: value
+                [name]: e.target.type === "number" ? +value : value
             }
         }));
     }

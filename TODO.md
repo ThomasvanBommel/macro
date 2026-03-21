@@ -15,11 +15,11 @@
 ## BACKEND
 ### Database
 - [ ] code cleanup
-- [ ] schema overhaul
-  - [ ]  update models
-  - [ ]  update api
-  - [ ]  update db
-  - [ ]  reset database
+- [x] schema overhaul
+  - [x]  update models
+  - [x]  update api
+  - [x]  update db
+  - [x]  reset database
 
 ### Api
 - [ ] logging

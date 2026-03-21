@@ -7,7 +7,14 @@ export function Login({ onSuccess }) {
 
     const handleSubmit = e => {
         e.preventDefault();
-        axios.post("/api/login", e.target, { headers: { 'Content-Type': 'application/json' } })
+
+        const form = new FormData(e.currentTarget);
+        const payload = {
+            name: String(form.get('name') || ''),
+            password: String(form.get('password') || ''),
+        };
+
+        axios.post("/api/login", payload)
             .then(res => {
                 if(res.status !== 200)
                     return alert(`Login failed: ${res.data.message}`);
@@ -42,7 +49,14 @@ export function Register({ onSuccess }) {
     const navigate = useNavigate();
     const handleSubmit = e => {
         e.preventDefault();
-        axios.post("/api/register", e.target, { headers: { 'Content-Type': 'application/json' } })
+
+        const form = new FormData(e.currentTarget);
+        const payload = {
+            name: String(form.get('name') || ''),
+            password: String(form.get('password') || ''),
+        };
+
+        axios.post("/api/register", payload)
             .then(res => {
                 if(res.status !== 200)
                     return alert(`Registration failed: ${res.data.message}`);

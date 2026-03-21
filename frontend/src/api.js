@@ -12,7 +12,7 @@ export async function clearSession() {
 
 export async function fetchSession() {
     try {
-        const res = await axios.post("/api/login");
+        const res = await axios.post("/api/login", {});
 
         if(res.status !== 200)
             console.error(`fetchSession !== 200: ${res.data.message}`);
@@ -30,6 +30,21 @@ export async function fetchEntries(user_name, date) {
 
         if(res.status !== 200)
             console.error(`fetchEntries !== 200: ${res.data.message}`);
+
+        return res.status === 200 ? res.data : [];
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+}
+
+// fetchFoods
+export async function fetchFoods() {
+    try {
+        const res = await axios.get("/api/foods");
+
+        if(res.status !== 200)
+            console.error(`fetchFoods !== 200: ${res.data.message}`);
 
         return res.status === 200 ? res.data : [];
     } catch (err) {

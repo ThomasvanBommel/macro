@@ -31,6 +31,7 @@ func initAPI(r *gin.Engine) {
 	api.POST("/logout", logout)
 	api.POST("/entries", getEntries)
 	api.POST("/entry", addEntry)
+	api.GET("/foods", getFoods)
 }
 
 /* Bind request context to a model struct */
@@ -180,4 +181,15 @@ func addEntry(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, entry)
+}
+
+func getFoods(c *gin.Context) {
+	foods, err := getDB(c).getFoods()
+	if err != nil {
+		log.Printf("Error retrieving foods: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve foods"})
+		return
+	}
+
+	c.JSON(http.StatusOK, foods)
 }
