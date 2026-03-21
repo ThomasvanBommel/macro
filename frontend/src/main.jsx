@@ -7,6 +7,7 @@ import { fetchSession,  } from './api';
 import Home from './Home';
 import { Login, Register } from './Authentication';
 import Profile from './Profile';
+import '@picocss/pico';
 import './main.css';
 
 function AuthorizedOnly({ session }) {
@@ -67,6 +68,8 @@ function App() {
 
 createRoot(document.getElementById('root')).render(
     <StrictMode>
-        <App />
+        <main className="container">
+            <App />
+        </main>
     </StrictMode>,
 )

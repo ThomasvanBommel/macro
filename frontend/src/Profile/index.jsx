@@ -30,6 +30,80 @@ export default function Profile({ session }) {
     )
 }
 
+function EntryList({ session }) {
+    const [date, setDate] = useState(new Date().toLocaleString().split(',')[0]);
+    const [entries, setEntries] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [entryUpdate, setEntryUpdate] = useState(null);
+    const [EntryModalOpen, setEntryModalOpen] = useState(false);
+
+    const reloadEntries = () => {
+        setLoading(true);
+        setEntryUpdate(Date.now());
+    }
+
+    // Helper to add days to current date and trigger entry reload
+    const addDays = n => {
+        const d = new Date(date + " 00:00");
+        d.setDate(d.getDate() + n);
+        setDate(d.toLocaleString().split(',')[0]);
+        reloadEntries();
+    }
+
+    // Fetch entries for the selected date
+    useEffect(() => {
+        axios.get("/api/entry", { params: { UserID: +(session?.user_name), Date: date } })
+            .then(res => {
+                console.log(res.data);
+                setEntries(res.data);
+            })
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, [entryUpdate]);
+    
+    return (
+        <div>
+            <h3>Your Food Entries</h3>
+            <div id="date-nav">
+                <div className="spacer"></div>
+                <input type="submit" value="Previous Day" onClick={ () => { addDays(-1) } } />
+                <div>
+                    <input type="date" value={ date } onChange={ e => setDate(e.target.value) } />
+                </div>
+                <input type="submit" value="Next Day" onClick={ () => { addDays(1) } } />
+                <div className="spacer"></div>
+
+            </div>
+
+            <div className="green">
+                <input type="submit" 
+                    value="Insert New Entry" 
+                    onClick={ () => setEntryModalOpen(true) } />
+            </div>
+
+            <ModalForm isOpen={ EntryModalOpen }>
+                <AddEntryForm onSuccess={ () => { setEntryModalOpen(false); reloadEntries(); } } />
+            </ModalForm>
+
+            { loading ? <p>Loading entries...</p> : 
+                <div>
+                    { !entries || entries.length === 0 ? (
+                        <p>No entries for this date.</p>
+                    ) : (
+                        <ul>
+                            { entries.map(e => (
+                                <div>
+                                    <li key={ e.id }>{ e.food.name } - { e.servings } serving(s) - { e.food.calories * e.servings } calories</li>
+                                </div>
+                            )) }
+                        </ul>
+                    ) }
+                </div>
+            }
+        </div>
+    )
+}
+
 function AddEntryForm({ onSuccess }) {
     const initialState = {
         date: new Date().toLocaleString().split(',')[0],
@@ -123,61 +197,7 @@ function AddEntryForm({ onSuccess }) {
     )
 }
 
-function EntryList({ session }) {
-    const [date, setDate] = useState(new Date().toLocaleString().split(',')[0]);
-    const [entries, setEntries] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [entryUpdate, setEntryUpdate] = useState(null);
-    const [EntryModalOpen, setEntryModalOpen] = useState(false);
 
-    const addDays = n => {
-        const d = new Date(date + " 00:00");
-        d.setDate(d.getDate() + n);
-        setDate(d.toLocaleString().split(',')[0]);
-    }
-
-    useEffect(() => {
-        axios.get("/api/entry", { params: { UserID: +(session?.user_name), Date: date } })
-            .then(res => {
-                console.log(res.data);
-                setEntries(res.data);
-            })
-            .catch(console.error)
-            .finally(() => setLoading(false));
-    }, [entryUpdate]);
-    
-    if(loading) return <p>Loading entries...</p>;
-
-    return (
-        <div>
-            <h3>Your Food Entries</h3>
-            <div>
-                <button onClick={ () => { addDays(-1); setLoading(true); setEntryUpdate(Date.now()); } }>-1</button>
-                <input type="date" value={ date } onChange={ e => setDate(e.target.value) } />
-                <button onClick={ () => { addDays(1); setLoading(true); setEntryUpdate(Date.now()); } }>+1</button>
-            </div>
-            <div>
-                <button onClick={ () => setEntryModalOpen(true) }>Insert New Entry</button>
-            </div>
-            <ModalForm isOpen={ EntryModalOpen }>
-                <AddEntryForm onSuccess={ () => { setEntryModalOpen(false); setLoading(true); setEntryUpdate(Date.now()); } } />
-            </ModalForm>
-            <div>
-                { !entries || entries.length === 0 ? (
-                    <p>No entries for this date.</p>
-                ) : (
-                    <ul>
-                        { entries.map(e => (
-                            <div>
-                                <li key={ e.id }>{ e.food.name } - { e.servings } serving(s) - { e.food.calories * e.servings } calories</li>
-                            </div>
-                        )) }
-                    </ul>
-                ) }
-            </div>
-        </div>
-    )
-}
 
 function AddFoodForm({ onSuccess }) {
     const [name, setName] = useState('');

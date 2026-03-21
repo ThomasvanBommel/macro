@@ -1,10 +1,14 @@
-.modal-form {
-    width: fit-content;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 20px;
-    border: 1px solid black;
+#date-nav {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
 }
+
+#date-nav input[type="submit"] {
+    flex: 0.5;
+}
+
+#date-nav .spacer {
+    flex: 1;
+}
+

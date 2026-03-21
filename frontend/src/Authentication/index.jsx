@@ -72,11 +72,6 @@ export function Register({ onSuccess }) {
             </div>
             <button type="submit" disabled={password !== confirm}>Register</button>
             {password !== confirm && <span style={{ color: 'red' }}> Passwords do not match!</span>}
-
-            <p style={{ color: 'red', fontWeight: 'bold' }}>
-                Assume all data is publically accessible, including passwords. Don't use real 
-                passwords here.
-            </p>
         </form>
     )
 }
