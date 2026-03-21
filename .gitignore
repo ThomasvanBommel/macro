@@ -1,1 +1,2 @@
 session_secret.txt
+./backend/data/*

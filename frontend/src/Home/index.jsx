@@ -6,8 +6,11 @@ export default function Home({ session, authCheck }) {
     const navigate = useNavigate();
 
     function Logout(){
-        clearSession();
-        authCheck().then(() => navigate("/login"));
+        clearSession()
+            .then(() => {
+                authCheck().then(() => navigate("/login"));
+            })
+            .catch(alert);
     }
 
     return (
@@ -17,7 +20,11 @@ export default function Home({ session, authCheck }) {
                 <nav>
                     <NavLink to="/">Home</NavLink>
                     { session ? 
-                        <Link onClick={ Logout }>Logout</Link>: 
+                        <>
+                        <NavLink to="/profile">Profile</NavLink> 
+                        <Link to="/logout" onClick={Logout}>Logout</Link>
+                        </>
+                        : 
                         <>
                             <NavLink to="/login">Login</NavLink>
                             <NavLink to="/register">Register</NavLink>

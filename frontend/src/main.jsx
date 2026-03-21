@@ -3,10 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { Outlet, BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { useState, useEffect, useRef } from 'react';
 
-import { fetchSession } from './api';
+import { fetchSession,  } from './api';
 import Home from './Home';
 import { Login, Register } from './Authentication';
 import Profile from './Profile';
+import './main.css';
 
 function AuthorizedOnly({ session }) {
     return session ? <Outlet /> : <Navigate to="/login" replace />;
@@ -21,11 +22,20 @@ function App() {
     const [loading, setLoading] = useState(true);
     const init = useRef(false);
 
-    const authCheck = async () => {
+    // Check for existing session. Also acts as a callback for successful login/registration
+    const authCheck = async (session_model) => {
+        setSession(null);
+        if(session_model) {
+            setSession(session_model);
+            setLoading(false);
+            return;
+        }
+
         setSession(await fetchSession());
         setLoading(false);
     };
 
+    // Run auth check on initial load
     useEffect(() => {
         if (!init.current) {
             init.current = true;
@@ -40,10 +50,9 @@ function App() {
             <Routes>
                 <Route path="/" element={<Home session={ session } authCheck={ authCheck } />}>
 
-                    {/* <Route element={<AuthLayout />}> */}
                     <Route element={<UnAuthorizedOnly session={ session } />}>
                         <Route path="login" element={<Login onSuccess={ authCheck } />} />
-                        <Route path="register" element={<Register />} />
+                        <Route path="register" element={<Register onSuccess={ authCheck } />} />
                     </Route>
 
                     <Route element={<AuthorizedOnly session={ session } />}>

@@ -28,7 +28,8 @@ func initAPI(r *gin.Engine) {
 	api := r.Group("/api")
 	api.POST("/register", register)
 	api.POST("/login", login)
-	api.GET("/session", getSession)
+	api.POST("/logout", logout)
+	// api.GET("/session", getSession)
 	// api.GET("/profile", profile)
 	// api.POST("/session", getSession)
 	// api.DELETE("/session", delSession)
@@ -60,28 +61,10 @@ func register(c *gin.Context) {
 		return
 	}
 
-	// Insert user into database
-	err := getDB(c).insertUser(req)
+	// Insert user into database and create session, fetch session info
+	token, res, err := getDB(c).register(req)
 	if err != nil {
-		log.Printf("Error creating user: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
-}
-
-func login(c *gin.Context) {
-	// Parse form data
-	var req RequestUserModel
-	if !bindModel(c, &req) {
-		return
-	}
-
-	// Insert session into database
-	token, err := getDB(c).insertSession(req)
-	if err != nil {
-		log.Printf("Error creating session: %v", err)
+		log.Printf("Error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -91,28 +74,79 @@ func login(c *gin.Context) {
 	session.Set("token", token)
 	session.Save()
 
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	c.JSON(http.StatusOK, res)
 }
 
-func getSession(c *gin.Context) {
-	// Get session token from cookie
+func login(c *gin.Context) {
+	// Check for existing session cookie, return session info if valid
 	session := sessions.Default(c)
-	token := session.Get("token")
-	if token == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	if session.Get("token") != nil {
+		res, err := getDB(c).getSessionInfo(session.Get("token").(string))
+		if err == nil {
+			c.JSON(http.StatusOK, res)
+			return
+		}
+	}
+
+	// Parse form data
+	var req RequestUserModel
+	if !bindModel(c, &req) {
 		return
 	}
 
-	// Select session from database
-	s, err := getDB(c).selectSession(token.(string))
+	// Insert session into database and fetch session info
+	token, res, err := getDB(c).login(req)
 	if err != nil {
-		log.Printf("Error retrieving session: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
+		log.Printf("Error creating session: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
 		return
 	}
 
-	c.JSON(http.StatusOK, s)
+	// Set session cookie
+	session.Set("token", token)
+	session.Save()
+
+	c.JSON(http.StatusOK, res)
 }
+
+func logout(c *gin.Context) {
+	// Delete session from database
+	session := sessions.Default(c)
+	if token := session.Get("token"); token != nil {
+		err := getDB(c).deleteSession(token.(string))
+		if err != nil {
+			log.Printf("Error deleting session: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete session"})
+			return
+		}
+	}
+
+	// Clear session cookie, expire immediately
+	session.Clear()
+	session.Save()
+
+	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+// func getSession(c *gin.Context) {
+// 	// Get session token from cookie
+// 	session := sessions.Default(c)
+// 	token := session.Get("token")
+// 	if token == nil {
+// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+// 		return
+// 	}
+
+// 	// Select session from database
+// 	s, err := getDB(c).selectSession(token.(string))
+// 	if err != nil {
+// 		log.Printf("Error retrieving session: %v", err)
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, s)
+// }
 
 // func (h *Handler) registerUser(c *gin.Context) {
 // 	var req RegisterUserRequest

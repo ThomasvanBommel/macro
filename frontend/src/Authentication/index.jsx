@@ -9,11 +9,10 @@ export function Login({ onSuccess }) {
         e.preventDefault();
         axios.post("/api/login", e.target, { headers: { 'Content-Type': 'application/json' } })
             .then(res => {
-                if(res.status === 200) {
-                    onSuccess?.() .then(() => navigate('/profile'));
-                } else {
-                    alert(`Login failed: ${res.data.message}`);
-                }
+                if(res.status !== 200)
+                    return alert(`Login failed: ${res.data.message}`);
+
+                onSuccess?.(res.data).then(() => navigate('/profile'));
             })
             .catch(err => {
                 console.log(err);
@@ -36,7 +35,7 @@ export function Login({ onSuccess }) {
     )
 }
 
-export function Register() {
+export function Register({ onSuccess }) {
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
 
@@ -45,13 +44,10 @@ export function Register() {
         e.preventDefault();
         axios.post("/api/register", e.target, { headers: { 'Content-Type': 'application/json' } })
             .then(res => {
-                if(res.status === 201) {
-                    alert('Registration successful! Please log in.');
-                    e.target.reset();
-                    navigate('/login');
-                } else {
-                    alert(`Registration failed: ${res.data.message}`);
-                }
+                if(res.status !== 200)
+                    return alert(`Registration failed: ${res.data.message}`);
+                
+                onSuccess?.(res.data).then(() => navigate('/profile'));
             })
             .catch(err => {
                 alert(`An error occurred: ${err.message}${'\n' + err.response.data.error ?? ''}`);

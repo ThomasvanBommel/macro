@@ -4,7 +4,7 @@
 
 #main-header {
     display: flex;
-    border-bottom: .2rem solid black;
+    border-bottom: .2rem solid var(--fg-color);
 }
 
 #main-header h1 {
@@ -19,7 +19,6 @@
 #main-header nav a {
   margin-right: 1em;
   text-decoration: none;
-  color: black;
 }
 
 #main-header nav a:hover {

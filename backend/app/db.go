@@ -47,57 +47,75 @@ func initDB() (*sql.DB, error) {
 	return db, nil
 }
 
-/*
-	  Insert a new user into the database, returning an error if the username is already taken or if
-		the database operation fails.
-*/
-func (db *DatabaseWrapper) insertUser(user RequestUserModel) error {
+func (db *DatabaseWrapper) register(user RequestUserModel) (string, *ResponseSessionModel, error) {
 	// Hash password
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 
 	// Insert into database
 	q := "INSERT INTO user (name, password_hash) VALUES (?, ?);"
 	_, err = db.Exec(q, user.Name, string(hash))
 	if err != nil {
-		return err
+		return "", nil, err
 	}
 
-	return nil
+	// Login
+	return db.login(user)
 }
 
-func (db *DatabaseWrapper) insertSession(user RequestUserModel) (string, error) {
+func (db *DatabaseWrapper) login(user RequestUserModel) (string, *ResponseSessionModel, error) {
 	// Generate random token
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
-		return "", err
+		return "", nil, err
 	}
 	token := hex.EncodeToString(b)
 
-	// Insert into database
+	// Insert into database and fetch session info
+	var res ResponseSessionModel
 	q := `INSERT INTO session (user_name, token, expires)
-		  VALUES (?, ?, datetime('now', '+1 hour'));`
-	_, err := db.Exec(q, user.Name, token)
+		  VALUES (?, ?, datetime('now', '+1 hour'))
+		  RETURNING user_name, created, expires;`
+	err := db.QueryRow(q, user.Name, token).Scan(&res.UserName, &res.Created, &res.Expires)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	return token, nil
+	return token, &res, nil
 }
 
-func (db *DatabaseWrapper) selectSession(token string) (*ResponseSessionModel, error) {
+func (db *DatabaseWrapper) getSessionInfo(token string) (*ResponseSessionModel, error) {
 	var s ResponseSessionModel
 	q := `SELECT user_name, created, expires
 		  FROM session
-		  WHERE token = ?
-		    AND expires > datetime('now');`
+		  WHERE token = ?;`
 	err := db.QueryRow(q, token).Scan(&s.UserName, &s.Created, &s.Expires)
-	if err != nil { return nil, err }
-	
+	if err != nil {
+		return nil, err
+	}
+
 	return &s, nil
 }
+
+func (db *DatabaseWrapper) deleteSession(token string) error {
+	q := `DELETE FROM session WHERE token = ?;`
+	_, err := db.Exec(q, token)
+	return err
+}
+
+// func (db *DatabaseWrapper) selectSession(token string) (*ResponseSessionModel, error) {
+// 	var s ResponseSessionModel
+// 	q := `SELECT user_name, created, expires
+// 		  FROM session
+// 		  WHERE token = ?
+// 		    AND expires > datetime('now');`
+// 	err := db.QueryRow(q, token).Scan(&s.UserName, &s.Created, &s.Expires)
+// 	if err != nil { return nil, err }
+
+// 	return &s, nil
+// }
 
 // func createUser(db *sql.DB, username string, password string) error {
 // 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
