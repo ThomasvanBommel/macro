@@ -46,6 +46,8 @@ export default function Home({ session, authCheck }) {
             </div>
     
             <Outlet />
+
+            { window.location.pathname === "/" && <p>Nothing here, jimithy</p> }
         </>
     )
 }

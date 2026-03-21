@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import "./index.css";
 import { createPortal } from 'react-dom';
+import { ModalForm } from '../Modal';
 
 export default function Profile({ session }) {
     const [timeLeft, setTimeLeft] = useState("-");
@@ -81,9 +82,13 @@ function EntryList({ session }) {
                     onClick={ () => setEntryModalOpen(true) } />
             </div>
 
-            <ModalForm isOpen={ EntryModalOpen }>
+            <ModalForm isOpen={ EntryModalOpen } onClose={ () => setEntryModalOpen(false) }>
                 <AddEntryForm onSuccess={ () => { setEntryModalOpen(false); reloadEntries(); } } />
             </ModalForm>
+
+            {/* <ModalForm isOpen={ EntryModalOpen }>
+                <AddEntryForm onSuccess={ () => { setEntryModalOpen(false); reloadEntries(); } } />
+            </ModalForm> */}
 
             { loading ? <p>Loading entries...</p> : 
                 <div>
@@ -148,11 +153,11 @@ function AddEntryForm({ onSuccess }) {
 
     return (
         <form onSubmit={handleSubmit}>
-            <div>
+            {/* <div>
                 <label htmlFor="date">Date:</label>
                 <input type="date" id="date" name="date" value={ formData.date } 
                     onChange={ e => setFormData(p => ({ ...p, date: e.target.value })) } required />
-            </div>
+            </div> */}
             <div>
                 <label htmlFor="meal">Meal:</label>
                 <select id="meal" name="meal" value={ formData.meal } 
@@ -164,27 +169,34 @@ function AddEntryForm({ onSuccess }) {
                 </select>
             </div>
             <div>
-                { loadingFoods ? (
-                    <p>Loading foods...</p>
-                ) : foods.length === 0 ? (
-                    <p>No foods available.</p>
-                ) : (
+
+                
+
+                { foodModalOpen ?
+                    <AddFoodForm />
+                : 
                     <>
-                        <label htmlFor="food">Food:</label>
-                        <select id="food" name="food" value={ formData.food_id } 
-                            onChange={ e => setFormData(p => ({ ...p, food_id: +e.target.value })) }
-                             required>
-                                <option value="">Select a food</option>
-                            { foods.map(f => (
-                                <option value={ f.id }>{ f.name }</option>
-                            )) }
-                        </select>
+                        <button onClick={ () => setFoodModalOpen(true) }>+Food</button>
+
+                        { loadingFoods ? (
+                            <p>Loading foods...</p>
+                        ) : foods.length === 0 ? (
+                            <p>No foods available.</p>
+                        ) : (
+                            <>
+                                <label htmlFor="food">Food:</label>
+                                <select id="food" name="food" value={ formData.food_id } 
+                                    onChange={ e => setFormData(p => ({ ...p, food_id: +e.target.value })) }
+                                    required>
+                                        <option value="">Select a food</option>
+                                    { foods.map(f => (
+                                        <option value={ f.id }>{ f.name }</option>
+                                    )) }
+                                </select>
+                            </>
+                        ) }
                     </>
-                ) }
-                <button onClick={ () => setFoodModalOpen(true) }>+Food</button>
-                <ModalForm isOpen={ foodModalOpen }>
-                    <AddFoodForm onSuccess={ () => { setFoodModalOpen(false); setLoadingFoods(true); setFoodUpdate(Date.now()); } } />
-                </ModalForm>
+                }
             </div>
             <div>
                 <label htmlFor="servings">Servings:</label>
@@ -196,8 +208,6 @@ function AddEntryForm({ onSuccess }) {
         </form>
     )
 }
-
-
 
 function AddFoodForm({ onSuccess }) {
     const [name, setName] = useState('');
@@ -231,7 +241,8 @@ function AddFoodForm({ onSuccess }) {
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <>
+        {/* // <form onSubmit={handleSubmit}> */}
             <div>
                 <label htmlFor="name">Name:</label>
                 <input type="text" id="name" name="name" value={ name } 
@@ -267,19 +278,20 @@ function AddFoodForm({ onSuccess }) {
                 <input type="number" id="serving_size" name="serving_size" value={ servingSize } 
                     onChange={ e => setServingSize(e.target.value) } min="1" required />
             </div>
-            <button type="submit">Add Food</button>
-        </form>
+            {/* <button type="submit">Add Food</button> */}
+        {/* // </form> */}
+        </>
     )
 }
 
-function ModalForm({ isOpen, children }) {
-    if(!isOpen) return null;
+// function ModalForm({ isOpen, children }) {
+//     if(!isOpen) return null;
 
-    return createPortal(
-        <div className="modal-form">
-            <div className="modal-content" onClick={ e => e.stopPropagation() }>
-                { children }
-            </div>
-        </div>, document.body
-    );
-}
+//     return createPortal(
+//         <div className="modal-form">
+//             <div className="modal-content" onClick={ e => e.stopPropagation() }>
+//                 { children }
+//             </div>
+//         </div>, document.body
+//     );
+// }
