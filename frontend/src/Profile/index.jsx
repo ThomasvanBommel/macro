@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import "./index.css";
-import { createPortal } from 'react-dom';
 import { ModalForm } from '../Modal';
+import { fetchEntries } from '../api';
 
 export default function Profile({ session }) {
     const [timeLeft, setTimeLeft] = useState("-");
@@ -53,11 +53,8 @@ function EntryList({ session }) {
 
     // Fetch entries for the selected date
     useEffect(() => {
-        axios.get("/api/entry", { params: { UserID: +(session?.user_name), Date: date } })
-            .then(res => {
-                console.log(res.data);
-                setEntries(res.data);
-            })
+        fetchEntries(session.user_name, date)
+            .then(setEntries)
             .catch(console.error)
             .finally(() => setLoading(false));
     }, [entryUpdate]);
@@ -83,12 +80,12 @@ function EntryList({ session }) {
             </div>
 
             <ModalForm isOpen={ EntryModalOpen } onClose={ () => setEntryModalOpen(false) }>
-                <AddEntryForm onSuccess={ () => { setEntryModalOpen(false); reloadEntries(); } } />
+                <AddEntryForm onSuccess={ entry => { 
+                    setEntryModalOpen(false); 
+                    setEntries(prev => [...prev, entry]);
+                    // reloadEntries(); 
+                } } entryDate={ date } />
             </ModalForm>
-
-            {/* <ModalForm isOpen={ EntryModalOpen }>
-                <AddEntryForm onSuccess={ () => { setEntryModalOpen(false); reloadEntries(); } } />
-            </ModalForm> */}
 
             { loading ? <p>Loading entries...</p> : 
                 <div>
@@ -109,10 +106,10 @@ function EntryList({ session }) {
     )
 }
 
-function AddEntryForm({ onSuccess }) {
+function AddEntryForm({ onSuccess, entryDate }) {
     const initialState = {
-        date: new Date().toLocaleString().split(',')[0],
-        meal: 'breakfast',
+        date: entryDate,
+        meal_name: 'breakfast',
         food_id: undefined,
         servings: 1
     };
@@ -132,36 +129,37 @@ function AddEntryForm({ onSuccess }) {
                 }
                 setLoadingFoods(false);
             })
-            .catch(console.error);
+            .catch( e => {
+                setLoadingFoods(false);
+                console.error(e);
+            });
     }, [foodUpdate]);
 
     const handleSubmit = e => {
         e.preventDefault();
         e.stopPropagation();
 
-        axios.put("/api/entry", formData )
+        axios.post("/api/entry", formData)
             .then(res => {
-                if(res.status === 201) {
-                    setFormData(initialState);
-                    onSuccess?.();
-                } else {
+                if(res.status !== 200)
                     alert(`Failed to add entry: ${res.data.message}`);
-                }
+
+                setFormData(initialState);
+                onSuccess?.(res.data);
             })
-            .catch(console.error);
+            .catch(e => {
+                alert(`An error occurred: ${e.message}${'\n' + e.response.data.error ?? ''}`);
+                console.error(e);
+            });
     }
 
     return (
         <form onSubmit={handleSubmit}>
-            {/* <div>
-                <label htmlFor="date">Date:</label>
-                <input type="date" id="date" name="date" value={ formData.date } 
-                    onChange={ e => setFormData(p => ({ ...p, date: e.target.value })) } required />
-            </div> */}
             <div>
-                <label htmlFor="meal">Meal:</label>
-                <select id="meal" name="meal" value={ formData.meal } 
-                    onChange={ e => setFormData(p => ({ ...p, meal: e.target.value })) } required>
+                <label htmlFor="meal_name">Meal:</label>
+                <select id="meal_name" name="meal_name" value={ formData.meal_name } 
+                    onChange={ e => setFormData(p => ({ ...p, meal_name: e.target.value })) } 
+                    required>
                     <option value="breakfast">Breakfast</option>
                     <option value="lunch">Lunch</option>
                     <option value="dinner">Dinner</option>
@@ -173,10 +171,10 @@ function AddEntryForm({ onSuccess }) {
                 
 
                 { foodModalOpen ?
-                    <AddFoodForm />
+                    <AddFoodForm formData={formData} setFormData={setFormData} />
                 : 
                     <>
-                        <button onClick={ () => setFoodModalOpen(true) }>+Food</button>
+                        <button className="green" onClick={ () => setFoodModalOpen(true) }>+Food</button>
 
                         { loadingFoods ? (
                             <p>Loading foods...</p>
@@ -204,94 +202,79 @@ function AddEntryForm({ onSuccess }) {
                     onChange={ e => setFormData(p => ({ ...p, servings: +e.target.value }))} min="1"
                      required />
             </div>
-            <button type="submit" disabled={ loadingFoods || foods.length===0 }>Add Entry</button>
+            <button type="submit">Add Entry</button>
         </form>
     )
 }
 
-function AddFoodForm({ onSuccess }) {
-    const [name, setName] = useState('');
-    const [brand, setBrand] = useState('');
-    const [calories, setCalories] = useState(0);
-    const [carbs, setCarbs] = useState(0);
-    const [protein, setProtein] = useState(0);
-    const [fat, setFat] = useState(0);
-    const [servingSize, setServingSize] = useState(1);
-
-    const handleSubmit = e => {
-        e.preventDefault();
-        e.stopPropagation();
-        axios.put("/api/food", { name: name, brand: brand, calories: Number(calories), carbs: Number(carbs), 
-            protein: Number(protein), fat: Number(fat), serving_size: Number(servingSize) })
-            .then(res => {
-                if(res.status === 201) {
-                    setName('');
-                    setBrand('');
-                    setCalories(0);
-                    setCarbs(0);
-                    setProtein(0);
-                    setFat(0);
-                    setServingSize(1);
-                    onSuccess?.();
-                } else {
-                    alert(`Failed to add food: ${res.data.message}`);
-                }
-            })
-            .catch(console.error);
+function AddFoodForm({ formData, setFormData }) {
+    const emptyFood = {
+        name: '',
+        brand: '',
+        calories: 0,
+        carbs: 0,
+        protein: 0,
+        fat: 0,
+        serving_size: ''
     };
+
+    const food = formData.food ?? emptyFood;
+
+    useEffect(() => {
+        setFormData(p => ({
+            ...p, 
+            food: emptyFood
+        }));
+    }, []);
+
+    const onChange = e => {
+        const { name, value } = e.target;
+        setFormData(p => ({
+            ...p,
+            food: {
+                ...p.food,
+                [name]: value
+            }
+        }));
+    }
 
     return (
         <>
-        {/* // <form onSubmit={handleSubmit}> */}
             <div>
                 <label htmlFor="name">Name:</label>
-                <input type="text" id="name" name="name" value={ name } 
-                    onChange={ e => setName(e.target.value) } required />
+                <input type="text" id="name" name="name" value={ food.name } 
+                    onChange={ onChange } required />
             </div>
             <div>
                 <label htmlFor="brand">Brand:</label>
-                <input type="text" id="brand" name="brand" value={ brand } 
-                    onChange={ e => setBrand(e.target.value) } />
+                <input type="text" id="brand" name="brand" value={ food.brand } 
+                    onChange={ onChange } />
             </div>
             <div>
                 <label htmlFor="calories">Calories:</label>
-                <input type="number" id="calories" name="calories" value={ calories } 
-                    onChange={ e => setCalories(e.target.value) } min="0" required />
+                <input type="number" id="calories" name="calories" value={ food.calories } 
+                    onChange={ onChange } min="0" required />
             </div>
             <div>
                 <label htmlFor="carbs">Carbs (g):</label>
-                <input type="number" id="carbs" name="carbs" value={ carbs } 
-                    onChange={ e => setCarbs(e.target.value) } min="0" required />
+                <input type="number" id="carbs" name="carbs" value={ food.carbs } 
+                    onChange={ onChange } min="0" required />
             </div>
             <div>
                 <label htmlFor="protein">Protein (g):</label>
-                <input type="number" id="protein" name="protein" value={ protein } 
-                    onChange={ e => setProtein(e.target.value) } min="0" required />
+                <input type="number" id="protein" name="protein" value={ food.protein } 
+                    onChange={ onChange } min="0" required />
             </div>
             <div>
                 <label htmlFor="fat">Fat (g):</label>
-                <input type="number" id="fat" name="fat" value={ fat } 
-                    onChange={ e => setFat(e.target.value) } min="0" required />
+                <input type="number" id="fat" name="fat" value={ food.fat } 
+                    onChange={ onChange } min="0" required />
             </div>
             <div>
                 <label htmlFor="serving_size">Serving Size:</label>
-                <input type="number" id="serving_size" name="serving_size" value={ servingSize } 
-                    onChange={ e => setServingSize(e.target.value) } min="1" required />
+                <input type="text" id="serving_size" name="serving_size" value={ food.serving_size } 
+                    onChange={ onChange } required />
             </div>
-            {/* <button type="submit">Add Food</button> */}
-        {/* // </form> */}
         </>
     )
 }
-
-// function ModalForm({ isOpen, children }) {
-//     if(!isOpen) return null;
-
-//     return createPortal(
-//         <div className="modal-form">
-//             <div className="modal-content" onClick={ e => e.stopPropagation() }>
-//                 { children }
-//             </div>
-//         </div>, document.body
-//     );
-// }

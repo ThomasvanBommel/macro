@@ -16,42 +16,43 @@ type ResponseSessionModel struct {
 	Expires  string `json:"expires"`
 }
 
-/*
-FoodModel:
+type ResponseFoodModel struct {
+	ID           int    `json:"id"`
+	Name         string `json:"name" binding:"required"`
+	Brand        string `json:"brand"`
+	Created      string `json:"created"`
+	UserName     string `json:"user_name"`
+	Calories     int    `json:"calories" binding:"gte=0"`
+	Carbs        int    `json:"carbs" binding:"gte=0"`
+	Protein      int    `json:"protein" binding:"gte=0"`
+	Fat          int    `json:"fat" binding:"gte=0"`
+	ServingSize  string `json:"serving_size" binding:"required"`
+	ServingCount int    `json:"serving_count" binding:"gte=0"`
+}
 
-	calories, carbs, protein, fat, and serving_count are stored as integer representing the value
-	multiplied by 100 to avoid floating point issues.
-*/
-// type FoodModel struct {
-// 	id            int    `json:"id"`
-// 	name          string `json:"name"`
-// 	brand         string `json:"brand"`
-// 	created       string `json:"created"`
-// 	user_name     string `json:"username"`
-// 	calories      int    `json:"calories"`
-// 	carbs         int    `json:"carbs"`
-// 	protein       int    `json:"protein"`
-// 	fat           int    `json:"fat"`
-// 	serving_size  string `json:"serving_size"`
-// 	serving_count int    `json:"serving_count"`
-// }
+type RequestFoodModel struct {
+	ResponseFoodModel
+}
 
-// type MealModel struct {
-// 	name string `json:"name"`
-// }
+type RequestEntriesModel struct {
+	UserName string `json:"user_name" binding:"required"`
+	Date     string `json:"date" binding:"required"`
+}
 
-/*
-EntryModel:
+type RequestAddEntryModel struct {
+	FoodId   *int              `json:"food_id"`
+	Food     *RequestFoodModel `json:"food"`
+	MealName string            `json:"meal_name" binding:"required"`
+	Date     string            `json:"date" binding:"required"`
+	Servings int               `json:"servings" binding:"gte=1"`
+}
 
-	servings is stored as integer representing the value multiplied by 100 to avoid floating point
-	issues.
-*/
-// type EntryModel struct {
-// 	id        int    `json:"id"`
-// 	user_name string `json:"user_name"`
-// 	food_id   int    `json:"food_id"`
-// 	meal_name string `json:"meal_name"`
-// 	date      string `json:"date"`
-// 	servings  int    `json:"servings"`
-// 	created   string `json:"created"`
-// }
+type ResponseEntryModel struct {
+	ID       int               `json:"id"`
+	UserName string            `json:"user_name"`
+	Food     ResponseFoodModel `json:"food"`
+	MealName string            `json:"meal_name"`
+	Date     string            `json:"date"`
+	Servings int               `json:"servings"`
+	Created  string            `json:"created"`
+}

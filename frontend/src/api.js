@@ -23,3 +23,17 @@ export async function fetchSession() {
         return null;
     }
 }
+
+export async function fetchEntries(user_name, date) {
+    try {
+        const res = await axios.post("/api/entries", { user_name, date });
+
+        if(res.status !== 200)
+            console.error(`fetchEntries !== 200: ${res.data.message}`);
+
+        return res.status === 200 ? res.data : [];
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+}

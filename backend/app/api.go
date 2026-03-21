@@ -29,14 +29,8 @@ func initAPI(r *gin.Engine) {
 	api.POST("/register", register)
 	api.POST("/login", login)
 	api.POST("/logout", logout)
-	// api.GET("/session", getSession)
-	// api.GET("/profile", profile)
-	// api.POST("/session", getSession)
-	// api.DELETE("/session", delSession)
-	// api.PUT("/food", addFood)
-	// api.GET("/food", getFoods)
-	// api.PUT("/entry", addEntry)
-	// api.GET("/entry", getEntries)
+	api.POST("/entries", getEntries)
+	api.POST("/entry", addEntry)
 }
 
 /* Bind request context to a model struct */
@@ -128,189 +122,62 @@ func logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
 }
 
-// func getSession(c *gin.Context) {
-// 	// Get session token from cookie
-// 	session := sessions.Default(c)
-// 	token := session.Get("token")
-// 	if token == nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-// 		return
-// 	}
+func getEntries(c *gin.Context) {
+	var req RequestEntriesModel
+	if !bindModel(c, &req) {
+		return
+	}
 
-// 	// Select session from database
-// 	s, err := getDB(c).selectSession(token.(string))
-// 	if err != nil {
-// 		log.Printf("Error retrieving session: %v", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
-// 		return
-// 	}
+	entries, err := getDB(c).getEntries(req)
+	if err != nil {
+		log.Printf("Error retrieving entries: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve entries"})
+		return
+	}
 
-// 	c.JSON(http.StatusOK, s)
-// }
+	c.JSON(http.StatusOK, entries)
+}
 
-// func (h *Handler) registerUser(c *gin.Context) {
-// 	var req RegisterUserRequest
+func addEntry(c *gin.Context) {
+	// Get session token from cookie
+	session := sessions.Default(c)
+	token := session.Get("token")
+	if token == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
 
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-// 		return
-// 	}
+	// Bind request body to model
+	var req RequestAddEntryModel
+	if !bindModel(c, &req) {
+		return
+	}
 
-// 	err := createUser(h.db, req.Username, req.Password)
-// 	if err != nil {
-// 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-// 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
-// 			return
-// 		}
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-// 		return
-// 	}
+	// Add food if FoodId is not provided
+	if req.FoodId == nil {
+		if req.Food == nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Either food_id or food details must be provided"})
+			return
+		}
 
-// 	c.JSON(http.StatusCreated, gin.H{"message": "User registered successfully"})
-// }
+		food_id, err := getDB(c).addFood(req.Food, token.(string))
+		if err != nil {
+			log.Printf("Error adding food: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add food"})
+			return
+		}
 
-// func (h *Handler) loginUser(c *gin.Context) {
-// 	var req LoginUserRequest
+		req.FoodId = &food_id
+	}
 
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-// 		return
-// 	}
+	// Add entry and return it with food info populated
+	entry, err := getDB(c).addEntry(req, token.(string))
+	if err != nil {
+		log.Printf("Error adding entry: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add entry"})
+		return
+	}
 
-// 	token, err := loginUser(h.db, req.Username, req.Password)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
-// 		return
-// 	}
-// 	if token == "" {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
-// 		return
-// 	}
-
-// 	session := sessions.Default(c)
-// 	session.Set("token", token)
-// 	session.Save()
-
-// 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
-// }
-
-// func (h *Handler) getSession(c *gin.Context) {
-// 	session := sessions.Default(c)
-// 	token := session.Get("token")
-// 	if token == nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-// 		return
-// 	}
-
-// 	log.Printf("Session token: %s", token.(string))
-// 	s, err := selectSession(h.db, token.(string))
-// 	if err != nil {
-// 		log.Printf("Error retrieving session token: %v", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve session"})
-// 		return
-// 	}
-// 	if s == nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Session expired or invalid"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, s)
-// }
-
-// func (h *Handler) delSession(c *gin.Context) {
-// 	session := sessions.Default(c)
-// 	token := session.Get("token")
-// 	if token == nil {
-// 		c.JSON(http.StatusOK, gin.H{"message": "No active session"})
-// 		return
-// 	}
-
-// 	err := deleteSession(h.db, token.(string))
-// 	if err != nil {
-// 		log.Printf("Error deleting session: %v", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove session"})
-// 	}
-
-// 	c.JSON(http.StatusOK, session)
-// }
-
-// func (h *Handler) addFood(c *gin.Context) {
-// 	var req PutFoodRequest
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		log.Printf("Error parsing JSON: %v", err)
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-// 		return
-// 	}
-
-// 	session := sessions.Default(c)
-// 	token := session.Get("token")
-
-// 	if token == nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-// 		return
-// 	}
-
-// 	req.SessionToken = token.(string)
-// 	err := insertFood(h.db, req)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add food"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, gin.H{"message": "Food added successfully"})
-// }
-
-// func (h *Handler) getFoods(c *gin.Context) {
-// 	foods, err := selectFoods(h.db)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve foods"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, foods)
-// }
-
-// func (h *Handler) addEntry(c *gin.Context) {
-// 	var req PutEntryRequest
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		log.Printf("Error parsing JSON: %v", err)
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON"})
-// 		return
-// 	}
-
-// 	session := sessions.Default(c)
-// 	token := session.Get("token")
-
-// 	if token == nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-// 		return
-// 	}
-
-// 	req.SessionToken = token.(string)
-// 	err := insertEntry(h.db, req)
-// 	if err != nil {
-// 		log.Printf("Error inserting entry: %v", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add entry"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, gin.H{"message": "Entry added successfully"})
-// }
-
-// func (h *Handler) getEntries(c *gin.Context) {
-// 	var req EntryRequest
-// 	if err := c.ShouldBindQuery(&req); err != nil {
-// 		log.Printf("Error parsing query parameters: %v", err)
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid query parameters"})
-// 		return
-// 	}
-
-// 	entries, err := selectEntries(h.db, req.UserID, req.Date)
-// 	if err != nil {
-// 		log.Printf("Error retrieving entries: %v", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve entries"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, entries)
-// }
+	c.JSON(http.StatusOK, entry)
+}
