@@ -1,6 +1,6 @@
-import { useNavigate, Navigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import axios from 'axios';
-import React, { Outlet, useState } from 'react';
+import React, { useState } from 'react';
 
 export function Login({ onSuccess }) {
     const navigate = useNavigate();
@@ -10,25 +10,22 @@ export function Login({ onSuccess }) {
         axios.post("/api/login", e.target, { headers: { 'Content-Type': 'application/json' } })
             .then(res => {
                 if(res.status === 200) {
-                    // alert('Login successful!');
-                    onSuccess?.()
-                        .then(() => navigate('/profile'));
+                    onSuccess?.() .then(() => navigate('/profile'));
                 } else {
                     alert(`Login failed: ${res.data.message}`);
                 }
             })
             .catch(err => {
                 console.log(err);
-                alert("An error occurred");
-                // alert(`An error occurred: ${err.message}${'\n' + err.response.data.error ?? ''}`);
+                alert(`An error occurred: ${err.message}${'\n' + err.response.data.error ?? ''}`);
             });
     };
 
     return (
         <form onSubmit={handleSubmit}>
             <div>
-                <label htmlFor="username">Username:</label>
-                <input type="text" id="username" name="username" required />
+                <label htmlFor="name">Username:</label>
+                <input type="text" id="name" name="name" required />
             </div>
             <div>
                 <label htmlFor="password">Password:</label>
@@ -64,8 +61,8 @@ export function Register() {
     return (
         <form onSubmit={handleSubmit}>
             <div>
-                <label htmlFor="username">Username:</label>
-                <input type="text" id="username" name="username" required />
+                <label htmlFor="name">Username:</label>
+                <input type="text" id="name" name="name" required />
             </div>
             <div>
                 <label htmlFor="password">Password:</label>

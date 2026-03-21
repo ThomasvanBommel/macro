@@ -6,9 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )
@@ -32,21 +31,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h := &Handler{db: db}
+	dbWrapper := &DatabaseWrapper{db}
 
 	router := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	router.Use(sessions.Sessions("macro_session", store))
+	router.Use(func(c *gin.Context) { c.Set("db", dbWrapper); c.Next() })
 
-	api := router.Group("/api")
-	api.POST("/register", h.registerUser)
-	api.POST("/login", h.loginUser)
-	api.POST("/session", h.getSession)
-	api.DELETE("/session", h.delSession)
-	api.PUT("/food", h.addFood)
-	api.GET("/food", h.getFoods)
-	api.PUT("/entry", h.addEntry)
-	api.GET("/entry", h.getEntries)
+	initAPI(router)
 
 	if os.Getenv("DEVMODE") == "true" {
 		router.NoRoute(func(c *gin.Context) {
@@ -56,6 +46,12 @@ func main() {
 		router.StaticFS("/assets", http.FS(assetFS))
 
 		router.NoRoute(func(c *gin.Context) {
+			// reject requests for paths starting with /api
+			if strings.HasPrefix(c.Request.URL.Path, "/api") {
+				c.JSON(http.StatusNotFound, gin.H{"error": "API endpoint not found"})
+				return
+			}
+
 			file, err := frontendFiles.ReadFile("frontend/build/index.html")
 			if err != nil {
 				c.String(http.StatusInternalServerError, "Failed to load index.html")

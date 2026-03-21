@@ -5,12 +5,14 @@ import { createPortal } from 'react-dom';
 
 export default function Profile({ session }) {
     const [timeLeft, setTimeLeft] = useState("-");
-    const expiry = new Date(session?.expires_at);
+    const expiry = new Date(session?.expires);
 
+    // Update time left every second
     useEffect(() => {
         const interval = setInterval(() => {
             const diff = expiry - new Date();
-            setTimeLeft(diff > 0 ? `${Math.floor(diff/60000)}m ${Math.floor((diff%60000)/1000)}s` : "Expired");
+            setTimeLeft(diff > 0 ? 
+                `${Math.floor(diff/60000)}m ${Math.floor((diff%60000)/1000)}s` : "Expired");
         }, 1000);
         return () => clearInterval(interval);
     }, []);
@@ -19,9 +21,8 @@ export default function Profile({ session }) {
         <>  
             <div>
                 <h2>Profile Page</h2>
-                <p>Welcome to your profile, {session?.username}!</p>
-                <p>Your user ID is: {session?.user_id}</p>
-                <p>Session expires in: {timeLeft} ({new Date(session?.expires_at).toLocaleString()})</p>
+                <p>Welcome to your profile, {session?.user_name}!</p>
+                <p>Session expires in: {timeLeft} ({new Date(session?.expires).toLocaleString()})</p>
             </div>
 
             <EntryList session={ session } />
@@ -136,7 +137,7 @@ function EntryList({ session }) {
     }
 
     useEffect(() => {
-        axios.get("/api/entry", { params: { UserID: +(session?.user_id), Date: date } })
+        axios.get("/api/entry", { params: { UserID: +(session?.user_name), Date: date } })
             .then(res => {
                 console.log(res.data);
                 setEntries(res.data);

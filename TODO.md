@@ -1,30 +1,20 @@
 # TODO
 
 ## FRONTEND
+- [ ] replace alerts with a notification system
+
 ### Home (/)
 - [ ] move /profile to root, replacing home main; or
 - [ ] add profile navigation; and
 - [ ] add home content
 
 ### Profile
-#### entry list
-- [ ] code cleanup
-- [ ] styling
-
-#### entry form
-- [ ] code cleanup
-- [ ] styling
-
-#### food form
-- [ ] code cleanup
-- [ ] styling
-
-### Authentication
 - [ ] code cleanup
 - [ ] styling
 
 ## BACKEND
 ### Database
+- [ ] code cleanup
 - [ ] schema overhaul
   - [ ]  update models
   - [ ]  update api

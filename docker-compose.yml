@@ -1,10 +1,16 @@
+secrets:
+  session_secret:
+    file: ./session_secret.txt
+
 services:
   fullstack:
     build:
       context: .
       dockerfile: Dockerfile.fullstack
     volumes:
-      - ./backend/macro.db:/app/macro.db
+      - ./backend/data:/app/data
+    secrets:
+      - session_secret
     ports:
       - "8080:8080"
 
@@ -13,9 +19,11 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     volumes:
-      - ./backend/macro.db:/app/macro.db
+      - ./backend/data:/app/data
     environment:
       - DEVMODE=true
+    secrets:
+      - session_secret
     ports:
       - "8080:8080"
   
@@ -33,7 +41,7 @@ services:
       - ./backend:/app
     environment:
       - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=/app/macro.db
+      - GOOSE_DBSTRING=/app/data/macro.db
       - GOOSE_MIGRATION_DIR=/app/migrations
     working_dir: /app
 
@@ -66,6 +74,6 @@ services:
   sqlite:
     image: alpine/sqlite:latest
     volumes:
-      - ./backend/macro.db:/app/macro.db
+      - ./backend/data:/app
     working_dir: /app
     command: macro.db

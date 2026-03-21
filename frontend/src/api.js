@@ -18,13 +18,15 @@ export async function clearSession() {
 
 export async function fetchSession() {
     try {
-        const res = await axios.post("/api/session");
+        const res = await axios.get("/api/session");
         if(res.status !== 200)
             console.log("fetchSession:", res.data);
+
         return res.status === 200 ? res.data : null;
     } catch(err) {
         if(err.status !== 401)
             console.error("fetchSession:", err);
+
         return null;
     }
-};
+}

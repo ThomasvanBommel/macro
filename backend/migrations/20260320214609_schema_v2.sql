@@ -21,7 +21,7 @@ CREATE TABLE food (
     name TEXT NOT NULL,
     brand TEXT,
     created DATETIME DEFAULT CURRENT_TIMESTAMP,
-    user_name TEXT NOT NULL, -- person who created the food entry
+    user_name TEXT NOT NULL, -- user who created the food entry
     calories INTEGER NOT NULL,
     carbs INTEGER NOT NULL,
     protein INTEGER NOT NULL,
