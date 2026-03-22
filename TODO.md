@@ -39,6 +39,7 @@
 ### Readme
 - [x] explain make commands
 - [x] explain tech choices
+- [ ] describe the need to mount /app/data for the db. mount one to persist, or have it generated
 
 ### Deployment
 - [x] deploy and provide link in readme
