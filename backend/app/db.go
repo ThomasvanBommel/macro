@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"log"
+	"time"
 
 	"github.com/pressly/goose/v3"
 	"golang.org/x/crypto/bcrypt"
@@ -34,17 +35,24 @@ func initDB() (*sql.DB, error) {
 		return nil, err
 	}
 
-	// ticker := time.NewTicker(10 * time.Minute)
-	// go func() {
-	// 	for range ticker.C {
-	// 		log.Println("Cleaning up expired sessions...")
-	// 		if err := cleanupExpiredSessions(db); err != nil {
-	// 			log.Printf("Failed to clean up expired sessions: %v", err)
-	// 		}
-	// 	}
-	// }()
+	// Start session cleanup ticker
+	ticker := time.NewTicker(10 * time.Minute)
+	go func() {
+		for range ticker.C {
+			log.Println("Cleaning up expired sessions...")
+			if err := cleanupExpiredSessions(db); err != nil {
+				log.Printf("Failed to clean up expired sessions: %v", err)
+			}
+		}
+	}()
 
 	return db, nil
+}
+
+func cleanupExpiredSessions(db *sql.DB) error {
+	q := `DELETE FROM session WHERE expires <= datetime('now');`
+	_, err := db.Exec(q)
+	return err
 }
 
 func (db *DatabaseWrapper) register(user RequestUserModel) (string, *ResponseSessionModel, error) {
@@ -198,7 +206,9 @@ func (db *DatabaseWrapper) getFoods() ([]ResponseFoodModel, error) {
 	}
 	defer rows.Close()
 
-	var foods []ResponseFoodModel
+	// entries := make([]ResponseEntryModel, 0)
+	// var foods []ResponseFoodModel
+	foods := make([]ResponseFoodModel, 0)
 	for rows.Next() {
 		var f ResponseFoodModel
 		err := rows.Scan(&f.ID, &f.Name, &f.Brand, &f.Created, &f.UserName, &f.Calories,
