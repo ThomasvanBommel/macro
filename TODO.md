@@ -11,6 +11,13 @@
 ### Profile
 - [ ] code cleanup
 - [ ] styling
+- [ ] ability to remove items from the diary
+- [ ] ability to edit foods
+- [ ] ability to edit entries
+- [ ] provide % macros
+
+### Administration
+- [ ] create this
 
 ## BACKEND
 ### Database
@@ -23,11 +30,15 @@
 
 ### Api
 - [ ] logging
+- [ ] remove required session_secret - generate one if not provided
+- [ ] ability to remove items from the diary
+- [ ] ability to edit foods
+- [ ] ability to edit entries
 
 ## MISC
 ### Readme
 - [x] explain make commands
-- [ ] explain tech choices
+- [x] explain tech choices
 
 ### Deployment
 - [x] deploy and provide link in readme
@@ -37,3 +48,9 @@
 - [ ] add testing
   - [ ] backend
   - [ ] frontend
+
+
+
+
+
+
