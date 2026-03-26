@@ -4,7 +4,7 @@ import { Outlet, BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { useState, useEffect, useRef } from 'react';
 
 import { fetchSession,  } from './api';
-import Home from './Home';
+import Header from './Header';
 import { Login, Register } from './Authentication';
 import Profile from './Profile';
 import '@picocss/pico';
@@ -48,8 +48,10 @@ function App() {
 
     return (
         <BrowserRouter>
+            <Header session={ session } authCheck={ authCheck } />
+            
             <Routes>
-                <Route path="/" element={<Home session={ session } authCheck={ authCheck } />}>
+                <Route path="/">
 
                     <Route element={<UnAuthorizedOnly session={ session } />}>
                         <Route path="login" element={<Login onSuccess={ authCheck } />} />

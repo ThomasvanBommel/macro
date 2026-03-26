@@ -1,8 +1,8 @@
-import { Outlet, NavLink, Link, useNavigate } from 'react-router';
+import { NavLink, Link, useNavigate } from 'react-router';
 import { clearSession } from '../api';
-import './index.css';
 
-export default function Home({ session, authCheck }) {
+// Header component, shown on all pages. Displays different links based on session state.
+export default function Header({ session, authCheck }) {
     const navigate = useNavigate();
 
     function Logout(){
@@ -44,10 +44,6 @@ export default function Home({ session, authCheck }) {
                     passwords. Don't use real passwords here.
                 </span>
             </div>
-    
-            <Outlet />
-
-            { window.location.pathname === "/" && <p>Nothing here, jimithy</p> }
         </>
     )
 }

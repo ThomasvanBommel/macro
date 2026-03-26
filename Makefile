@@ -14,6 +14,7 @@ help:
 
 	@echo "  frontend  - Build and run the frontend development server"
 	@echo "  npm       - Run npm CLI for frontend package management"
+	@echo "  add       - Add all changes to git staging area and show status"
 
 	@echo "  down      - Stop and remove all containers, networks, and volumes"
 
@@ -48,6 +49,10 @@ frontend:
 
 npm:
 	docker compose run -it --rm npm
+
+add:
+	git add -A
+	git status
 
 # --
 
