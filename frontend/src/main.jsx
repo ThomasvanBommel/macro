@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 
 import { fetchSession,  } from './api';
 import Header from './Header';
+import Home from './Home';
 import { Login, Register } from './Authentication';
 import Profile from './Profile';
 import '@picocss/pico';
@@ -49,20 +50,22 @@ function App() {
     return (
         <BrowserRouter>
             <Header session={ session } authCheck={ authCheck } />
-            
+
             <Routes>
-                <Route path="/">
+                {/* <Route path="/"> */}
 
-                    <Route element={<UnAuthorizedOnly session={ session } />}>
-                        <Route path="login" element={<Login onSuccess={ authCheck } />} />
-                        <Route path="register" element={<Register onSuccess={ authCheck } />} />
-                    </Route>
+                <Route index element={ <Home /> } />
 
-                    <Route element={<AuthorizedOnly session={ session } />}>
-                        <Route path="profile" element={<Profile session={ session } />} />
-                    </Route>
-
+                <Route element={<UnAuthorizedOnly session={ session } />}>
+                    <Route path="login" element={<Login onSuccess={ authCheck } />} />
+                    <Route path="register" element={<Register onSuccess={ authCheck } />} />
                 </Route>
+
+                <Route element={<AuthorizedOnly session={ session } />}>
+                    <Route path="profile" element={<Profile session={ session } />} />
+                </Route>
+
+                {/* </Route> */}
             </Routes>
         </BrowserRouter>
     )
