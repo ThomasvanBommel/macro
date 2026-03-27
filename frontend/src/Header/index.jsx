@@ -37,11 +37,7 @@ export default function Header({ session, authCheck }) {
             <div className="warning-box" style={{ display: "flex" }}>
                 <div style={{ marginRight: "0.5rem" }}>⚠️</div>
                 <span>
-                    This is a development version of the app. It's subject to extreme change and
-                    frequent database resets. 
-                    <br />
-                    Assume all data is publically accessible, including 
-                    passwords. Don't use real passwords here.
+                    This is a development version of the app. It's subject to extreme change. 
                 </span>
             </div>
         </>
