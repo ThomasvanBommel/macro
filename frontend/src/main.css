@@ -1,8 +1,19 @@
 .green {
-    --pico-primary: #2e7d32;
-    --pico-primary-background: #2e7d32;
-    --pico-primary-hover: #1b5e20;
-    --pico-primary-border: var(--pico-primary);
+    --pico-primary-background: #43a047;
+    --pico-primary-border: #43a047;
+    --pico-primary-hover-background: #2e7d32;
+    --pico-primary-hover-border: #2e7d32;
+    --pico-primary-focus: rgba(67, 160, 71, 0.25);
+    --pico-primary-inverse: #fff
+}
+
+.red {
+    --pico-primary-background: #e53935;
+    --pico-primary-border: #e53935;
+    --pico-primary-hover-background: #c62828;
+    --pico-primary-hover-border: #c62828;
+    --pico-primary-focus: rgba(229, 57, 53, 0.25);
+    --pico-primary-inverse: #fff
 }
 
 .warning-box {
