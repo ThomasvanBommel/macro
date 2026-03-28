@@ -60,76 +60,80 @@ export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
                                onChange={ handleChange } />
                     </label>
 
-                    <label>
-                        Calories
-                        <input type="number" 
-                               name="calories" 
-                               min="0" 
-                               step="0.01"
-                               inputmode="decimal"
-                               value={ data.calories } 
-                               onChange={ handleChange } 
-                               required />
-                    </label>
+                        <label>
+                            Calories (kcal)
+                            <input type="number" 
+                                name="calories" 
+                                min="0" 
+                                step="0.01"
+                                inputmode="decimal"
+                                value={ data.calories } 
+                                onChange={ handleChange } 
+                                required />
+                        </label>
 
-                    <label>
-                        Carbs (g)
-                        <input type="number" 
-                               name="carbs" 
-                               min="0" 
-                               step="0.01"
-                               inputmode="decimal"
-                               value={ data.carbs } 
-                               onChange={ handleChange } 
-                               required />
-                    </label>
+                    <div style={{ display: "flex", gap: "1rem" }}>
+                        <label>
+                            Carbs (g)
+                            <input type="number" 
+                                name="carbs" 
+                                min="0" 
+                                step="0.01"
+                                inputmode="decimal"
+                                value={ data.carbs } 
+                                onChange={ handleChange } 
+                                required />
+                        </label>
 
-                    <label>
-                        Protein (g)
-                        <input type="number" 
-                               name="protein" 
-                               min="0" 
-                               step="0.01"
-                               inputmode="decimal"
-                               value={ data.protein } 
-                               onChange={ handleChange } 
-                               required />
-                    </label>
+                        <label>
+                            Protein (g)
+                            <input type="number" 
+                                name="protein" 
+                                min="0" 
+                                step="0.01"
+                                inputmode="decimal"
+                                value={ data.protein } 
+                                onChange={ handleChange } 
+                                required />
+                        </label>
 
-                    <label>
-                        Fat (g)
-                        <input type="number" 
-                               name="fat" 
-                               min="0"
-                               step="0.01"
-                               inputmode="decimal"
-                               value={ data.fat } 
-                               onChange={ handleChange } 
-                               required />
-                    </label>
+                        <label>
+                            Fat (g)
+                            <input type="number" 
+                                name="fat" 
+                                min="0"
+                                step="0.01"
+                                inputmode="decimal"
+                                value={ data.fat } 
+                                onChange={ handleChange } 
+                                required />
+                        </label>
+                    </div>
 
-                    <label>
-                        Serving Size
-                        <input type="text" 
-                               name="serving_size" 
-                               placeholder="cups, g, ml, etc..." 
-                               value={ data.serving_size } 
-                               onChange={ handleChange }
-                               required />
-                    </label>
+                    <div style={{ display: "flex", gap: "1rem" }}>
+                        <label>
+                            Serving Count
+                            <input type="number" 
+                                name="serving_count" 
+                                placeholder="" 
+                                min="0"
+                                step="0.01"
+                                inputmode="decimal"
+                                value={ data.serving_count } 
+                                onChange={ handleChange }
+                                required />
+                        </label>
 
-                    <label>
-                        Serving Count
-                        <input type="number" 
-                               name="serving_count" 
-                               placeholder="" 
-                               min="0"
-                               step="0.01"
-                               inputmode="decimal"
-                               value={ data.serving_count } 
-                               onChange={ handleChange }
-                               required />
-                    </label>
+                        <label>
+                            Serving Size
+                            <input type="text" 
+                                name="serving_size" 
+                                placeholder="cups, g, ml, etc..." 
+                                value={ data.serving_size } 
+                                onChange={ handleChange }
+                                required />
+                        </label>
+                    </div>
 
                     { loading ? (
                         <div role="button" disabled aria-busy="true">Creating...</div>

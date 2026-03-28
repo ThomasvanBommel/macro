@@ -21,11 +21,11 @@ export default function DateSelector({ date, setDate }) {
     return (
         <form onSubmit={ e => e.preventDefault() }>
             <fieldset role="group">
-                <button onClick={ decr }>Prev</button>
+                <button onClick={ decr }>&lt;</button>
                 <input type="date" 
                        value={ date.value } 
                        onChange={ e => setDate(new DateString(e.target.value)) } />
-                <button onClick={ incr }>Next</button>
+                <button onClick={ incr }>&gt;</button>
             </fieldset>
         </form>
     );
