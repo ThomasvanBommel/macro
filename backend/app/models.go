@@ -50,13 +50,13 @@ type RequestEntriesModel struct {
 	Date     string `json:"date" binding:"required"`
 }
 
-type RequestAddEntryModel struct {
-	FoodId   *int              `json:"food_id"`
-	Food     *RequestFoodModel `json:"food"`
-	MealName string            `json:"meal_name" binding:"required"`
-	Date     string            `json:"date" binding:"required"`
-	Servings int               `json:"servings" binding:"gte=1"`
-}
+// type RequestAddEntryModel struct {
+// 	FoodId   *int              `json:"food_id"`
+// 	Food     *RequestFoodModel `json:"food"`
+// 	MealName string            `json:"meal_name" binding:"required"`
+// 	Date     string            `json:"date" binding:"required"`
+// 	Servings int               `json:"servings" binding:"gte=1"`
+// }
 
 type ResponseEntryModel struct {
 	ID       int               `json:"id"`
@@ -66,4 +66,11 @@ type ResponseEntryModel struct {
 	Date     string            `json:"date"`
 	Servings int               `json:"servings"`
 	Created  string            `json:"created"`
+}
+
+type RequestAddEntryModel struct {
+	FoodId   *int   `json:"food_id" binding:"required"`
+	MealName string `json:"meal_name" binding:"required"`
+	Date     string `json:"date" binding:"required"`
+	Servings int    `json:"servings" binding:"gt=0"`
 }

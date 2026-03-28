@@ -4,8 +4,8 @@ import { Outlet, BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { useState, useEffect, useRef } from 'react';
 
 import { fetchSession,  } from './api';
-import Header from './Header';
-import Home from './Home';
+import { Header } from './Components';
+import { Home } from './Pages';
 import { Login, Register } from './Authentication';
 import Profile from './Profile';
 import '@picocss/pico';

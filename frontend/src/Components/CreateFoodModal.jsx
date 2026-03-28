@@ -1,7 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Modal, { ModalHeader } from "./Modal";
 import { createFood } from "../api";
 
+/**
+ * Callback for when the user closes the modal without creating a food.
+ * @callback onClose
+ * @returns { void }
+ */
+
+/**
+ * Callback for successful food creation. Receives the new food data as an argument.
+ * @callback onSuccess
+ * @param { object } food - The newly created food data.
+ * @returns { void }
+ */
+
+/**
+ * Modal component for creating a new food. Contains a form with fields for all necessary food 
+ * information. On successful creation, calls the onSuccess callback with the new food data.
+ * @component
+ * @param { Object } props - The component props
+ * @param { boolean } props.isOpen - Whether the modal is open or not
+ * @param { onClose } props.onClose - Callback for when the user closes the modal without creating a 
+ *                                    food
+ * @param { onSuccess } props.onSuccess - Callback for successful food creation. Receives the new 
+ *                                        food data as an argument.
+ * @returns { JSX.Element } The rendered component
+ */
 export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState({
@@ -60,17 +85,17 @@ export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
                                onChange={ handleChange } />
                     </label>
 
-                        <label>
-                            Calories (kcal)
-                            <input type="number" 
-                                name="calories" 
-                                min="0" 
-                                step="0.01"
-                                inputmode="decimal"
-                                value={ data.calories } 
-                                onChange={ handleChange } 
-                                required />
-                        </label>
+                    <label>
+                        Calories (kcal)
+                        <input type="number" 
+                            name="calories" 
+                            min="0" 
+                            step="0.01"
+                            inputMode="decimal"
+                            value={ data.calories } 
+                            onChange={ handleChange } 
+                            required />
+                    </label>
 
                     <div style={{ display: "flex", gap: "1rem" }}>
                         <label>

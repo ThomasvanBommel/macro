@@ -222,7 +222,7 @@ func (db *DatabaseWrapper) getFoods() ([]ResponseFoodModel, error) {
 	return foods, nil
 }
 
-func (db *DatabaseWrapper) createFood(req *RequestCreateFoodModel, token string) error {
+func (db *DatabaseWrapper) createFood(req *RequestCreateFoodModel, token string) (ResponseFoodModel, error) {
 	q := `INSERT INTO food (name, brand, user_name, calories, carbs, protein, fat, serving_size, 
 		  	serving_count)
 		  VALUES (?, ?, (
@@ -237,8 +237,37 @@ func (db *DatabaseWrapper) createFood(req *RequestCreateFoodModel, token string)
 		&f.UserName, &f.Calories, &f.Carbs, &f.Protein, &f.Fat, &f.ServingSize,
 		&f.ServingCount)
 	if err != nil {
-		return err
+		return ResponseFoodModel{}, err
 	}
 
-	return nil
+	return f, nil
+}
+
+func (db *DatabaseWrapper) createEntry(req *RequestAddEntryModel, token string) (*ResponseEntryModel, error) {
+	q := `INSERT INTO entry (user_name, food_id, meal_name, date, servings)
+		  VALUES ((
+		  	SELECT user_name FROM session WHERE token = ?
+		  ), ?, ?, ?, ?)
+		  RETURNING id, user_name, meal_name, date, servings, created;`
+
+	var e ResponseEntryModel
+	err := db.QueryRow(q, token, req.FoodId, req.MealName, req.Date, req.Servings).
+		Scan(&e.ID, &e.UserName, &e.MealName, &e.Date, &e.Servings, &e.Created)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get food info
+	q = `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
+	     	serving_count
+		 FROM food
+		 WHERE id = ?;`
+	err = db.QueryRow(q, req.FoodId).Scan(&e.Food.ID, &e.Food.Name, &e.Food.Brand, &e.Food.Created,
+		&e.Food.UserName, &e.Food.Calories, &e.Food.Carbs, &e.Food.Protein, &e.Food.Fat,
+		&e.Food.ServingSize, &e.Food.ServingCount)
+	if err != nil {
+		return nil, err
+	}
+
+	return &e, nil
 }

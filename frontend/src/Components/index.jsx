@@ -5,3 +5,4 @@ export { default as Modal } from './Modal';
 export { default as CreateEntryModal } from './CreateEntryModal';
 export { default as CreateFoodModal } from './CreateFoodModal';
 export { default as FindFoodModal } from './FindFoodModal';
+export { default as Header } from './Header';
