@@ -18,7 +18,7 @@ export default function Header({ session, authCheck }) {
         width: "100%",
         position: "absolute",
         textAlign: "center",
-        top: "1rem",
+        top: "1.2rem",
         left: "0",
         opacity: 0.5,
         whiteSpace: "nowrap"

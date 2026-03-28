@@ -221,3 +221,24 @@ func (db *DatabaseWrapper) getFoods() ([]ResponseFoodModel, error) {
 
 	return foods, nil
 }
+
+func (db *DatabaseWrapper) createFood(req *RequestCreateFoodModel, token string) error {
+	q := `INSERT INTO food (name, brand, user_name, calories, carbs, protein, fat, serving_size, 
+		  	serving_count)
+		  VALUES (?, ?, (
+			SELECT user_name FROM session WHERE token = ?
+		  ), ?, ?, ?, ?, ?, ?)
+		  RETURNING id, name, brand, created, user_name, calories, carbs, protein, fat, 
+		    serving_size, serving_count;`
+
+	var f ResponseFoodModel
+	err := db.QueryRow(q, req.Name, req.Brand, token, req.Calories, req.Carbs, req.Protein,
+		req.Fat, req.ServingSize, req.ServingCount).Scan(&f.ID, &f.Name, &f.Brand, &f.Created,
+		&f.UserName, &f.Calories, &f.Carbs, &f.Protein, &f.Fat, &f.ServingSize,
+		&f.ServingCount)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

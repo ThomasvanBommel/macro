@@ -34,6 +34,17 @@ type RequestFoodModel struct {
 	ResponseFoodModel
 }
 
+type RequestCreateFoodModel struct {
+	Name         string `json:"name" binding:"required"`
+	Brand        string `json:"brand"`
+	Calories     int    `json:"calories" binding:"gte=0"`
+	Carbs        int    `json:"carbs" binding:"gte=0"`
+	Protein      int    `json:"protein" binding:"gte=0"`
+	Fat          int    `json:"fat" binding:"gte=0"`
+	ServingSize  string `json:"serving_size" binding:"required"`
+	ServingCount int    `json:"serving_count" binding:"gte=0"`
+}
+
 type RequestEntriesModel struct {
 	UserName string `json:"user_name" binding:"required"`
 	Date     string `json:"date" binding:"required"`

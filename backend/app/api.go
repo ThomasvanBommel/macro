@@ -32,6 +32,7 @@ func initAPI(r *gin.Engine) {
 	api.POST("/entries", getEntries)
 	api.POST("/entry", addEntry)
 	api.GET("/foods", getFoods)
+	api.POST("/food", addFood)
 }
 
 /* Bind request context to a model struct */
@@ -192,4 +193,28 @@ func getFoods(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, foods)
+}
+
+func addFood(c *gin.Context) {
+	var req RequestCreateFoodModel
+	if !bindModel(c, &req) {
+		return
+	}
+
+	// Get session token from cookie
+	session := sessions.Default(c)
+	token := session.Get("token")
+	if token == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	err := getDB(c).createFood(&req, token.(string))
+	if err != nil {
+		log.Printf("Error creating food: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create food"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Food created successfully"})
 }
