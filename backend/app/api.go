@@ -140,50 +140,6 @@ func getEntries(c *gin.Context) {
 	c.JSON(http.StatusOK, entries)
 }
 
-// func addEntry(c *gin.Context) {
-// 	// Get session token from cookie
-// 	session := sessions.Default(c)
-// 	token := session.Get("token")
-// 	if token == nil {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-// 		return
-// 	}
-
-// 	// Bind request body to model
-// 	var req RequestAddEntryModel
-// 	if !bindModel(c, &req) {
-// 		return
-// 	}
-
-// 	// Add food if FoodId is not provided
-// 	if req.FoodId == nil {
-// 		if req.Food == nil {
-// 			c.JSON(http.StatusBadRequest, gin.H{
-// 				"error": "Either food_id or food details must be provided"})
-// 			return
-// 		}
-
-// 		food_id, err := getDB(c).addFood(req.Food, token.(string))
-// 		if err != nil {
-// 			log.Printf("Error adding food: %v", err)
-// 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add food"})
-// 			return
-// 		}
-
-// 		req.FoodId = &food_id
-// 	}
-
-// 	// Add entry and return it with food info populated
-// 	entry, err := getDB(c).addEntry(req, token.(string))
-// 	if err != nil {
-// 		log.Printf("Error adding entry: %v", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add entry"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, entry)
-// }
-
 func getFoods(c *gin.Context) {
 	foods, err := getDB(c).getFoods()
 	if err != nil {

@@ -81,12 +81,23 @@ func (db *DatabaseWrapper) login(user RequestUserModel) (string, *ResponseSessio
 	}
 	token := hex.EncodeToString(b)
 
+	// Check password
+	var hash string
+	q := "SELECT password_hash FROM user WHERE name = ?;"
+	err := db.QueryRow(q, user.Name).Scan(&hash)
+	if err != nil {
+		return "", nil, err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(user.Password)); err != nil {
+		return "", nil, err
+	}
+
 	// Insert into database and fetch session info
 	var res ResponseSessionModel
-	q := `INSERT INTO session (user_name, token, expires)
+	q = `INSERT INTO session (user_name, token, expires)
 		  VALUES (?, ?, datetime('now', '+1 hour'))
 		  RETURNING user_name, created, expires;`
-	err := db.QueryRow(q, user.Name, token).Scan(&res.UserName, &res.Created, &res.Expires)
+	err = db.QueryRow(q, user.Name, token).Scan(&res.UserName, &res.Created, &res.Expires)
 	if err != nil {
 		return "", nil, err
 	}
