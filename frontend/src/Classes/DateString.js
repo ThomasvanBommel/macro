@@ -59,6 +59,6 @@ export default class DateString {
      * @return { string } A string representing the date in the format "YYYY-MM-DD".
      */
     static #dateToString(date) {
-        return date.toISOString().split('T')[0];
+        return date.toLocaleString().split(',')[0];
     }
 }

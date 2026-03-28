@@ -15,7 +15,7 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal="breakfa
 
     return (
         <Modal isOpen={ isOpen } onClose={ onClose }>
-            <ModalHeader title={`Add Entry Form`} onClose={ onClose } />
+            <ModalHeader title={`Create Entry Modal`} onClose={ onClose } />
 
             <form>
                 <fieldset>
