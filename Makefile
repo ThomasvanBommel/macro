@@ -54,6 +54,18 @@ add:
 	git add -A
 	git status
 
+docker-build:
+	docker build -t macro-fullstack:latest -f ./Dockerfile.fullstack .
+	docker images macro-fullstack
+
+docker-tag:
+	docker build -t macro-fullstack:latest -f ./Dockerfile.fullstack .
+	docker tag macro-fullstack:latest cekeh/macro:latest
+	docker images
+
+docker-push:
+	docker push cekeh/macro:latest
+
 # --
 
 down:

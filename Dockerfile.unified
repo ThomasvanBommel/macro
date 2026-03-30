@@ -1,4 +1,4 @@
-# frontend
+# fronend
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app
 COPY frontend/package*.json ./
@@ -21,18 +21,26 @@ RUN --mount=type=cache,target=/go-cache \
     CGO_ENABLED=0 \
     GOOS=linux \
     go build \
+    -ldflags="-s -w" \
     -tags='no_postgres no_clickhouse no_mssql no_mysql' \
     -o macro .
 
-# full stack
-# FROM alpine:latest
-# WORKDIR /app
-# COPY --from=backend-builder /app/macro .
-# EXPOSE 8080
-# CMD ["./macro"]
-
-from gcr.io/distroless/static-debian12:latest
-WORKDIR /app
-COPY --from=backend-builder /app/macro .
+# fullstack (production)
+FROM gcr.io/distroless/static-debian12:latest AS distroless
+COPY --from=backend-builder /macro .
 EXPOSE 8080
-CMD ["./macro"]
+CMD ["/macro"]
+
+# alpine (debug)
+FROM alpine:latest AS alpine
+COPY --from=backend-builder /macro .
+EXPOSE 8080
+CMD ["/macro"]
+
+# goose (migration tool)
+FROM golang:1.26-alpine AS goose-builder
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+
+FROM alpine:latest AS goose
+COPY --from=goose-builder /go/bin/goose /usr/local/bin/goose
+WORKDIR /app
