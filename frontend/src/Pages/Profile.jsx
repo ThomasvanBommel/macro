@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { fetchFoods } from '../api';
+import { useState } from 'react';
 import { DateSelector, EntryList } from '../Components';
 import DateString from '../Classes/DateString';
+
 
 export default function Profile({ session }) {
     const [date, setDate] = useState(DateString.today());

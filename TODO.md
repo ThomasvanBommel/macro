@@ -33,5 +33,4 @@
   - [ ] frontend
 
 ## Immediate
-- [ ] FindFoodModal: refresh list instead of using returned food item. (it's missing an id)
-- [ ] EntryList: (same thing as above)
+- [ ] EntryList: loading

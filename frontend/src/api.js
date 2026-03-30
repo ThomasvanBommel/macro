@@ -63,21 +63,14 @@ export async function fetchFoods() {
 
 export async function createFood(foodData) {
     const data = { ...foodData };
-    const scale = key => data[key] = Math.floor((data[key] ?? 0) * 100);
-
-    scale("calories");
-    scale("protein");
-    scale("carbs");
-    scale("fat");
-    scale("serving_count");
 
     try {
-        const res = await axios.post("/api/food", data);
+        const res = await axios.post("/api/food", scaleFoodUp(data));
 
         if(res.status !== 200)
             console.error(`createFood !== 200: ${res.data.message}`);
 
-        return res.status === 200 ? res.data : false;
+        return res.status === 200 ? scaleFoodDown(res.data) : false;
     } catch (err) {
         alert(`Failed to create food: ${err.response?.data?.message || err.message}`);
         return false;

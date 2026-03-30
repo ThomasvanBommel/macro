@@ -13,6 +13,8 @@ import { CreateEntryModal } from '../Components';
  * @returns { JSX.Element } The rendered component
  */
 export default function EntryList({ username, date, editable=false }) {
+    const totals_init = { protein: 0, carbs: 0, fat: 0, calories: 0 };
+    const [totals, setTotals] = useState(totals_init);
     const [entries, setEntries] = useState({
         breakfast: [],
         lunch: [],
@@ -20,8 +22,12 @@ export default function EntryList({ username, date, editable=false }) {
         snack: []
     });
 
-    const updateEntries = meal => newEntries => {
-        setEntries(prev => ({ ...prev, [meal]: [ ...prev[meal], newEntries] }));
+    const updateEntries = newEntry => {
+        console.log(newEntry);
+        setEntries(prev => {
+            const meal = newEntry.meal_name.toLowerCase();
+            return { ...prev, [meal]: [ ...prev[meal], newEntry] };
+        });
     };
 
     useEffect(() => {
@@ -40,13 +46,41 @@ export default function EntryList({ username, date, editable=false }) {
             });
     }, [username, date]);
 
+    useEffect(() => {
+        const newTotals = { ...totals_init };
+
+        Object.keys(entries).forEach(meal => {
+            entries[meal].forEach(entry => {
+                Object.keys(newTotals).forEach(key => {
+                    newTotals[key] += (entry.food[key] ?? 0) * entry.servings;
+                });
+            });
+        });
+
+        Object.keys(newTotals).forEach(key => {
+            newTotals[key] = Math.round(newTotals[key] * 100) / 100;
+        });
+
+        setTotals(newTotals);
+    }, [entries]);
+
     return (
         <>
+            <article>
+                <center role="group" style={{ margin: 0 }}>
+                    <div>Totals:</div>
+                    <div style={{ color: "dodgerblue" }}>{ totals.protein }p</div>
+                    <div style={{ color: "green" }}>{ totals.carbs }c</div>
+                    <div style={{ color: "orange" }}>{ totals.fat }f</div>
+                    <div style={{ color: "red" }}>{ totals.calories }kcal</div>
+                </center>
+            </article>
+
             { Object.keys(entries).map(meal => (
                 <EntryTable key={ meal } 
                             name={ meal.charAt(0).toUpperCase() + meal.slice(1) }
                             entries={ entries[meal] }
-                            updateEntries={ updateEntries(meal) }
+                            updateEntries={ updateEntries }
                             editable={ editable }
                             date={ date } />
             )) }
@@ -55,15 +89,19 @@ export default function EntryList({ username, date, editable=false }) {
 }
 
 function EntryTable({ name, entries, updateEntries, editable, date }) {
+    const totals_init = { protein: 0, carbs: 0, fat: 0, calories: 0 };
     const [entryModalOpen, setEntryModalOpen] = useState(false);
+    const [totals, setTotals] = useState(totals_init);
 
-    const totals = entries.reduce((acc, entry) => {
-        Object.keys(acc).forEach(key => {
-            acc[key] += entry.food[key] ?? 0;
-        });
+    useEffect(() => {
+        setTotals(entries.reduce((acc, entry) => {
+            Object.keys(acc).forEach(key => {
+                acc[key] += (entry.food[key] ?? 0) * entry.servings;
+            });
 
-        return acc;
-    }, { protein: 0, carbs: 0, fat: 0, calories: 0 });
+            return acc;
+        }, totals_init));
+    }, [entries]);
 
     const handleAddEntrySuccess = newEntry => {
         setEntryModalOpen(false);

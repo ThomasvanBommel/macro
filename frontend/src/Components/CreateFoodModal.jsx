@@ -52,11 +52,9 @@ export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
         setLoading(true);
 
         createFood(data)
-            .then(success => {
-                if (success) {
-                    onSuccess(data);
-                    setLoading(false);
-                }
+            .then(res => {
+                if (res) onSuccess(res);
+                setLoading(false);
             });
     }
 
