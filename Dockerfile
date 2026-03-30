@@ -11,7 +11,8 @@ FROM golang:1.26-alpine AS backend-builder
 WORKDIR /app
 RUN go env -w GOCACHE=/go-cache
 RUN go env -w GOMODCACHE=/go-mod-cache
-COPY backend/app/go.mod backend/app/go.sum ./
+RUN go install github.com/air-verse/air@latest
+COPY backend/app/go.mod backend/app/go.sum backend/.air.toml ./
 RUN --mount=type=cache,target=/go-mod-cache go mod download
 COPY backend/app/ ./
 COPY backend/migrations ./migrations
@@ -27,13 +28,13 @@ RUN --mount=type=cache,target=/go-cache \
 
 # fullstack (production)
 FROM gcr.io/distroless/static-debian12:latest AS distroless
-COPY --from=backend-builder /macro .
+COPY --from=backend-builder /app/macro .
 EXPOSE 8080
 CMD ["/macro"]
 
 # alpine (debug)
 FROM alpine:latest AS alpine
-COPY --from=backend-builder /macro .
+COPY --from=backend-builder /app/macro .
 EXPOSE 8080
 CMD ["/macro"]
 

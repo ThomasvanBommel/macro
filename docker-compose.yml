@@ -6,7 +6,7 @@ services:
   fullstack:
     build:
       context: .
-      dockerfile: Dockerfile.fullstack
+      target: distroless
     volumes:
       - ./backend/data:/app/data
     secrets:
@@ -17,38 +17,22 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile.backend
+      target: backend-builder
     volumes:
       - ./backend/data:/app/data
+      - ./backend/app:/app/src
     environment:
       - DEVMODE=true
     secrets:
       - session_secret
     ports:
       - "8080:8080"
-  
-  golang:
-    image: golang:1.26-alpine
-    volumes:
-      - ./backend/app:/app
-    working_dir: /app
-  
-  goose:
-    build:
-      context: .
-      dockerfile: Dockerfile.goose
-    volumes:
-      - ./backend:/app
-    environment:
-      - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=/app/data/macro.db
-      - GOOSE_MIGRATION_DIR=/app/migrations
-    working_dir: /app
+    command: air
 
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+      target: frontend-builder
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
@@ -59,21 +43,40 @@ services:
       - DEVMODE=true
     ports:
       - "5173:5173"
+    command: npm run dev -- --host
   
-  npm:
-    image: node:20-alpine
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/index.html:/app/index.html
-      - ./frontend/vite.config.js:/app/vite.config.js
-      - ./frontend/package.json:/app/package.json
-    working_dir: /app
-    command: sh
+  # golang:
+  #   image: golang:1.26-alpine
+  #   volumes:
+  #     - ./backend/app:/app
+  #   working_dir: /app
+  
+  # goose:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.goose
+  #   volumes:
+  #     - ./backend:/app
+  #   environment:
+  #     - GOOSE_DRIVER=sqlite3
+  #     - GOOSE_DBSTRING=/app/data/macro.db
+  #     - GOOSE_MIGRATION_DIR=/app/migrations
+  #   working_dir: /app
+  
+  # npm:
+  #   image: node:20-alpine
+  #   volumes:
+  #     - ./frontend/src:/app/src
+  #     - ./frontend/public:/app/public
+  #     - ./frontend/index.html:/app/index.html
+  #     - ./frontend/vite.config.js:/app/vite.config.js
+  #     - ./frontend/package.json:/app/package.json
+  #   working_dir: /app
+  #   command: sh
 
-  sqlite:
-    image: alpine/sqlite:latest
-    volumes:
-      - ./backend/data:/app
-    working_dir: /app
-    command: macro.db
+  # sqlite:
+  #   image: alpine/sqlite:latest
+  #   volumes:
+  #     - ./backend/data:/app
+  #   working_dir: /app
+  #   command: macro.db
