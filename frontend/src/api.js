@@ -80,7 +80,6 @@ export async function createFood(foodData) {
 export async function createEntry(entryData) {
     const data = { ...entryData };
     data.servings = Math.floor((data.servings ?? 0) * 100);
-
     try {
         const res = await axios.post("/api/entry", data);
 

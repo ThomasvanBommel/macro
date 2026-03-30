@@ -159,7 +159,7 @@ export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
                     </div>
 
                     { loading ? (
-                        <div role="button" disabled aria-busy="true">Creating...</div>
+                        <div role="button" disabled aria-busy="true"></div>
                     ) : (
                         <input type="submit" value="Create Food" />
                     ) }

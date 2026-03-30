@@ -8,6 +8,7 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
     const [servings, setServings] = useState(1);
     const [food, setFood] = useState(null);
 
+    const [loading, setLoading] = useState(false);
     const [foodModalOpen, setFoodModalOpen] = useState(false);
 
     const onFoodChoice = food => {
@@ -19,16 +20,23 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
         e.preventDefault();
         e.stopPropagation();
 
-        createEntry({
-            food_id: food.id,
-            meal_name: meal,
-            date: date.value,
-            servings: servings
-        })
-        .then(res => {
-            if (res)
-                onSuccess?.(res);
-        });
+        setLoading(true);
+
+        try {
+            createEntry({
+                food_id: food.id,
+                meal_name: meal,
+                date: date.value,
+                servings: servings
+            })
+            .then(res => {
+                if (res) onSuccess?.(res);
+            })
+            .finally(() => setLoading(false));
+        } catch (err) {
+            alert(`Failed to create entry: ${err.response?.data?.message || err.message}`);
+            setLoading(false);
+        }
     }
 
     if (foodModalOpen) {
@@ -54,7 +62,7 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
                                     value={ food?.id }
                                     onClick={ () => setFoodModalOpen(true) }
                                     checked={ !!food }
-                                    readOnly />
+                                    required />
                             </div>
                             <div>
                                 { food ? food.name : "Select a food..." } 
@@ -81,7 +89,11 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
                                onChange={ (e) => setServings(e.target.value) } />
                     </label>
 
-                    <input type="submit" value="Add Entry" />
+                    { loading ? (
+                        <div role="button" aria-busy="true" disabled></div>
+                    ) : (
+                        <input type="submit" value="Add Entry" />
+                    ) }
                 </fieldset>
             </form>
         </Modal>

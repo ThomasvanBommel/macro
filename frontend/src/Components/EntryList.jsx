@@ -14,6 +14,8 @@ import { CreateEntryModal } from '../Components';
  */
 export default function EntryList({ username, date, editable=false }) {
     const totals_init = { protein: 0, carbs: 0, fat: 0, calories: 0 };
+
+    const [loading, setLoading] = useState(true);
     const [totals, setTotals] = useState(totals_init);
     const [entries, setEntries] = useState({
         breakfast: [],
@@ -31,6 +33,8 @@ export default function EntryList({ username, date, editable=false }) {
     };
 
     useEffect(() => {
+        setLoading(true);
+
         fetchEntries(username, date.value)
             .then(res => {
                 if (res) {
@@ -43,6 +47,7 @@ export default function EntryList({ username, date, editable=false }) {
 
                     setEntries(groupedEntries);
                 }
+                setLoading(false);
             });
     }, [username, date]);
 
@@ -63,6 +68,8 @@ export default function EntryList({ username, date, editable=false }) {
 
         setTotals(newTotals);
     }, [entries]);
+
+    if (loading) return <article aria-busy="true"></article>;
 
     return (
         <>

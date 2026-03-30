@@ -33,4 +33,3 @@
   - [ ] frontend
 
 ## Immediate
-- [ ] EntryList: loading
