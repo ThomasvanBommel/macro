@@ -5,9 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 
 import { fetchSession,  } from './api';
 import { Header } from './Components';
-import { Home } from './Pages';
+import { Home, Profile } from './Pages';
 import { Login, Register } from './Authentication';
-import Profile from './Profile';
 import '@picocss/pico';
 import './main.css';
 
