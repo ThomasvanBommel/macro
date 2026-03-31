@@ -58,12 +58,9 @@ export default function EntryList({ username, date, editable=false }) {
             entries[meal].forEach(entry => {
                 Object.keys(newTotals).forEach(key => {
                     newTotals[key] += (entry.food[key] ?? 0) * entry.servings;
+                    newTotals[key] = Number(newTotals[key].toFixed(2));
                 });
             });
-        });
-
-        Object.keys(newTotals).forEach(key => {
-            newTotals[key] = Math.round(newTotals[key] * 100) / 100;
         });
 
         setTotals(newTotals);
@@ -104,6 +101,7 @@ function EntryTable({ name, entries, updateEntries, editable, date }) {
         setTotals(entries.reduce((acc, entry) => {
             Object.keys(acc).forEach(key => {
                 acc[key] += (entry.food[key] ?? 0) * entry.servings;
+                acc[key] = Number(acc[key].toFixed(2));
             });
 
             return acc;
