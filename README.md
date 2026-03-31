@@ -1,73 +1,51 @@
 # Macro
 
-Macro is a full-stack nutrition tracking application built to demonstrate end-to-end product development: frontend implementation, backend API design, authentication, database modeling, containerized workflows, and live deployment.
+Macro is a full-stack nutrition tracking app with a React frontend and a Go backend.
+
+This repository is intended as a portfolio project that demonstrates end-to-end product delivery: planning the data model, implementing the API, building a usable frontend, shipping a containerized runtime, and running it live.
 
 Live app: https://macro.cekeh.com
 
-## Why This Project Exists
+## Why This Project
 
-I built Macro as a portfolio project to show that I can take an idea from concept to a working deployed application.
+Macro was built to show practical full-stack ownership, not just isolated feature work. The emphasis is on delivering a working vertical slice across the full stack and leaving a codebase that can be iterated on.
 
-I built the first version in about a week of focused work, so the goal was not to produce a polished, production-ready product. The goal was to demonstrate full-stack ownership by handling the entire workflow:
+What this project demonstrates:
 
-- designing the schema
-- building the API
-- implementing authentication and sessions
-- creating the React UI
-- wiring frontend and backend together
-- containerizing the project
-- deploying a live version
+- API design and implementation in Go
+- Session-based authentication and protected frontend routes
+- Relational data modeling for diary and nutrition workflows
+- Frontend state management and route-level UX flows
+- Container-first local development and deployment packaging
+- Ongoing iteration with explicit tradeoffs and roadmap gaps
 
-It is still unfinished, and I plan to keep improving it over time. That context matters: this repository is best read as a strong working foundation and a demonstration of engineering range, not as a finished commercial product.
+## Current Features
 
-## What It Does
+- User registration and login
+- Cookie-based session auth
+- Session countdown timer in the UI
+- Protected profile route
+- Food catalog browsing
+- Custom food creation
+- Daily food-entry logging by meal (breakfast, lunch, dinner, snack)
+- Date-based diary view with daily totals
 
-Macro lets a user:
+## What Is Intentionally Not Finished Yet
 
-- register and log in
-- maintain a session with cookie-based auth
-- view a protected profile page
-- browse existing foods
-- add custom foods with nutrition values
-- create food entries for a specific day
-- organize entries by meal
-- view daily calorie and macro totals
+This app is functional and deployed, but it is still under active iteration.
 
-## What This Demonstrates
+- UX polish is incomplete in several areas
+- Some interactions still use alert-based error handling
+- Test coverage is not yet in place
+- Admin and advanced editing flows are still planned
 
-The value of this project is that it required decisions across the full application surface rather than in just one layer.
-
-### Frontend
-
-- React application built with Vite
-- client-side routing with protected and unprotected routes
-- form handling for login, registration, food creation, and entry creation
-- API integration against a Go backend
-- session-aware UI flow
-
-### Backend
-
-- HTTP API built with Go and Gin
-- cookie-backed session handling
-- password hashing with bcrypt
-- embedded frontend assets for single-app deployment
-- database access layer for users, sessions, foods, and entries
-
-### Data and Infrastructure
-
-- SQLite persistence
-- schema migrations with Goose
-- Docker and Docker Compose workflow
-- separate development and full-stack runtime modes
-- live deployment so the app can be reviewed without local setup
-
-## Stack
+## Tech Stack
 
 ### Frontend
 
 - React 19
-- Vite
-- React Router
+- Vite 8
+- React Router 7
 - Axios
 - Pico CSS
 
@@ -75,171 +53,181 @@ The value of this project is that it required decisions across the full applicat
 
 - Go 1.26
 - Gin
-- gin-contrib/sessions
-- bcrypt
+- gin-contrib/sessions (cookie store)
+- bcrypt password hashing
 
-### Data / Tooling
+### Data and Tooling
 
 - SQLite
-- Goose migrations
-- Docker
-- Docker Compose
+- Goose migrations (embedded and run at startup)
+- Docker and Docker Compose
 - Make
 
-## Architecture Overview
+## Architecture
 
 ```text
-React + Vite UI
-    |
-    | HTTP / JSON
-    v
+React + Vite (frontend)
+        |
+        | HTTP / JSON
+        v
 Go + Gin API
-    |
-    | SQL
-    v
-SQLite database
-
-Dev mode:
-- frontend runs on :5173
-- backend runs on :8080
-- Vite proxies /api to the backend
-
-Full-stack mode:
-- frontend build is embedded into the Go binary/runtime image
-- backend serves both the API and the compiled frontend on :8080
+        |
+        | SQL
+        v
+SQLite
 ```
 
-## Project Structure
+### Runtime Modes
+
+Development mode (two containers):
+
+- Backend on :8080
+- Frontend (Vite dev server) on :5173
+- Vite proxies /api to backend
+
+Full-stack mode (single container):
+
+- Frontend is built to frontend/build
+- Build artifacts are embedded in the Go binary
+- Go serves API and static frontend on :8080
+
+## Project Layout
 
 ```text
 macro/
 ├── backend/
-│   ├── app/            # Go API, DB layer, models, app entrypoint
-│   ├── data/           # SQLite database files
-│   └── migrations/     # Goose SQL migrations
+│   ├── app/           # Go application (API, DB layer, models, entrypoint)
+│   ├── data/          # SQLite file location (macro.db)
+│   └── migrations/    # Goose SQL migrations
 ├── frontend/
-│   ├── src/            # React app
-│   ├── public/         # Static assets
-│   └── package.json    # Frontend dependencies and scripts
-├── docker-compose.yml  # Local orchestration
-├── Makefile            # Common development commands
-└── READMEV2.md
+│   ├── src/           # React app code
+│   ├── public/        # Public assets
+│   ├── package.json
+│   └── vite.config.js
+├── docker-compose.yml
+├── Dockerfile
+├── Makefile
+└── README.md
 ```
 
-## Notable Implementation Details
+## API Endpoints
 
-- Sessions are stored server-side and identified via a cookie.
-- Passwords are hashed with bcrypt before storage.
-- Database migrations run automatically when the backend starts.
-- Session cleanup runs on a ticker to remove expired sessions.
-- In development, the frontend runs through Vite; in full-stack mode, the Go app serves the compiled frontend.
-- The project is separated into frontend and backend concerns while still supporting a single-container deployment path.
+All endpoints are under /api.
 
-## Running the Project
+- POST /register
+- POST /login
+- POST /logout
+- POST /entries
+- POST /entry
+- GET /foods
+- POST /food
 
-### Prerequisites
+Notes:
+
+- Login can also be used as a session check when called with an existing valid session cookie.
+- /food and /entry require an authenticated session.
+
+## Database Notes
+
+Schema is managed by Goose and currently includes:
+
+- user
+- session
+- food
+- meal
+- entry
+
+Precision strategy:
+
+- food macros/calories and serving_count are stored as integers scaled by 100
+- entry servings are stored as integers scaled by 100
+
+This avoids floating-point precision drift and values are scaled back in frontend API helpers.
+
+## Local Development
+
+Prerequisites:
 
 - Docker
 - Docker Compose
 - Make
 
-### Main Commands
+Session secret:
+
+- Docker Compose reads it from session_secret.txt and mounts it as a Docker secret.
+- Backend fallback: SESSION_SECRET env var.
+
+### Useful Commands
 
 ```bash
-# Show available commands
+# List available targets
 make
-```
 
-```bash
-# Run the full stack on :8080
+# Full-stack mode (:8080)
 make fullstack
-```
 
-```bash
-# Run frontend and backend separately for development
-# frontend: :5173
-# backend:  :8080
-make devmode
-```
+# Dev mode (backend + frontend)
+make dev
 
-```bash
-# Backend only
+# Start only backend container
 make backend
-```
 
-```bash
-# Frontend only
+# Start only frontend container
 make frontend
-```
 
-```bash
-# Open a Go container for backend work
-make golang
-```
-
-```bash
-# Open a Goose container for migration work
-make goose
-```
-
-```bash
-# Create a new migration
-make migration name="your_migration_name"
-```
-
-```bash
-# Open SQLite against the local database volume
-make sqlite
-```
-
-```bash
-# Open an npm container for frontend package work
-make npm
-```
-
-```bash
-# Stop and remove containers, networks, and orphans
+# Stop and remove containers
 make down
 ```
 
-## Development Notes
+Helper shells:
 
-- In development mode, the frontend uses Vite and proxies API requests to the backend container.
-- In full-stack mode, the backend serves both the compiled frontend build and the API.
-- The live deployment should be treated as a working demo, not a production-hardened environment.
-- Because the project is still evolving, data models and UI behavior may change over time.
+```bash
+# Go shell with backend mounted
+make golang
 
-## Current Limitations
+# Node shell with frontend mounted
+make npm
 
-This project is intentionally honest about where it stands today.
+# SQLite shell for backend/data/macro.db
+make sqlite
 
-- The homepage is still minimal.
-- The UI needs another styling pass.
-- Notifications still use simple alerts in some places.
-- Automated test coverage has not been added yet.
-- Logging and production hardening are still limited.
-- The live demo should not be treated as secure for sensitive personal data.
+# Goose tool shell
+make goose
+```
 
-Those gaps are real, but they also reflect the prioritization tradeoff: I focused first on building a complete working vertical slice.
+Image workflow:
 
-## What I Would Improve Next
+```bash
+# Build production image (distroless target), tag as cekeh/macro:latest
+make build-image
 
-- Add backend and frontend test coverage.
-- Improve validation and error handling.
-- Replace alert-based UX with a proper notification system.
-- Refine the profile workflow and homepage.
-- Expand logging and observability.
-- Harden deployment and security practices.
-- Automate deployment.
+# Push image to Docker Hub
+make push-image
+```
 
-## Why I’d Include This In A Job Application
+## Deployment and Persistence
 
-This project is still a work in progress. I reached a good stopping point for the application, but not a final one. What I wanted this repository to show is the kind of work I can do independently within a limited timeframe:
+- The full-stack container expects writable database storage at /app/data.
+- For persistence, mount a host or named volume to /app/data.
+- If no persistent mount is used, SQLite data will be ephemeral.
 
-- Translate an idea into a real application.
-- Make reasonable technology choices.
-- Move between UI, API, data, and deployment work.
-- Deliver something live and reviewable.
-- Leave a codebase in a state that can continue evolving.
+## Current Gaps / Planned Improvements
 
-I ran out of time to push it further before submitting applications, but I plan to keep improving it. If you are reviewing this repository for a role, the main signal I want it to send is straightforward: I can build across the stack, deliver a working product, and continue iterating from a solid foundation.
+- Replace alert-based notifications with a proper notification system
+- Profile page cleanup and styling pass
+- Entry and food editing/removal flows
+- More backend logging and cleanup
+- Automated tests (frontend and backend)
+- Deployment automation and hardening
+
+## Notes for Reviewers
+
+This is an actively evolving project and intentionally pragmatic in parts.
+
+If you are reviewing this for hiring:
+
+- The strongest signal is breadth plus execution, not final polish
+- The project is already usable end-to-end and publicly deployable
+- The remaining work is mostly iterative hardening and product refinement
+
+In short, this repo is meant to show the ability to ship across frontend, backend, data, and infrastructure, then continue improving from a solid baseline.
