@@ -96,6 +96,7 @@ function EntryTable({ name, entries, updateEntries, editable, date }) {
     const totals_init = { protein: 0, carbs: 0, fat: 0, calories: 0 };
     const [entryModalOpen, setEntryModalOpen] = useState(false);
     const [totals, setTotals] = useState(totals_init);
+    const [modalId, setModalId] = useState(0);
 
     useEffect(() => {
         setTotals(entries.reduce((acc, entry) => {
@@ -111,6 +112,7 @@ function EntryTable({ name, entries, updateEntries, editable, date }) {
     const handleAddEntrySuccess = newEntry => {
         setEntryModalOpen(false);
         updateEntries(newEntry);
+        setModalId(prev => prev + 1);
     }
 
     return (
@@ -137,7 +139,7 @@ function EntryTable({ name, entries, updateEntries, editable, date }) {
                 { entries.map(entry => <EntryRow key={ "ER-" + entry.id } entry={ entry } />) }
             </div>
 
-            <CreateEntryModal key={ name }
+            <CreateEntryModal key={ modalId }
                               isOpen={ entryModalOpen } 
                               onClose={ () => setEntryModalOpen(false) }
                               initialMeal={ name.toLowerCase() }
