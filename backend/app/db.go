@@ -36,7 +36,7 @@ func initDB() (*sql.DB, error) {
 	}
 
 	// Start session cleanup ticker
-	ticker := time.NewTicker(10 * time.Minute)
+	ticker := time.NewTicker(24 * time.Hour)
 	go func() {
 		for range ticker.C {
 			log.Println("Cleaning up expired sessions...")
