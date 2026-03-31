@@ -39,9 +39,5 @@ EXPOSE 8080
 CMD ["/macro"]
 
 # goose (migration tool)
-FROM golang:1.26-alpine AS goose-builder
+FROM golang:1.26-alpine AS goose
 RUN go install github.com/pressly/goose/v3/cmd/goose@latest
-
-FROM alpine:latest AS goose
-COPY --from=goose-builder /go/bin/goose /usr/local/bin/goose
-WORKDIR /app

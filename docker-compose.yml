@@ -45,38 +45,14 @@ services:
       - "5173:5173"
     command: npm run dev -- --host
   
-  # golang:
-  #   image: golang:1.26-alpine
-  #   volumes:
-  #     - ./backend/app:/app
-  #   working_dir: /app
-  
-  # goose:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile.goose
-  #   volumes:
-  #     - ./backend:/app
-  #   environment:
-  #     - GOOSE_DRIVER=sqlite3
-  #     - GOOSE_DBSTRING=/app/data/macro.db
-  #     - GOOSE_MIGRATION_DIR=/app/migrations
-  #   working_dir: /app
-  
-  # npm:
-  #   image: node:20-alpine
-  #   volumes:
-  #     - ./frontend/src:/app/src
-  #     - ./frontend/public:/app/public
-  #     - ./frontend/index.html:/app/index.html
-  #     - ./frontend/vite.config.js:/app/vite.config.js
-  #     - ./frontend/package.json:/app/package.json
-  #   working_dir: /app
-  #   command: sh
-
-  # sqlite:
-  #   image: alpine/sqlite:latest
-  #   volumes:
-  #     - ./backend/data:/app
-  #   working_dir: /app
-  #   command: macro.db
+  goose:
+    build:
+      context: .
+      target: goose
+    volumes:
+      - ./backend:/app
+    environment:
+      - GOOSE_DRIVER=sqlite3
+      - GOOSE_DBSTRING=/app/data/macro.db
+      - GOOSE_MIGRATION_DIR=/app/migrations
+    working_dir: /app
