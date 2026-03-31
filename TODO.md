@@ -1,35 +1,44 @@
 # TODO
 
-## FRONTEND
-- [ ] replace alerts with a notification system
+## Current Sprint (Hiring Signal First)
 
-### Profile
-- [ ] code cleanup
-- [ ] styling
-- [ ] ability to remove items from the diary
+### 1) Quality Baseline
+- [ ] add backend tests for auth/session flow
+- [ ] add backend tests for entry creation/read flow
+- [ ] add frontend tests for API helpers and at least 1-2 core UI flows
+
+### 2) User-Facing Reliability
+- [ ] replace alert() usage with a reusable notification system
+- [ ] centralize API error mapping to user-friendly messages
+
+### 3) Core Product Completeness
+- [ ] add ability to remove diary entries
+- [ ] add ability to edit diary entries
+
+### 4) Operational Readiness
+- [ ] add structured/verbose API logging
+- [ ] generate fallback session secret when one is not provided
+
+## Next Sprint
+
+### Profile UX and Product Depth
+- [ ] profile code cleanup
+- [ ] profile styling pass
 - [ ] ability to edit foods
-- [ ] ability to edit entries
-- [ ] provide % macros
+- [ ] show macro percentages
 
-### Administration
-- [ ] create this
+### Backend Cleanup
+- [ ] database layer cleanup/refactor pass
 
-## BACKEND
-### Database
-- [ ] code cleanup
+## Backlog
 
-### Api
-- [ ] verbose logging
-- [ ] remove required session_secret - generate one if not provided
+### Platform / Admin
+- [ ] create administration area
 
-## MISC
-### Readme
-- [ ] describe the need to mount /app/data for the db. mount one to persist, or have it generated
+### Delivery
+- [ ] automate deployment pipeline
 
-## OPTIONAL
-- [ ] automate deployment
-- [ ] add testing
-  - [ ] backend
-  - [ ] frontend
+## Documentation
 
-## Immediate
+- [x] README includes /app/data persistence note
+- [ ] add a short Architecture Decision Notes section in README
