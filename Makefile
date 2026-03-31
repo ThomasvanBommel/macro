@@ -1,12 +1,12 @@
-.PHONY: help full backend frontend dev down build-image push-image add commit golang npm sqlite \
-        goose
+.PHONY: help fullstack backend frontend dev down build-image push-image add commit golang npm \
+        sqlite goose
 
 help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
 	@echo "  Compose:"
-	@echo "    full           Build and run both backend and frontend"
+	@echo "    fullstack      Build and run both backend and frontend"
 	@echo "    backend        Build and run only the backend in development mode"
 	@echo "    frontend       Build and run only the frontend in development mode"
 	@echo "    dev            Build and run backend and frontend in development mode"
@@ -30,7 +30,7 @@ help:
 
 ## Docker Compose
 
-full:
+fullstack:
 	docker compose up --build fullstack
 
 backend:
