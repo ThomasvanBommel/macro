@@ -7,9 +7,7 @@ tmp_dir = "/tmp"
 
 [build]
   args_bin = []
-  cmd = "--mount=type=cache,target=/go-cache \
-         --mount=type=cache,target=/go-mod-cache \
-         CGO_ENABLED=0 \
+  cmd = "CGO_ENABLED=0 \
          GOOS=linux \
          go build \
          -ldflags='-s -w' \
@@ -36,7 +34,7 @@ tmp_dir = "/tmp"
   rerun = false
   rerun_delay = 500
   send_interrupt = false
-  stop_on_error = false
+  stop_on_error = true
 
 [color]
   app = ""

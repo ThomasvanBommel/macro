@@ -47,7 +47,7 @@ export async function handleLoginUser(name, password) {
  *                     error message.
  */
 export async function handleFetchSession() {
-    const { error, ...session } = await axios.post("/api/validate-session");
+    const { error, data: session } = await axios.post("/api/validate-session");
 
     if (error) throw new Error(error);
     return session;
@@ -105,10 +105,42 @@ export async function handleLogoutUser() {
  *                     error message.
  */
 export async function handleFetchEntryList(name, datestr) {
-    const { error, ...entries } = await axios.post("/api/entries", { 
+    const { error, data: entries } = await axios.post("/api/entries", { 
         name: name, date: datestr.value 
     });
 
     if (error) throw new Error(error);
     return entries;
+}
+
+/**
+ * Creates a new entry for a specific user and date via the create-entry endpoint.
+ * @param { number } id - The ID of the food item to associate with the entry.
+ * @param { string } meal - The name of the meal to associate with the entry.
+ * @param { DateString } date - The date for the entry.
+ * @param { number } servings - The number of servings for the entry.
+ * @returns { Promise<Entry> } - A promise that resolves to the created entry object.
+ * @throws { Error } - Throws an error if the creation of the entry fails or if the server returns 
+ *                     an error message. 
+ */
+export async function handleCreateEntry(id, meal, date, servings) {
+    const { error, ...entry } = await axios.post("/api/create-entry", {
+        food_id: id, meal_name: meal, date: date.value, servings
+    });
+
+    if (error) throw new Error(error);
+    return entry;
+}
+
+/**
+ * Handles the fetching of the food list for the authenticated user via the foods endpoint.
+ * @returns { Promise<Food[]> } - A promise that resolves to an array of available food objects
+ * @throws { Error } - Throws an error if the fetching of foods fails or if the server returns an 
+ *                     error message.
+ */
+export async function handleFetchFoodList() {
+    const { error, data: foods } = await axios.post("/api/foods");
+
+    if (error) throw new Error(error);
+    return foods;
 }

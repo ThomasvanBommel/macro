@@ -421,6 +421,8 @@ func (a *API) handleCreateFood(c *gin.Context) {
 		return
 	}
 
+	scaleFoodForResponse(f)
+
 	c.JSON(http.StatusOK, f)
 }
 
@@ -435,6 +437,12 @@ func (a *API) handleListFoods(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve foods"})
 		return
 	}
+
+	slog.Info("Retrieved foods", "count", len(foods))
+
+	// for i := range foods {
+	// 	scaleFoodForResponse(&foods[i])
+	// }
 
 	c.JSON(http.StatusOK, foods)
 }

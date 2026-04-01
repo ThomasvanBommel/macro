@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchFoods } from "../api";
+import { handleFetchFoodList } from "../api";
 import Modal, { ModalHeader } from "./Modal";
 import CreateFoodModal from "./CreateFoodModal";
 
@@ -37,9 +37,9 @@ export default function FindFoodModal({ isOpen, onClose, onSelect }) {
     const [createFoodModalOpen, setCreateFoodModalOpen] = useState(false);
 
     useEffect(() => {
-        fetchFoods()
+        handleFetchFoodList()
             .then(setFoods)
-            .catch(console.error)
+            .catch(alert)
             .finally(() => setLoadingFoods(false));
     }, []);
 

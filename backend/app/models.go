@@ -39,10 +39,10 @@ type User struct {
 }
 
 type Session struct {
-	UserName string
-	Token    string
-	Created  string
-	Expires  string
+	UserName string `json:"username"`
+	Token    string `json:"token"`
+	Created  string `json:"created"`
+	Expires  string `json:"expires"`
 }
 
 type Entry struct {
@@ -56,17 +56,17 @@ type Entry struct {
 }
 
 type Food struct {
-	ID           int
-	Name         string
-	Brand        string
-	Created      string
-	UserName     string
-	Calories     int
-	Carbs        int
-	Protein      int
-	Fat          int
-	ServingSize  string
-	ServingCount int
+	ID           int    `json:"id"`
+	Name         string `json:"name"`
+	Brand        string `json:"brand"`
+	Created      string `json:"created"`
+	UserName     string `json:"username"`
+	Calories     int    `json:"calories"`
+	Carbs        int    `json:"carbs"`
+	Protein      int    `json:"protein"`
+	Fat          int    `json:"fat"`
+	ServingSize  string `json:"serving_size"`
+	ServingCount int    `json:"serving_count"`
 }
 
 type EntryWithFood struct {

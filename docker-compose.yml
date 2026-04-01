@@ -1,7 +1,3 @@
-secrets:
-  session_secret:
-    file: ./session_secret.txt
-
 services:
   fullstack:
     build:
@@ -9,10 +5,10 @@ services:
       target: distroless
     volumes:
       - ./backend/data:/app/data
-    secrets:
-      - session_secret
     ports:
       - "8080:8080"
+    environment:
+      - SESSION_SECRET=this_is_dev_only
 
   backend:
     build:
@@ -23,8 +19,7 @@ services:
       - ./backend/app:/app/src
     environment:
       - DEVMODE=true
-    secrets:
-      - session_secret
+      - SESSION_SECRET=this_is_dev_only
     ports:
       - "8080:8080"
     command: air

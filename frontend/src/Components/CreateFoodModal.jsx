@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Modal, { ModalHeader } from "./Modal";
-import { createFood } from "../api";
 
 /**
  * Callback for when the user closes the modal without creating a food.
@@ -51,11 +50,11 @@ export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
 
         setLoading(true);
 
-        createFood(data)
-            .then(res => {
-                if (res) onSuccess(res);
-                setLoading(false);
-            });
+        // createFood(data)
+        //     .then(res => {
+        //         if (res) onSuccess(res);
+        //         setLoading(false);
+        //     });
     }
 
     return (

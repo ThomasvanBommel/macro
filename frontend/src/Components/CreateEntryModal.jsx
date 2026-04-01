@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Modal, { ModalHeader } from "./Modal";
 import FindFoodModal from "./FindFoodModal";
-import { createEntry } from "../api";
+import { handleCreateEntry } from "../api";
 
 export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, onSuccess }) {
     const [meal, setMeal] = useState(initialMeal ?? "breakfast");
@@ -22,21 +22,10 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
 
         setLoading(true);
 
-        try {
-            createEntry({
-                food_id: food.id,
-                meal_name: meal,
-                date: date.value,
-                servings: servings
-            })
-            .then(res => {
-                if (res) onSuccess?.(res);
-            })
+        handleCreateEntry(food.id, meal, date, servings)
+            .then(onSuccess)
+            .catch(alert)
             .finally(() => setLoading(false));
-        } catch (err) {
-            alert(`Failed to create entry: ${err.response?.data?.message || err.message}`);
-            setLoading(false);
-        }
     }
 
     if (foodModalOpen) {

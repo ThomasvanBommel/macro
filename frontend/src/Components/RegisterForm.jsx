@@ -1,4 +1,4 @@
-import { handleRegisterUser } from '../api'
+import { handleRegisterUser, handleLoginUser } from '../api'
 
 /**
  * Register component that renders a registration form and handles user registration. It takes an 
@@ -14,10 +14,13 @@ export default function RegisterForm({ onSuccess }) {
         e.preventDefault();
 
         const form = new FormData(e.currentTarget);
+        const name = form.get('name');
+        const password = form.get('password');
 
-        handleRegisterUser(form.get('name'), form.get('password'))
+        handleRegisterUser(name, password)
+            .then(() => handleLoginUser(name, password))
             .then(onSuccess)
-            .catch(err => alert(`Registration failed: ${err.message}`));
+            .catch(alert);
     }
 
     const handlePasswordChange = e => {
@@ -25,7 +28,12 @@ export default function RegisterForm({ onSuccess }) {
         const p1 = target.form.password;
         const p2 = target.form.confirm;
 
-        target.setCustomValidity(p1.value !== p2.value ? "Passwords do not match" : "");
+        [p1, p2].forEach(e => {
+            e.setAttribute("aria-invalid", p1.value !== p2.value);
+            e.setCustomValidity(p1.value === p2.value ? "" : "Passwords do not match");
+        });
+
+        target.form.submit.disabled = p1.value !== p2.value;
     }
 
     return (
@@ -42,7 +50,7 @@ export default function RegisterForm({ onSuccess }) {
                 Confirm :
                 <input type="password" name="confirm" onChange={handlePasswordChange} required />
             </label>
-            <input type="submit" value="Register" />
+            <input type="submit" name="submit" value="Register" disabled />
         </form>
     );
 }

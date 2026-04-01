@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchEntries, fetchFoods } from '../api';
+import { handleFetchEntryList } from '../api';
 import { CreateEntryModal } from '../Components';
 
 /**
@@ -14,6 +14,7 @@ import { CreateEntryModal } from '../Components';
  */
 export default function EntryList({ username, date, editable=false }) {
     const totals_init = { protein: 0, carbs: 0, fat: 0, calories: 0 };
+
 
     const [loading, setLoading] = useState(true);
     const [totals, setTotals] = useState(totals_init);
@@ -35,20 +36,21 @@ export default function EntryList({ username, date, editable=false }) {
     useEffect(() => {
         setLoading(true);
 
-        fetchEntries(username, date.value)
-            .then(res => {
-                if (res) {
-                    const groupedEntries = res.reduce((acc, entry) => {
-                        const meal = entry.meal_name.toLowerCase();
-                        if (!acc[meal]) acc[meal] = [];
-                        acc[meal].push(entry);
-                        return acc;
-                    }, { breakfast: [], lunch: [], dinner: [], snack: [] });
+        handleFetchEntryList(username, date)
+            .then(e => {
+                const groupedEntries = e.reduce((acc, entry) => {
+                    const meal = entry.meal_name.toLowerCase();
 
-                    setEntries(groupedEntries);
-                }
-                setLoading(false);
-            });
+                    if (!acc[meal]) acc[meal] = [];
+                    acc[meal].push(entry);
+                    
+                    return acc;
+                }, { breakfast: [], lunch: [], dinner: [], snack: [] });
+
+                setEntries(groupedEntries);
+            })
+            .catch(alert)
+            .finally(() => setLoading(false));
     }, [username, date]);
 
     useEffect(() => {
