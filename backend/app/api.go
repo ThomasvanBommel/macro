@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"io/fs"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -146,13 +145,14 @@ func registerStaticAssetRoute(r *gin.Engine) {
 func (a *API) registerAPIRoutes(r *gin.Engine) {
 	defer Trace("registerAPIRoutes(r *gin.Engine)")()
 
-	// naming scheme: handle<action><resource>
-
 	api := r.Group("/api")
 	api.POST("/register", a.handleRegisterUser)
 	api.POST("/login", a.handleLoginUser)
 	api.POST("/logout", a.handleLogoutUser)
-	api.POST("/profile", a.handleGetUserProfile)
+	api.POST("/food", a.handleCreateFood)
+	api.POST("/foods", a.handleListFoods)
+	api.POST("/entry", a.handleCreateEntry)
+	api.POST("/entries", a.handleListUserEntries)
 }
 
 // bindInput is a helper function that binds the JSON body of a request to a specified struct. It
@@ -317,14 +317,15 @@ func (a *API) handleLogoutUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User logged out and session cleared successfully"})
 }
 
-// handleGetUserProfile is a handler function for the user profile endpoint. It binds the incoming
-// JSON request to a UserProfileRequestInput struct, retrieves the user's entries with food details
-// from the database based on the provided name and date, and returns the result as a JSON response.
-// If any step fails, it returns an appropriate error response to the client.
-func (a *API) handleGetUserProfile(c *gin.Context) {
-	defer Trace("handleGetUserProfile(c *gin.Context)")()
+// handleListUserEntries is a handler function for the endpoint that retrieves a list of user
+// entries for a specific user on a specific date. It binds the incoming JSON request to a
+// ListUserEntriesInput struct, retrieves the user's entries with food details from the database
+// based on the provided name and date, and returns the result as a JSON response. If any step
+// fails, it returns an appropriate error response to the client.
+func (a *API) handleListUserEntries(c *gin.Context) {
+	defer Trace("handleListUserEntries(c *gin.Context)")()
 
-	var in UserProfileRequestInput
+	var in ListUserEntriesInput
 	if !bindInput(c, &in) {
 		return
 	}
@@ -338,142 +339,54 @@ func (a *API) handleGetUserProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// -------------------------------------------- OLD:
+// handleCreateFood is a handler function for the food creation endpoint. It binds the incoming JSON
+// request to a CreateFoodInput struct, retrieves the session token from the user's session, creates
+// a new food entry in the database using the provided details and the session token for
+// authentication, and returns the created food entry as a JSON response. If any step fails, it
+// returns an appropriate error response to the client. On success, it returns the newly created
+// food entry in the response.
+func (a *API) handleCreateFood(c *gin.Context) {
+	defer Trace("handleCreateFood(c *gin.Context)")()
 
-func initAPI(r *gin.Engine) {
-	// Load session secret & middleware
-	secret, err := os.ReadFile("/run/secrets/session_secret")
+	var in CreateFoodInput
+	if !bindInput(c, &in) {
+		return
+	}
+
+	t, exists := getSessionToken(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	p := CreateFoodParams{
+		Name:         in.Name,
+		Brand:        in.Brand,
+		Calories:     in.Calories,
+		Carbs:        in.Carbs,
+		Protein:      in.Protein,
+		Fat:          in.Fat,
+		ServingSize:  in.ServingSize,
+		ServingCount: in.ServingCount,
+	}
+
+	f, err := a.db.createFoodByToken(p, t)
 	if err != nil {
-		log.Printf("Failed to read session secret: %v", err)
-		secret = []byte(os.Getenv("SESSION_SECRET"))
-	}
-
-	if len(secret) == 0 {
-		log.Fatal("Docker secret and SESSION_SECRET environment variable are both empty.")
-	}
-
-	r.Use(sessions.Sessions("macro_session", cookie.NewStore(secret)))
-
-	// Define API endpoints
-	api := r.Group("/api")
-	api.POST("/register", register)
-	api.POST("/login", login)
-	api.POST("/logout", logout)
-	api.POST("/entries", getEntries)
-	api.POST("/entry", addEntry)
-	api.GET("/foods", getFoods)
-	api.POST("/food", addFood)
-}
-
-/* Bind request context to a model struct */
-func bindModel(c *gin.Context, obj any) bool {
-	if err := c.ShouldBindJSON(obj); err != nil {
-		log.Printf("Error parsing request: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return false
-	}
-	return true
-}
-
-/* Extract the database wrapper from the request context, panic if it doesn't exist. */
-func getDB(c *gin.Context) *DatabaseWrapper {
-	return c.MustGet("db").(*DatabaseWrapper)
-}
-
-func register(c *gin.Context) {
-	// Parse form data
-	var req RequestUserModel
-	if !bindModel(c, &req) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create food"})
 		return
 	}
 
-	// Insert user into database and create session, fetch session info
-	token, res, err := getDB(c).register(req)
+	c.JSON(http.StatusOK, f)
+}
+
+// handleListFoods is a handler function for the endpoint that retrieves a list of all food entries.
+// It queries the database for all food entries and returns them as a JSON response. If any error
+// occurs during the query, it returns an appropriate error response to the client.
+func (a *API) handleListFoods(c *gin.Context) {
+	defer Trace("handleListFoods(c *gin.Context)")()
+
+	foods, err := a.db.listFoods()
 	if err != nil {
-		log.Printf("Error: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Set session cookie
-	session := sessions.Default(c)
-	session.Set("token", token)
-	session.Save()
-
-	c.JSON(http.StatusOK, res)
-}
-
-func login(c *gin.Context) {
-	// Check for existing session cookie, return session info if valid
-	session := sessions.Default(c)
-	if session.Get("token") != nil {
-		res, err := getDB(c).getSessionInfo(session.Get("token").(string))
-		if err == nil {
-			c.JSON(http.StatusOK, res)
-			return
-		}
-	}
-
-	// Parse form data
-	var req RequestUserModel
-	if !bindModel(c, &req) {
-		return
-	}
-
-	// Insert session into database and fetch session info
-	token, res, err := getDB(c).login(req)
-	if err != nil {
-		log.Printf("Error creating session: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create session"})
-		return
-	}
-
-	// Set session cookie
-	session.Set("token", token)
-	session.Save()
-
-	c.JSON(http.StatusOK, res)
-}
-
-func logout(c *gin.Context) {
-	// Delete session from database
-	session := sessions.Default(c)
-	if token := session.Get("token"); token != nil {
-		err := getDB(c).deleteSession(token.(string))
-		if err != nil {
-			log.Printf("Error deleting session: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete session"})
-			return
-		}
-	}
-
-	// Clear session cookie, expire immediately
-	session.Clear()
-	session.Save()
-
-	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
-}
-
-func getEntries(c *gin.Context) {
-	var req RequestEntriesModel
-	if !bindModel(c, &req) {
-		return
-	}
-
-	entries, err := getDB(c).getEntries(req)
-	if err != nil {
-		log.Printf("Error retrieving entries: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve entries"})
-		return
-	}
-
-	c.JSON(http.StatusOK, entries)
-}
-
-func getFoods(c *gin.Context) {
-	foods, err := getDB(c).getFoods()
-	if err != nil {
-		log.Printf("Error retrieving foods: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve foods"})
 		return
 	}
@@ -481,50 +394,38 @@ func getFoods(c *gin.Context) {
 	c.JSON(http.StatusOK, foods)
 }
 
-func addFood(c *gin.Context) {
-	var req RequestCreateFoodModel
-	if !bindModel(c, &req) {
+// handleCreateEntry is a handler function for the entry creation endpoint. It binds the incoming
+// JSON request to a CreateEntryInput struct, retrieves the session token from the user's session,
+// creates a new entry in the database using the provided details and the session token for
+// authentication, and returns the created entry as a JSON response. If any step fails, it returns
+// an appropriate error response to the client. On success, it returns the newly created entry in
+// the response.
+func (a *API) handleCreateEntry(c *gin.Context) {
+	defer Trace("handleCreateEntry(c *gin.Context)")()
+
+	var in CreateEntryInput
+	if !bindInput(c, &in) {
 		return
 	}
 
-	// Get session token from cookie
-	session := sessions.Default(c)
-	token := session.Get("token")
-	if token == nil {
+	t, exists := getSessionToken(c)
+	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	res, err := getDB(c).createFood(&req, token.(string))
+	p := CreateEntryParams{
+		FoodId:   *in.FoodId,
+		MealName: in.MealName,
+		Date:     in.Date,
+		Servings: in.Servings,
+	}
+
+	e, err := a.db.createEntryByToken(p, t)
 	if err != nil {
-		log.Printf("Error creating food: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create food"})
-		return
-	}
-
-	c.JSON(http.StatusOK, res)
-}
-
-func addEntry(c *gin.Context) {
-	var req RequestAddEntryModel
-	if !bindModel(c, &req) {
-		return
-	}
-
-	// Get session token from cookie
-	session := sessions.Default(c)
-	token := session.Get("token")
-	if token == nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	res, err := getDB(c).createEntry(&req, token.(string))
-	if err != nil {
-		log.Printf("Error creating entry: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create entry"})
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, e)
 }
