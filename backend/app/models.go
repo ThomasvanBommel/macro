@@ -1,5 +1,68 @@
 package main
 
+// API ---------------------------------------------------------------------------------------------
+
+type UserCredentialInput struct {
+	Name     string `json:"name" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type UserProfileRequestInput struct {
+	Name string `json:"name" binding:"required"`
+	Date string `json:"date" binding:"required"`
+}
+
+// Database ----------------------------------------------------------------------------------------
+
+type User struct {
+	Name         string
+	PasswordHash string
+	Created      string
+}
+
+type Session struct {
+	UserName string
+	Token    string
+	Created  string
+	Expires  string
+}
+
+type Entry struct {
+	ID       int
+	UserName string
+	FoodId   int
+	MealName string
+	Date     string
+	Servings int
+	Created  string
+}
+
+type Food struct {
+	ID           int
+	Name         string
+	Brand        string
+	Created      string
+	UserName     string
+	Calories     int
+	Carbs        int
+	Protein      int
+	Fat          int
+	ServingSize  string
+	ServingCount int
+}
+
+type EntryWithFood struct {
+	ID       int
+	UserName string
+	Food     Food
+	MealName string
+	Date     string
+	Servings int
+	Created  string
+}
+
+// ---------------------------------------------------------- OLD:
+
 type RequestUserModel struct {
 	Name     string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
