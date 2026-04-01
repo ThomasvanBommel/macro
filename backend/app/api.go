@@ -236,9 +236,9 @@ func (a *API) handleCreateSession(name string, c *gin.Context) error {
 
 // handleRegisterUser is a handler function for the user registration endpoint. It binds the
 // incoming JSON request to a UserCredentialInput struct, creates a new user in the database using
-// the provided credentials, and sets a session token for the newly registered user. If any step
-// fails, it returns an appropriate error response to the client. On success, it returns a JSON
-// response indicating that the user was registered successfully and logged in.
+// the provided credentials, and returns an appropriate response to the client. If any step fails,
+// it returns an error response. On success, it returns a JSON response indicating that the user
+// was registered successfully.
 func (a *API) handleRegisterUser(c *gin.Context) {
 	defer Trace("handleRegisterUser(c *gin.Context)")()
 
@@ -253,14 +253,7 @@ func (a *API) handleRegisterUser(c *gin.Context) {
 		return
 	}
 
-	err = a.handleCreateSession(in.Name, c)
-	if err != nil {
-		msg := "User created but failed to create session. Please try logging in."
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully and logged in"})
+	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
 }
 
 // handleLoginUser is a handler function for the user login endpoint. It binds the incoming JSON
@@ -341,6 +334,30 @@ func (a *API) handleSessionValidation(c *gin.Context) {
 	c.JSON(http.StatusOK, s)
 }
 
+// scaleFoodForResponse is a helper function that scales the nutritional values of a Food struct for
+// the API response. It divides the calories, carbs, protein, fat, and serving count by 100 to
+// convert them back to their original values before they were multiplied for storage in the
+// database. This is necessary because the database stores these values as integers multiplied by
+// 100 to avoid floating-point precision issues, but the API response should return the actual
+// nutritional values to the client.
+func scaleFoodForResponse(f *Food) {
+	f.Calories /= 100
+	f.Carbs /= 100
+	f.Protein /= 100
+	f.Fat /= 100
+	f.ServingCount /= 100
+}
+
+// scaleEntryWithFoodForResponse is a helper function that scales the nutritional values of an
+// EntryWithFood struct for the API response. It calls the scaleFoodForResponse function to scale
+// the food values and also scales the servings value. It divides the servings by 100 to convert it
+// back to its original value before it was multiplied for storage in the database. This ensures
+// that the API response returns the actual servings value.
+func scaleEntryWithFoodForResponse(e *EntryWithFood) {
+	scaleFoodForResponse(&e.Food)
+	e.Servings /= 100
+}
+
 // handleListUserEntries is a handler function for the endpoint that retrieves a list of user
 // entries for a specific user on a specific date. It binds the incoming JSON request to a
 // ListUserEntriesInput struct, retrieves the user's entries with food details from the database
@@ -358,6 +375,10 @@ func (a *API) handleListUserEntries(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user profile"})
 		return
+	}
+
+	for i := range res {
+		scaleEntryWithFoodForResponse(&res[i])
 	}
 
 	c.JSON(http.StatusOK, res)

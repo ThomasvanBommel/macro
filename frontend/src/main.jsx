@@ -44,15 +44,13 @@ function App() {
         }
     }, []);
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <article aria-busy="true" />;
 
     return (
         <BrowserRouter>
             <Header session={ session } authCheck={ authCheck } />
 
             <Routes>
-                {/* <Route path="/"> */}
-
                 <Route index element={ <Home /> } />
 
                 <Route element={<UnAuthorizedOnly session={ session } />}>
@@ -63,8 +61,6 @@ function App() {
                 <Route element={<AuthorizedOnly session={ session } />}>
                     <Route path="profile" element={<Profile session={ session } />} />
                 </Route>
-
-                {/* </Route> */}
             </Routes>
         </BrowserRouter>
     )
