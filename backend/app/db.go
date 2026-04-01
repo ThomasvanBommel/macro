@@ -97,6 +97,22 @@ func (db *Database) createSession(name string) (*Session, error) {
 	return &s, nil
 }
 
+// getSessionByToken retrieves a session from the database based on the provided token. It executes
+// a SELECT statement and returns the corresponding Session struct or an error if the operation
+// fails.
+func (db *Database) getSessionByToken(token string) (*Session, error) {
+	defer Trace("getSessionByToken(token)", "token", token)()
+
+	var s Session
+	q := "SELECT user_name, token, created, expires FROM session WHERE token = ?;"
+	err := db.QueryRow(q, token).Scan(&s.UserName, &s.Token, &s.Created, &s.Expires)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
+}
+
 // deleteSession deletes a session from the database based on the provided token. It executes a
 // DELETE statement and returns any error encountered.
 func (db *Database) deleteSession(token string) error {

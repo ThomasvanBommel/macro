@@ -149,6 +149,7 @@ func (a *API) registerAPIRoutes(r *gin.Engine) {
 	api.POST("/register", a.handleRegisterUser)
 	api.POST("/login", a.handleLoginUser)
 	api.POST("/logout", a.handleLogoutUser)
+	api.POST("/validate-session", a.handleSessionValidation)
 	api.POST("/food", a.handleCreateFood)
 	api.POST("/foods", a.handleListFoods)
 	api.POST("/entry", a.handleCreateEntry)
@@ -315,6 +316,29 @@ func (a *API) handleLogoutUser(c *gin.Context) {
 	clearSessionToken(c)
 
 	c.JSON(http.StatusOK, gin.H{"message": "User logged out and session cleared successfully"})
+}
+
+// handleSessionValidation is a handler function for validating the user's session. It retrieves the
+// session token from the user's session cookie, checks if the token is valid by querying the
+// database, and returns the session information if the token is valid. If the token is not found or
+// invalid, it returns a 401 Unauthorized response. This endpoint can be used by the frontend to
+// check if the user has an active session and to retrieve session details if needed.
+func (a *API) handleSessionValidation(c *gin.Context) {
+	defer Trace("handleSessionValidation(c *gin.Context)")()
+
+	t, exists := getSessionToken(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	s, err := a.db.getSessionByToken(t)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	c.JSON(http.StatusOK, s)
 }
 
 // handleListUserEntries is a handler function for the endpoint that retrieves a list of user
