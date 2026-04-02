@@ -2,13 +2,62 @@ package main
 
 import (
 	"log/slog"
+	"os"
+	"time"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 // log.go defines logging utilities and conventions for the application.
-func InitLogger() {
-	// slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-	// 	Level: slog.LevelDebug,
-	// })))
+func InitLogger(r *gin.Engine) *slog.Logger {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		// Level: slog.LevelDebug,
+	}))
+
+	slog.SetDefault(logger)
+	r.Use(SlogMiddleware())
+
+	return logger
+}
+
+func SlogMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		method := c.Request.Method
+
+		c.Next()
+
+		duration := time.Since(start)
+		status := c.Writer.Status()
+		clientIP := c.ClientIP()
+
+		session := sessions.Default(c)
+		id := session.Get("id")
+		token := session.Get("token")
+
+		if id == nil && token == nil {
+			id = GenerateRandomHexString(10)
+			session.Set("id", id)
+			session.Save()
+		}
+
+		error, _ := c.Get("error")
+
+		slog.Info("HTTP request",
+			"method", method,
+			"path", path,
+			"status", status,
+			"duration_ns", duration.Nanoseconds(),
+			"duration_ms", duration.Milliseconds(),
+			"client_ip", clientIP,
+			"session_id", id,
+			"session_token", token,
+			"username", session.Get("username"),
+			"error", error,
+		)
+	}
 }
 
 // Trace logs function entry and exit; defer its return value at call sites.

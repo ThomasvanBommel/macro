@@ -2,11 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"log/slog"
 	"math"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -25,7 +23,6 @@ func InitAPI(r *gin.Engine, db *Database) *API {
 	api := &API{db: db}
 
 	applySessionMiddleware(r)
-	applyLoggingMiddleware(r)
 
 	api.registerAPIRoutes(r)
 
@@ -43,40 +40,6 @@ func applySessionMiddleware(r *gin.Engine) {
 	}
 
 	r.Use(sessions.Sessions("macro_session", cookie.NewStore(s)))
-}
-
-// applyLoggingMiddleware logs request metadata, latency, and handler errors.
-func applyLoggingMiddleware(r *gin.Engine) {
-	defer Trace("applyLoggingMiddleware(r *gin.Engine)")()
-
-	r.Use(func(c *gin.Context) {
-		start := time.Now()
-		path := c.Request.URL.Path
-		query := c.Request.URL.RawQuery
-
-		c.Next()
-
-		dur := time.Since(start)
-
-		attr := []slog.Attr{
-			slog.Int("status", c.Writer.Status()),
-			slog.String("method", c.Request.Method),
-			slog.String("path", path),
-			slog.String("query", query),
-			slog.String("ip", c.ClientIP()),
-			slog.Duration("duration", dur),
-			slog.String("user_agent", c.Request.UserAgent()),
-		}
-
-		if len(c.Errors) == 0 {
-			slog.Info("Handled request", "details", attr)
-			return
-		}
-
-		errs := c.Errors.Errors()
-		slog.Error("Request resulted in errors", "count", len(errs), "errors", errs,
-			"details", attr)
-	})
 }
 
 // registerAPIRoutes mounts all endpoints under /api.
@@ -99,6 +62,7 @@ func bindInput(c *gin.Context, obj any) bool {
 	defer Trace("bindInput(c *gin.Context, obj any)")()
 
 	if err := c.ShouldBindJSON(obj); err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return false
 	}
@@ -106,12 +70,23 @@ func bindInput(c *gin.Context, obj any) bool {
 	return true
 }
 
-// setSessionToken stores the session token in the cookie store.
-func setSessionToken(c *gin.Context, token string) {
-	defer Trace("setSessionToken(c *gin.Context, token string)", "token", token)()
+// initSession initializes session state with the provided Session struct.
+func initSession(s *Session, c *gin.Context) {
+	defer Trace("initSession(s *Session, c *gin.Context)", "session", s)()
 
 	session := sessions.Default(c)
-	session.Set("token", token)
+	session.Set("token", s.Token)
+	session.Set("username", s.UserName)
+	session.Save()
+}
+
+// clearSession clears and persists session state.
+func clearSession(c *gin.Context) {
+	defer Trace("clearSessionToken(c *gin.Context)")()
+
+	session := sessions.Default(c)
+	session.Set("token", nil)
+	session.Set("username", nil)
 	session.Save()
 }
 
@@ -128,27 +103,41 @@ func getSessionToken(c *gin.Context) (string, bool) {
 	return token.(string), true
 }
 
-// clearSessionToken clears and persists session state.
-func clearSessionToken(c *gin.Context) {
-	defer Trace("clearSessionToken(c *gin.Context)")()
-
-	session := sessions.Default(c)
-	session.Clear()
-	session.Save()
-}
-
 // handleCreateSession creates a DB session and persists its token in the cookie.
 func (a *API) handleCreateSession(name string, c *gin.Context) error {
 	defer Trace("handleCreateSession(name string, c *gin.Context)", "name", name)()
 
 	s, err := a.db.createSession(name)
 	if err != nil {
+		c.Set("error", err.Error())
 		return err
 	}
 
-	setSessionToken(c, s.Token)
+	initSession(s, c)
 
 	return nil
+}
+
+// handleSessionValidation verifies the current session token.
+func (a *API) handleSessionValidation(c *gin.Context) {
+	defer Trace("handleSessionValidation(c *gin.Context)")()
+
+	t, exists := getSessionToken(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	s, err := a.db.getSessionByToken(t)
+	if err != nil {
+		c.Set("error", err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	initSession(s, c)
+
+	c.JSON(http.StatusOK, s)
 }
 
 // handleRegisterUser registers a new user.
@@ -162,6 +151,7 @@ func (a *API) handleRegisterUser(c *gin.Context) {
 
 	err := a.db.createUser(in.Name, in.Password)
 	if err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -180,12 +170,14 @@ func (a *API) handleLoginUser(c *gin.Context) {
 
 	u, err := a.db.getUserByNameAndPassword(in.Name, in.Password)
 	if err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
 		return
 	}
 
 	err = a.handleCreateSession(u.Name, c)
 	if err != nil {
+		c.Set("error", err.Error())
 		msg := "Failed to create session. Please try again."
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		return
@@ -206,32 +198,14 @@ func (a *API) handleLogoutUser(c *gin.Context) {
 
 	err := a.db.deleteSession(t)
 	if err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete session"})
 		return
 	}
 
-	clearSessionToken(c)
+	clearSession(c)
 
 	c.JSON(http.StatusOK, gin.H{"message": "User logged out and session cleared successfully"})
-}
-
-// handleSessionValidation verifies the current session token.
-func (a *API) handleSessionValidation(c *gin.Context) {
-	defer Trace("handleSessionValidation(c *gin.Context)")()
-
-	t, exists := getSessionToken(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	s, err := a.db.getSessionByToken(t)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	c.JSON(http.StatusOK, s)
 }
 
 // scaleFoodForResponse converts fixed-point nutrition values back to response units.
@@ -319,6 +293,7 @@ func (a *API) handleCreateEntry(c *gin.Context) {
 
 	e, err := a.db.createEntryByToken(p, t)
 	if err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create entry"})
 		return
 	}
@@ -361,6 +336,7 @@ func (a *API) handleListUserEntries(c *gin.Context) {
 
 	res, err := a.db.listUserEntriesWithFoodByNameAndDate(in.Name, in.Date)
 	if err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user profile"})
 		return
 	}
@@ -435,6 +411,7 @@ func (a *API) handleCreateFood(c *gin.Context) {
 
 	f, err := a.db.createFoodByToken(p, t)
 	if err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create food"})
 		return
 	}
@@ -462,6 +439,7 @@ func (a *API) handleListFoods(c *gin.Context) {
 
 	foods, err := a.db.listFoods()
 	if err != nil {
+		c.Set("error", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve foods"})
 		return
 	}

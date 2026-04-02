@@ -28,15 +28,16 @@ RUN --mount=type=cache,target=/go-cache \
 # fullstack (production)
 FROM gcr.io/distroless/static-debian12:latest AS distroless
 COPY --from=backend-builder /app/macro .
-ENV GIN_MODE=release
+ENV GIN_MODE=release PORT=8080
 EXPOSE 8080
 CMD ["/macro"]
 
 # backend dev
 FROM golang:1.26-alpine AS backend-dev
 RUN go install github.com/air-verse/air@latest
-COPY backend/app/go.mod backend/app/go.sum /app/
+COPY backend/app /app
 WORKDIR /app
+ENV PORT=8080
 CMD ["air"]
 
 # goose (migration tool)

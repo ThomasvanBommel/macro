@@ -8,14 +8,15 @@ import (
 )
 
 func main() {
-	InitLogger()
-
 	db := InitDatabase()
 	defer db.Close()
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+
+	InitLogger(r)
 	InitAPI(r, db)
-	InitStaticRoutes(r)
+	InitEnv(db.DB, r)
 
 	// If running in a trusted environment (e.g. GCP Cloud Run)
 	if os.Getenv("K_SERVICE") != "" {

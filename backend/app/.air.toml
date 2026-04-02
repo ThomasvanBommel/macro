@@ -6,15 +6,14 @@ testdata_dir = "testdata"
 tmp_dir = "/tmp"
 
 [build]
-  args_bin = []
   cmd = "CGO_ENABLED=0 \
          GOOS=linux \
          go build \
          -ldflags='-s -w' \
          -tags='no_postgres no_clickhouse no_mssql no_mysql dev' \
-         -o macro"
+         -o /macro"
   delay = 500
-  entrypoint = ["./macro"]
+  entrypoint = ["/macro"]
   exclude_dir = ["frontend", "data"]
   exclude_file = []
   exclude_regex = []

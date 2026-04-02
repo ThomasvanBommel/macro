@@ -16,7 +16,7 @@
 - [ ] add ability to edit diary entries
 
 ### 4) Operational Readiness
-- [ ] add structured/verbose API logging
+- [x] add structured/verbose API logging
 - [x] generate fallback session secret when one is not provided
 
 ## Next Sprint
