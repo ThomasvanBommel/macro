@@ -10,7 +10,7 @@ tmp_dir = "/tmp"
          GOOS=linux \
          go build \
          -ldflags='-s -w' \
-         -tags='no_postgres no_clickhouse no_mssql no_mysql dev' \
+         -tags='no_postgres no_clickhouse no_mssql no_mysql' \
          -o /macro"
   delay = 500
   entrypoint = ["/macro"]

@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/go-cache \
     GOOS=linux \
     go build \
     -ldflags="-s -w" \
-    -tags='no_postgres no_clickhouse no_mssql no_mysql' \
+    -tags='no_postgres no_clickhouse no_mssql no_mysql prod' \
     -o macro .
 
 # fullstack (production)
@@ -35,7 +35,6 @@ CMD ["/macro"]
 # backend dev
 FROM golang:1.26-alpine AS backend-dev
 RUN go install github.com/air-verse/air@latest
-COPY backend/app /app
 WORKDIR /app
 ENV PORT=8080
 CMD ["air"]

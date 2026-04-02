@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -152,7 +153,13 @@ func (a *API) handleRegisterUser(c *gin.Context) {
 	err := a.db.createUser(in.Name, in.Password)
 	if err != nil {
 		c.Set("error", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Username already exists"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
+		}
+
 		return
 	}
 

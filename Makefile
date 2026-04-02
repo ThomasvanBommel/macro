@@ -42,6 +42,9 @@ frontend:
 dev:
 	docker compose up --build backend frontend
 
+test:
+	docker compose run --rm test
+
 down:
 	docker compose down --remove-orphans
 

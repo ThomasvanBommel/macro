@@ -42,6 +42,20 @@ services:
       - "5173:5173"
     command: npm run dev -- --host
   
+  test:
+    build:
+      context: .
+      target: backend-dev
+    volumes:
+      - ./backend/app:/app
+      - go-cache:/go/pkg/mod
+      - go-build:/root/.cache/go-build
+    environment:
+      - SESSION_SECRET=this_is_dev_only
+      - GOMODCACHE=/go/pkg/mod
+      - GOCACHE=/root/.cache/go-build
+    command: go test -v ./...
+  
   goose:
     build:
       context: .

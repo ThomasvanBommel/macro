@@ -16,7 +16,7 @@ func main() {
 
 	InitLogger(r)
 	InitAPI(r, db)
-	InitEnv(db.DB, r)
+	InitEnv(r)
 
 	// If running in a trusted environment (e.g. GCP Cloud Run)
 	if os.Getenv("K_SERVICE") != "" {
