@@ -1,34 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { handleFetchFoodList } from "../api";
 import Modal, { ModalHeader } from "./Modal";
 import CreateFoodModal from "./CreateFoodModal";
+import { NotificationContext } from '../Context';
 
-/**
- * Callback for when the user closes the modal without selecting a food.
- * @callback onClose
- * @returns { void }
- */
-
-/**
- * Callback for when the user selects a food. Receives the selected food data as an argument.
- * @callback onSelect
- * @param { object } food - The selected food data.
- * @returns { void }
- */
-
-/**
- * Modal component for finding and selecting a food. Contains a search bar to filter foods by name, 
- * and a list of foods with radio buttons to select one. Also contains a button to open the 
- * CreateFoodModal for adding a new food. On successful creation of a new food, it is added to the 
- * list and selected.
- * @component
- * @param { Object } props - The component props
- * @param { boolean } props.isOpen - Whether the modal is open or not
- * @param { onClose } props.onClose - Callback for when the user closes the modal without selecting 
- *                                    a food
- * @param { onSelect } props.onSelect - Callback for when the user selects a food.
- * @returns { JSX.Element } The rendered component
- */
+// 
 export default function FindFoodModal({ isOpen, onClose, onSelect }) {
     const [foods, setFoods] = useState([]);
     const [loadingFoods, setLoadingFoods] = useState(true);
@@ -36,10 +12,16 @@ export default function FindFoodModal({ isOpen, onClose, onSelect }) {
 
     const [createFoodModalOpen, setCreateFoodModalOpen] = useState(false);
 
+    const notifications = useContext(NotificationContext);
+
     useEffect(() => {
         handleFetchFoodList()
             .then(setFoods)
-            .catch(alert)
+            .catch(error => notifications.add({ 
+                heading: "Failed to fetch food list",
+                details: error.message,
+                type: "error"
+            }))
             .finally(() => setLoadingFoods(false));
     }, []);
 

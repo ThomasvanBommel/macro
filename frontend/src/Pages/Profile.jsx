@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { DateSelector, EntryList } from '../Components';
 import DateString from '../Classes/DateString';
+import { SessionContext } from '../Context';
 
 
-export default function Profile({ session }) {
+export default function Profile() {
     const [date, setDate] = useState(DateString.today());
-
-    console.log(session);
+    const session = useContext(SessionContext);
 
     return (
         <>  

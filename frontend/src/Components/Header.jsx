@@ -1,14 +1,12 @@
 import { NavLink, Link, useNavigate } from 'react-router';
-import { handleLogoutUser } from '../api';
+import { useContext } from 'react';
+
+import { SessionContext, NotificationContext } from '../Context';
 import { SessionTimer } from '../Components';
 
 // Header component, shown on all pages. Displays different links based on session state.
-export default function Header({ session, authCheck }) {
-    const navigate = useNavigate();
-
-    const logout = () => handleLogoutUser()
-        .then(() => navigate("/login"))
-        .catch(alert);
+export default function Header() {
+    const session = useContext(SessionContext);
 
     const timerStyle = {
         width: "100%",
@@ -26,13 +24,13 @@ export default function Header({ session, authCheck }) {
             <h1 style={{ flex: "1 0", margin: 0 }}>macro</h1>
             <nav style={{ display: 'flex', gap: '1rem' }}>
                 <NavLink to="/">Home</NavLink>
-                { session ? 
+                { session.isValid() ? 
                     <>
                     <NavLink to="/profile">Profile</NavLink>
-                    <Link to="/logout" onClick={ logout } style={{ position: "relative" }} >
+                    <Link to="/login" onClick={ session.destroy } style={{ position: "relative" }} >
                         Logout
                         <small style={ timerStyle }>
-                            <SessionTimer expiration={ session.expires } onExpire={ logout } />
+                            <SessionTimer />
                         </small>
                     </Link>
                     </>

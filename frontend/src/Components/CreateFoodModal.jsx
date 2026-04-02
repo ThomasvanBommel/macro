@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+
+import { NotificationContext } from "../Context";
 import Modal, { ModalHeader } from "./Modal";
+import { handleCreateFood } from "../api";
 
 /**
  * Callback for when the user closes the modal without creating a food.
@@ -27,22 +30,8 @@ import Modal, { ModalHeader } from "./Modal";
  * @returns { JSX.Element } The rendered component
  */
 export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
+    const notifications = useContext(NotificationContext);
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState({
-        name: "",
-        brand: "",
-        calories: 0,
-        carbs: 0,
-        protein: 0,
-        fat: 0,
-        serving_size: "",
-        serving_count: 1
-    });
-
-    const handleChange = e => {
-        const { name, value } = e.target;
-        setData(prev => ({ ...prev, [name]: value }));
-    };
 
     const handleSubmit = e => {
         e.preventDefault();
@@ -50,12 +39,40 @@ export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
 
         setLoading(true);
 
-        // createFood(data)
-        //     .then(res => {
-        //         if (res) onSuccess(res);
-        //         setLoading(false);
-        //     });
+        const form = new FormData(e.currentTarget);
+        const data = {
+            name: form.get("name"),
+            brand: form.get("brand") || null,
+            calories: parseFloat(form.get("calories")),
+            carbs: parseFloat(form.get("carbs")),
+            protein: parseFloat(form.get("protein")),
+            fat: parseFloat(form.get("fat")),
+            serving_count: parseFloat(form.get("serving_count")),
+            serving_size: form.get("serving_size")
+        };
+
+        handleCreateFood(data)
+            .then(onSuccess)
+            .catch(err => notifications.add({
+                heading: "Failed to create food",
+                details: err.message,
+                type: "error"
+            }))
+            .finally(() => setLoading(false));
     }
+
+    const TextInput = ({ name, placeholder, required=true }) => 
+        <label>
+            { name.charAt(0).toUpperCase() + name.slice(1) }
+            <input type="text" name={ name } placeholder={ placeholder } required={ required } />
+        </label>;
+
+    const NumberInput = ({ name, value=0, required=true }) =>
+        <label>
+            { name.charAt(0).toUpperCase() + name.slice(1) }
+            <input type="number" name={ name } min="0" step="0.01" inputMode="decimal" 
+                   defaultValue={ value } required={ required } />
+        </label>;
 
     return (
         <Modal isOpen={ isOpen } onClose={ onClose }>
@@ -63,98 +80,19 @@ export default function CreateFoodModal({ isOpen, onClose, onSuccess }) {
 
             <form onSubmit={ handleSubmit }>
                 <fieldset>
-                    <label>
-                        Name
-                        <input type="text" 
-                               name="name" 
-                               placeholder="Enter food name..." 
-                               value={ data.name } 
-                               onChange={ handleChange } 
-                               required />
-                    </label>
-
-                    <label>
-                        Brand
-                        <input type="text" 
-                               name="brand" 
-                               placeholder="Enter food brand..." 
-                               value={ data.brand } 
-                               onChange={ handleChange } />
-                    </label>
-
-                    <label>
-                        Calories (kcal)
-                        <input type="number" 
-                            name="calories" 
-                            min="0" 
-                            step="0.01"
-                            inputMode="decimal"
-                            value={ data.calories } 
-                            onChange={ handleChange } 
-                            required />
-                    </label>
+                    <TextInput name="name" placeholder="Enter food name..." />
+                    <TextInput name="brand" placeholder="Enter food brand..." required={ false } />
+                    <NumberInput name="calories" />
 
                     <div style={{ display: "flex", gap: "1rem" }}>
-                        <label>
-                            Carbs (g)
-                            <input type="number" 
-                                name="carbs" 
-                                min="0" 
-                                step="0.01"
-                                inputmode="decimal"
-                                value={ data.carbs } 
-                                onChange={ handleChange } 
-                                required />
-                        </label>
-
-                        <label>
-                            Protein (g)
-                            <input type="number" 
-                                name="protein" 
-                                min="0" 
-                                step="0.01"
-                                inputmode="decimal"
-                                value={ data.protein } 
-                                onChange={ handleChange } 
-                                required />
-                        </label>
-
-                        <label>
-                            Fat (g)
-                            <input type="number" 
-                                name="fat" 
-                                min="0"
-                                step="0.01"
-                                inputmode="decimal"
-                                value={ data.fat } 
-                                onChange={ handleChange } 
-                                required />
-                        </label>
+                        <NumberInput name="carbs" />
+                        <NumberInput name="protein" />
+                        <NumberInput name="fat" />
                     </div>
 
                     <div style={{ display: "flex", gap: "1rem" }}>
-                        <label>
-                            Serving Count
-                            <input type="number" 
-                                name="serving_count" 
-                                placeholder="" 
-                                min="0"
-                                step="0.01"
-                                inputmode="decimal"
-                                value={ data.serving_count } 
-                                onChange={ handleChange }
-                                required />
-                        </label>
-
-                        <label>
-                            Serving Size
-                            <input type="text" 
-                                name="serving_size" 
-                                placeholder="cups, g, ml, etc..." 
-                                value={ data.serving_size } 
-                                onChange={ handleChange }
-                                required />
-                        </label>
+                        <NumberInput name="serving_count" value={ 1 } />
+                        <TextInput name="serving_size" placeholder="cups, g, ml, etc..." />
                     </div>
 
                     { loading ? (

@@ -8,7 +8,7 @@
 - [ ] add frontend tests for API helpers and at least 1-2 core UI flows
 
 ### 2) User-Facing Reliability
-- [ ] replace alert() usage with a reusable notification system
+- [x] replace alert() usage with a reusable notification system
 - [ ] centralize API error mapping to user-friendly messages
 
 ### 3) Core Product Completeness
@@ -17,7 +17,7 @@
 
 ### 4) Operational Readiness
 - [ ] add structured/verbose API logging
-- [ ] generate fallback session secret when one is not provided
+- [x] generate fallback session secret when one is not provided
 
 ## Next Sprint
 

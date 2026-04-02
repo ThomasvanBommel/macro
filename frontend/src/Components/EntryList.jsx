@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { handleFetchEntryList } from '../api';
 import { CreateEntryModal } from '../Components';
+import { NotificationContext } from '../Context';
 
 /**
  * Component to display a list of entries for a given user and date. Also displays macros for each 
@@ -15,6 +16,7 @@ import { CreateEntryModal } from '../Components';
 export default function EntryList({ username, date, editable=false }) {
     const totals_init = { protein: 0, carbs: 0, fat: 0, calories: 0 };
 
+    const notifications = useContext(NotificationContext);
 
     const [loading, setLoading] = useState(true);
     const [totals, setTotals] = useState(totals_init);
@@ -26,7 +28,6 @@ export default function EntryList({ username, date, editable=false }) {
     });
 
     const updateEntries = newEntry => {
-        console.log(newEntry);
         setEntries(prev => {
             const meal = newEntry.meal_name.toLowerCase();
             return { ...prev, [meal]: [ ...prev[meal], newEntry] };
@@ -49,7 +50,11 @@ export default function EntryList({ username, date, editable=false }) {
 
                 setEntries(groupedEntries);
             })
-            .catch(alert)
+            .catch(e => notifications.add({
+                heading: "Failed to fetch entries",
+                details: e.message,
+                type: "error"
+            }))
             .finally(() => setLoading(false));
     }, [username, date]);
 

@@ -1,15 +1,13 @@
-import { handleRegisterUser, handleLoginUser } from '../api'
+import { useContext } from 'react';
 
-/**
- * Register component that renders a registration form and handles user registration. It takes an 
- * onSuccess callback that is called when the registration is successful. The form collects the 
- * username, password, and password confirmation from the user. It validates that the password and
- * confirmation match before submitting.
- * @param {Object} props - The component props.
- * @param {Function} props.onSuccess - Callback function to be called when registration is 
- *                                     successful.
- */
-export default function RegisterForm({ onSuccess }) {
+import { handleRegisterUser, handleLoginUser } from '../api'
+import { NotificationContext, SessionContext } from '../Context';
+
+//
+export default function RegisterForm() {
+    const notifications = useContext(NotificationContext);
+    const session = useContext(SessionContext);
+
     const handleSubmit = e => {
         e.preventDefault();
 
@@ -19,8 +17,12 @@ export default function RegisterForm({ onSuccess }) {
 
         handleRegisterUser(name, password)
             .then(() => handleLoginUser(name, password))
-            .then(onSuccess)
-            .catch(alert);
+            .then(session.refresh)
+            .catch(error => notifications.add({ 
+                heading: "Registration failed",
+                details: error.message,
+                type: "error"
+            }));
     }
 
     const handlePasswordChange = e => {

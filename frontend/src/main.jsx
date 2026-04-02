@@ -1,98 +1,93 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Outlet, BrowserRouter, Routes, Route, Navigate } from 'react-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 
-import { handleFetchSession } from './api';
-import { Header } from './Components';
+import { SessionContext, useSession, NotificationContext, useNotifications } from './Context';
+import { Header, LoginForm, RegisterForm, NotificationArea } from './Components';
 import { Home, Profile } from './Pages';
-import { LoginForm, RegisterForm } from './Components';
+
 import '@picocss/pico';
 import './main.css';
 
-/**
- * Component that renders its children only if the user is authenticated (i.e. has a valid session).
- * If the user is not authenticated, they are redirected to the login page.
- * @param { Object } props - The component props.
- * @param { Object } props.session - The user session object containing session information.
- * @returns { JSX.Element } - The rendered component based on the user's authentication status.
- */
-function AuthorizedOnly({ session }) {
-    return session ? <Outlet /> : <Navigate to="/login" replace />;
+/** Renders nested routes only when a valid session exists. */
+function AuthorizedOnly() {
+    const session = useContext(SessionContext);
+
+    if (session.isValid()) 
+        return <Outlet />;
+
+    return <Navigate to="/login" replace />;
 }
 
-/**
- * Component that renders its children only if the user is not authenticated (i.e. does not have a 
- * valid session). If the user is authenticated, they are redirected to the profile page.
- * @param { Object } props - The component props.
- * @param { Object } props.session - The user session object containing session information.
- * @returns { JSX.Element } - The rendered component based on the user's authentication status.
- */
-function UnAuthorizedOnly({ session }) {
-    return !session ? <Outlet /> : <Navigate to="/profile" replace />;
+/** Renders nested routes only when no session exists. */
+function UnAuthorizedOnly() {
+    const session = useContext(SessionContext);
+
+    if (!session.isValid())
+        return <Outlet />;
+
+    return <Navigate to="/profile" replace />;
 }
 
-/**
- * The main application component that manages the user session and renders the appropriate routes 
- * based on the user's authentication status. It uses the useState hook to manage the session and 
- * loading state, and the useEffect hook to fetch the session data when the component mounts. It 
- * also defines a nullSession function to reset the session state when the user logs out or when
- * the session becomes invalid. The component renders a loading indicator while the session data is 
- * being fetched, and once the data is available, it renders the appropriate routes based on the 
- * user's authentication status. The Header component is always rendered, and the Home, LoginForm,
- * RegisterForm, and Profile components are rendered based on the user's authentication status and 
- * the current session state.
- * @returns { JSX.Element } - The rendered application component with routing and session management
- */
+/** Manages session state and renders auth-gated routes. */
 function App() {
-    const [updateSession, setUpdateSession] = useState(0);
-    const [session, setSession] = useState(null);
     const [loading, setLoading] = useState(true);
-
-    const nullSession = () => {
-        setSession(null);
-        setLoading(true);
-        setUpdateSession(s => s + 1);
-    };
+    const session = useSession();
 
     useEffect(() => {
-        handleFetchSession()
-            .then(setSession)
-            .catch(() => setSession(null))
-            .finally(() => setLoading(false));
-    }, [updateSession])
+        if (!session.isValid())
+            return setLoading(false);
+
+        const i = setInterval(() => {
+            console.log("Checking session validity...");
+            session.isValid();
+        }, 1000);
+
+        return () => clearInterval(i);
+    }, [session]);
 
     if (loading) return <article aria-busy="true" aria-label="Loading..." />;
 
     return (
         <BrowserRouter>
-            <Header session={ session } />
+        <SessionContext value={ session }>
+            <Header />
 
             <Routes>
                 <Route index element={ <Home /> } />
 
-                <Route element={<UnAuthorizedOnly session={ session } />}>
-                    <Route path="login" element={<LoginForm onSuccess={ nullSession } />} />
-                    <Route path="register" element={<RegisterForm onSuccess={ nullSession } />} />
+                <Route element={<UnAuthorizedOnly />}>
+                    <Route path="login" element={<LoginForm />} />
+                    <Route path="register" element={<RegisterForm />} />
                 </Route>
 
-                <Route element={<AuthorizedOnly session={ session } />}>
-                    <Route path="profile" element={<Profile session={ session } />} />
+                <Route element={<AuthorizedOnly />}>
+                    <Route path="profile" element={<Profile />} />
                 </Route>
             </Routes>
+
+            <NotificationArea />
+        </SessionContext>
         </BrowserRouter>
     )
 }
 
-/**
- * The main entry point of the application. It renders the App component inside a StrictMode wrapper
- * and a main container element. The StrictMode wrapper helps identify potential problems in the 
- * application by activating additional checks and warnings for its descendants.
- */
+function Root() {
+    const notifications = useNotifications();
+
+    return (
+        <NotificationContext value={ notifications }>
+            <App />
+        </NotificationContext>
+    );
+}
+
+/** Application entry point. */
 createRoot(document.getElementById('root')).render(
     <StrictMode>
         <main className="container">
-            <App />
+            <Root />
         </main>
     </StrictMode>,
 )

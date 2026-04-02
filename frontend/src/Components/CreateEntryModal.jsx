@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import Modal, { ModalHeader } from "./Modal";
 import FindFoodModal from "./FindFoodModal";
 import { handleCreateEntry } from "../api";
+import { NotificationContext } from '../Context';
 
 export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, onSuccess }) {
     const [meal, setMeal] = useState(initialMeal ?? "breakfast");
@@ -10,6 +11,8 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
 
     const [loading, setLoading] = useState(false);
     const [foodModalOpen, setFoodModalOpen] = useState(false);
+
+    const notifications = useContext(NotificationContext);
 
     const onFoodChoice = food => {
         setFoodModalOpen(false);
@@ -24,7 +27,11 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
 
         handleCreateEntry(food.id, meal, date, servings)
             .then(onSuccess)
-            .catch(alert)
+            .catch(error => notifications.add({ 
+                heading: "Failed to create entry",
+                details: error.message,
+                type: "error"
+            }))
             .finally(() => setLoading(false));
     }
 
@@ -50,7 +57,7 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
                                     name="food_id" 
                                     value={ food?.id }
                                     onClick={ () => setFoodModalOpen(true) }
-                                    checked={ !!food }
+                                    defaultChecked={ !!food }
                                     required />
                             </div>
                             <div>
@@ -73,7 +80,7 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
                         <input type="number" 
                                name="servings" 
                                min={ 0 } 
-                               step={ 0.5 } 
+                               step={ 0.01 } 
                                value={ servings } 
                                onChange={ (e) => setServings(e.target.value) } />
                     </label>

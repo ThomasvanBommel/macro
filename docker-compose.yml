@@ -4,7 +4,7 @@ services:
       context: .
       target: distroless
     volumes:
-      - ./backend/data:/app/data
+      - ./backend/data:/data
     ports:
       - "8080:8080"
     environment:
@@ -13,16 +13,18 @@ services:
   backend:
     build:
       context: .
-      target: backend-builder
+      target: backend-dev
     volumes:
-      - ./backend/data:/app/data
-      - ./backend/app:/app/src
+      - ./backend/app:/app
+      - ./backend/data:/data
+      - go-cache:/go/pkg/mod
+      - go-build:/root/.cache/go-build
     environment:
-      - DEVMODE=true
       - SESSION_SECRET=this_is_dev_only
+      - GOMODCACHE=/go/pkg/mod
+      - GOCACHE=/root/.cache/go-build
     ports:
       - "8080:8080"
-    command: air
 
   frontend:
     build:
@@ -51,3 +53,7 @@ services:
       - GOOSE_DBSTRING=/app/data/macro.db
       - GOOSE_MIGRATION_DIR=/app/migrations
     working_dir: /app
+
+volumes:
+  go-cache:
+  go-build:
