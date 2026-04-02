@@ -82,3 +82,82 @@ func TestHandleRegisterUser(t *testing.T) {
 		}
 	})
 }
+
+func TestHandleLoginUser(t *testing.T) {
+	db := Database{SetupTestDB()}
+	defer db.Close()
+
+	r := gin.New()
+	InitLogger(r)
+	InitAPI(r, &db)
+
+	t.Run("Register user", func(t *testing.T) {
+		body := `{"name": "testuser", "password": "testpass"}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/register", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+	})
+
+	t.Run("Missing body", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/login", nil)
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("Missing field - password", func(t *testing.T) {
+		body := `{"name": "testuser"}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("Wrong password", func(t *testing.T) {
+		body := `{"name": "testuser", "password": "wrongpass"}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status 401, got %d", w.Code)
+		}
+	})
+
+	t.Run("Wrong username", func(t *testing.T) {
+		body := `{"name": "wronguser", "password": "testpass"}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status 401, got %d", w.Code)
+		}
+	})
+
+	t.Run("Successful login", func(t *testing.T) {
+		body := `{"name": "testuser", "password": "testpass"}`
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("POST", "/api/login", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status 200, got %d", w.Code)
+		}
+	})
+}
