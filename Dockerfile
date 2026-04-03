@@ -14,7 +14,6 @@ RUN go env -w GOMODCACHE=/go-mod-cache
 COPY backend/app/go.mod backend/app/go.sum ./
 RUN --mount=type=cache,target=/go-mod-cache go mod download
 COPY backend/app/ ./
-COPY backend/migrations ./migrations
 COPY --from=frontend-builder /app/build ./frontend/build
 RUN --mount=type=cache,target=/go-cache \
     --mount=type=cache,target=/go-mod-cache \
