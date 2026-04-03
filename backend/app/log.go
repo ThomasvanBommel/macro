@@ -37,7 +37,7 @@ func SlogMiddleware() gin.HandlerFunc {
 		id := session.Get("id")
 		token := session.Get("token")
 
-		if id == nil && token == nil {
+		if id == nil {
 			id = GenerateRandomHexString(10)
 			session.Set("id", id)
 			session.Save()

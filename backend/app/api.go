@@ -63,6 +63,7 @@ func bindInput(c *gin.Context, obj any) bool {
 	defer Trace("bindInput(c *gin.Context, obj any)")()
 
 	if err := c.ShouldBindJSON(obj); err != nil {
+		c.Error(err)
 		c.Set("error", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return false
@@ -104,9 +105,9 @@ func getSessionToken(c *gin.Context) (string, bool) {
 	return token.(string), true
 }
 
-// handleCreateSession creates a DB session and persists its token in the cookie.
-func (a *API) handleCreateSession(name string, c *gin.Context) error {
-	defer Trace("handleCreateSession(name string, c *gin.Context)", "name", name)()
+// createSession creates a DB session and persists its token in the cookie.
+func (a *API) createSession(name string, c *gin.Context) error {
+	defer Trace("createSession(name string, c *gin.Context)", "name", name)()
 
 	s, err := a.db.createSession(name)
 	if err != nil {
@@ -182,7 +183,7 @@ func (a *API) handleLoginUser(c *gin.Context) {
 		return
 	}
 
-	err = a.handleCreateSession(u.Name, c)
+	err = a.createSession(u.Name, c)
 	if err != nil {
 		c.Set("error", err.Error())
 		msg := "Failed to create session. Please try again."
