@@ -6,6 +6,7 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  Compose:"
+	@echo "    test           Run tests in a temporary container"
 	@echo "    fullstack      Build and run both backend and frontend"
 	@echo "    backend        Build and run only the backend in development mode"
 	@echo "    frontend       Build and run only the frontend in development mode"
@@ -30,10 +31,13 @@ help:
 
 ## Docker Compose
 
-fullstack:
+test:
+	docker compose run --rm test
+
+fullstack: test
 	docker compose up --build fullstack
 
-backend:
+backend: test
 	docker compose up --build backend
 
 frontend:
@@ -41,9 +45,6 @@ frontend:
 
 dev:
 	docker compose up --build backend frontend
-
-test:
-	docker compose run --rm test
 
 down:
 	docker compose down --remove-orphans

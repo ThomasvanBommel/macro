@@ -18,21 +18,10 @@ import (
 //go:embed migrations/*.sql
 var testMigrationFiles embed.FS
 
-// setupTestDB creates an in-memory SQLite database and applies migrations for testing.
-// func setupTestDB() *sql.DB {
-// 	db, err := sql.Open("sqlite", ":memory:?cache=shared")
-// 	FatalOnError(err, "Failed to open DB in memory")
-
-// 	goose.SetBaseFS(testMigrationFiles)
-// 	err = goose.SetDialect("sqlite3")
-// 	FatalOnError(err, "Failed to set goose dialect")
-// 	FatalOnError(goose.Up(db, "migrations"), "Failed to apply migrations")
-
-// 	return db
-// }
-
 // newAPI creates a new API instance with an in-memory database for testing.
-func newAPI() *API {
+func newAPI(t *testing.T) *API {
+	t.Helper()
+
 	db, err := sql.Open("sqlite", ":memory:?cache=shared")
 	FatalOnError(err, "Failed to open DB in memory")
 
@@ -188,7 +177,7 @@ func TestGetSessionToken(t *testing.T) {
 // TestCreateSession tests the createSession function to ensure it creates a session and sets the
 // correct cookie values.
 func TestCreateSession(t *testing.T) {
-	api := newAPI()
+	api := newAPI(t)
 	defer api.db.Close()
 	_, c := newContext(t, "")
 
@@ -208,7 +197,7 @@ func TestCreateSession(t *testing.T) {
 func TestHandleSessionValidation(t *testing.T) {
 
 	t.Run("no-session", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		_, c := newContext(t, "")
 
@@ -220,7 +209,7 @@ func TestHandleSessionValidation(t *testing.T) {
 	})
 
 	t.Run("invalid-session", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		_, c := newContext(t, "")
 
@@ -237,7 +226,7 @@ func TestHandleSessionValidation(t *testing.T) {
 	})
 
 	t.Run("valid-session", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		_, c := newContext(t, "")
 
@@ -255,7 +244,7 @@ func TestHandleSessionValidation(t *testing.T) {
 func TestHandleRegistration(t *testing.T) {
 
 	t.Run("missing-field", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		w, c := newContext(t, `{"name": "newuser"}`)
 
@@ -266,7 +255,7 @@ func TestHandleRegistration(t *testing.T) {
 	})
 
 	t.Run("valid-input", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		w, c := newContext(t, `{"name": "newuser", "password": "password123"}`)
 
@@ -277,7 +266,7 @@ func TestHandleRegistration(t *testing.T) {
 	})
 
 	t.Run("duplicate-username", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		w, c := newContext(t, `{"name": "newuser", "password": "password123"}`)
 
@@ -296,7 +285,7 @@ func TestHandleRegistration(t *testing.T) {
 func TestHandleLoginUser(t *testing.T) {
 
 	t.Run("invalid-credentials", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		w, c := newContext(t, `{"name": "nonexistentuser", "password": "wrongpassword"}`)
 
@@ -308,7 +297,7 @@ func TestHandleLoginUser(t *testing.T) {
 	})
 
 	t.Run("valid-credentials", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		body := `{"name": "testuser", "password": "password123"}`
 
@@ -324,10 +313,12 @@ func TestHandleLoginUser(t *testing.T) {
 	})
 }
 
+// TestHandleLogoutUser tests the handleLogoutUser function for both no-session and valid-session
+// scenarios.
 func TestHandleLogoutUser(t *testing.T) {
 
 	t.Run("no-session", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 		w, c := newContext(t, "")
 
@@ -343,7 +334,7 @@ func TestHandleLogoutUser(t *testing.T) {
 	})
 
 	t.Run("valid-session", func(t *testing.T) {
-		api := newAPI()
+		api := newAPI(t)
 		defer api.db.Close()
 
 		s := Session{
