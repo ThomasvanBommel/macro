@@ -216,60 +216,78 @@ func (a *API) handleLogoutUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User logged out and session cleared successfully"})
 }
 
-// scaleFoodForResponse converts fixed-point nutrition values back to response units.
-func scaleFoodForResponse(f *Food) {
-	f.Calories /= 100
-	f.Carbs /= 100
-	f.Protein /= 100
-	f.Fat /= 100
-	f.ServingCount /= 100
-}
-
-// scaleFoodForStorage converts nutrition values to fixed-point for storage.
-func scaleFoodForStorage(f *Food) {
-	f.Calories *= 100
-	f.Carbs *= 100
-	f.Protein *= 100
-	f.Fat *= 100
-	f.ServingCount *= 100
-}
-
-// scaleEntryWithFoodForResponse scales embedded food fields and serving amount.
-func scaleEntryWithFoodForResponse(e *EntryWithFood) {
-	scaleFoodForResponse(&e.Food)
-	e.Servings /= 100
-}
-
-// scaleEntryWithFoodForStorage scales embedded food fields and serving amount for storage.
-func scaleEntryWithFoodForStorage(e *EntryWithFood) {
-	scaleFoodForStorage(&e.Food)
-	e.Servings *= 100
-}
-
-// jsonNumberToFloat32 safely converts a JSON number to float32, returning 0 on error.
-func jsonNumberToFloat32(n json.Number) float32 {
-	f, err := n.Float64()
-	if err != nil {
-		return 0
-	}
-	return float32(f)
-}
-
+// roundToTwoDecimalPlaces rounds a float to two decimal places.
 func roundToTwoDecimalPlaces(f float64) float64 {
 	return math.Round(f*100) / 100
 }
 
+// scaleForClient converts an integer DB value to a float for client responses.
 func scaleForClient(n int) float64 {
 	return roundToTwoDecimalPlaces(float64(n) / 100)
 }
 
-func scaleForDB(n json.Number) int {
+// scaleForStorage converts a JSON number to an integer for DB storage.
+func scaleForStorage(n json.Number) int {
 	f, err := n.Float64()
 	if err != nil {
 		return 0
 	}
 
 	return int(roundToTwoDecimalPlaces(f) * 100)
+}
+
+// toCreateEntryParams converts a CreateEntryInput to CreateEntryParams, applying necessary scaling.
+func toCreateEntryParams(in *CreateEntryInput) CreateEntryParams {
+	return CreateEntryParams{
+		FoodId:   *in.FoodId,
+		MealName: in.MealName,
+		Date:     in.Date,
+		Servings: scaleForStorage(in.Servings),
+	}
+}
+
+// toFoodResponse converts a Food DB record to a FoodResponse for API responses.
+func toFoodResponse(f *Food) FoodResponse {
+	return FoodResponse{
+		ID:           f.ID,
+		Name:         f.Name,
+		Brand:        f.Brand,
+		Created:      f.Created,
+		UserName:     f.UserName,
+		Calories:     scaleForClient(f.Calories),
+		Carbs:        scaleForClient(f.Carbs),
+		Protein:      scaleForClient(f.Protein),
+		Fat:          scaleForClient(f.Fat),
+		ServingSize:  f.ServingSize,
+		ServingCount: scaleForClient(f.ServingCount),
+	}
+}
+
+// toEntryWithFoodResponse converts an EntryWithFood DB record to an EntryWithFoodResponse
+func toEntryWithFoodResponse(e *EntryWithFood) EntryWithFoodResponse {
+	return EntryWithFoodResponse{
+		ID:       e.ID,
+		UserName: e.UserName,
+		Food:     toFoodResponse(&e.Food),
+		MealName: e.MealName,
+		Date:     e.Date,
+		Servings: scaleForClient(e.Servings),
+		Created:  e.Created,
+	}
+}
+
+// toCreateFoodParams converts a CreateFoodInput to CreateFoodParams, applying necessary scaling.
+func toCreateFoodParams(in *CreateFoodInput) CreateFoodParams {
+	return CreateFoodParams{
+		Name:         in.Name,
+		Brand:        in.Brand,
+		Calories:     scaleForStorage(in.Calories),
+		Carbs:        scaleForStorage(in.Carbs),
+		Protein:      scaleForStorage(in.Protein),
+		Fat:          scaleForStorage(in.Fat),
+		ServingSize:  in.ServingSize,
+		ServingCount: scaleForStorage(in.ServingCount),
+	}
 }
 
 // handleCreateEntry creates a food entry for the authenticated user.
@@ -283,17 +301,12 @@ func (a *API) handleCreateEntry(c *gin.Context) {
 
 	t, exists := getSessionToken(c)
 	if !exists {
+		c.Set("error", "No active session")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	p := CreateEntryParams{
-		FoodId:   *in.FoodId,
-		MealName: in.MealName,
-		Date:     in.Date,
-		Servings: int(jsonNumberToFloat32(in.Servings) * 100),
-	}
-
+	p := toCreateEntryParams(&in)
 	if p.Servings < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Servings must be greater than 0"})
 		return
@@ -302,34 +315,22 @@ func (a *API) handleCreateEntry(c *gin.Context) {
 	e, err := a.db.createEntryByToken(p, t)
 	if err != nil {
 		c.Set("error", err.Error())
+
+		if strings.Contains(err.Error(), "NOT NULL constraint failed: entry.user_name") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		if strings.Contains(err.Error(), "no rows in result set") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid food ID"})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create entry"})
 		return
 	}
 
-	f := FoodResponse{
-		ID:           e.Food.ID,
-		Name:         e.Food.Name,
-		Brand:        e.Food.Brand,
-		Created:      e.Food.Created,
-		UserName:     e.Food.UserName,
-		Calories:     scaleForClient(e.Food.Calories),
-		Carbs:        scaleForClient(e.Food.Carbs),
-		Protein:      scaleForClient(e.Food.Protein),
-		Fat:          scaleForClient(e.Food.Fat),
-		ServingSize:  e.Food.ServingSize,
-		ServingCount: scaleForClient(e.Food.ServingCount),
-	}
-
-	r := EntryWithFoodResponse{
-		ID:       e.ID,
-		UserName: e.UserName,
-		Food:     f,
-		MealName: e.MealName,
-		Date:     e.Date,
-		Servings: scaleForClient(e.Servings),
-		Created:  e.Created,
-	}
-
+	r := toEntryWithFoodResponse(e)
 	c.JSON(http.StatusOK, r)
 }
 
@@ -350,31 +351,8 @@ func (a *API) handleListUserEntries(c *gin.Context) {
 	}
 
 	r := make([]EntryWithFoodResponse, len(res))
-
 	for i := range res {
-		f := FoodResponse{
-			ID:           res[i].Food.ID,
-			Name:         res[i].Food.Name,
-			Brand:        res[i].Food.Brand,
-			Created:      res[i].Food.Created,
-			UserName:     res[i].Food.UserName,
-			Calories:     scaleForClient(res[i].Food.Calories),
-			Carbs:        scaleForClient(res[i].Food.Carbs),
-			Protein:      scaleForClient(res[i].Food.Protein),
-			Fat:          scaleForClient(res[i].Food.Fat),
-			ServingSize:  res[i].Food.ServingSize,
-			ServingCount: scaleForClient(res[i].Food.ServingCount),
-		}
-
-		r[i] = EntryWithFoodResponse{
-			ID:       res[i].ID,
-			UserName: res[i].UserName,
-			Food:     f,
-			MealName: res[i].MealName,
-			Date:     res[i].Date,
-			Servings: scaleForClient(res[i].Servings),
-			Created:  res[i].Created,
-		}
+		r[i] = toEntryWithFoodResponse(&res[i])
 	}
 
 	c.JSON(http.StatusOK, r)
@@ -395,17 +373,7 @@ func (a *API) handleCreateFood(c *gin.Context) {
 		return
 	}
 
-	p := CreateFoodParams{
-		Name:         in.Name,
-		Brand:        in.Brand,
-		Calories:     scaleForDB(in.Calories),
-		Carbs:        scaleForDB(in.Carbs),
-		Protein:      scaleForDB(in.Protein),
-		Fat:          scaleForDB(in.Fat),
-		ServingSize:  in.ServingSize,
-		ServingCount: scaleForDB(in.ServingCount),
-	}
-
+	p := toCreateFoodParams(&in)
 	if p.ServingCount < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Serving count must be greater than 0"})
 		return
@@ -420,25 +388,17 @@ func (a *API) handleCreateFood(c *gin.Context) {
 	f, err := a.db.createFoodByToken(p, t)
 	if err != nil {
 		c.Set("error", err.Error())
+
+		if strings.Contains(err.Error(), "NOT NULL constraint failed: food.user_name") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create food"})
 		return
 	}
 
-	res := FoodResponse{
-		ID:           f.ID,
-		Name:         f.Name,
-		Brand:        f.Brand,
-		Created:      f.Created,
-		UserName:     f.UserName,
-		Calories:     scaleForClient(f.Calories),
-		Carbs:        scaleForClient(f.Carbs),
-		Protein:      scaleForClient(f.Protein),
-		Fat:          scaleForClient(f.Fat),
-		ServingSize:  f.ServingSize,
-		ServingCount: scaleForClient(f.ServingCount),
-	}
-
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, toFoodResponse(f))
 }
 
 // handleListFoods returns all foods.
@@ -455,19 +415,7 @@ func (a *API) handleListFoods(c *gin.Context) {
 	f := make([]FoodResponse, len(foods))
 
 	for i := range foods {
-		f[i] = FoodResponse{
-			ID:           foods[i].ID,
-			Name:         foods[i].Name,
-			Brand:        foods[i].Brand,
-			Created:      foods[i].Created,
-			UserName:     foods[i].UserName,
-			Calories:     scaleForClient(foods[i].Calories),
-			Carbs:        scaleForClient(foods[i].Carbs),
-			Protein:      scaleForClient(foods[i].Protein),
-			Fat:          scaleForClient(foods[i].Fat),
-			ServingSize:  foods[i].ServingSize,
-			ServingCount: scaleForClient(foods[i].ServingCount),
-		}
+		f[i] = toFoodResponse(&foods[i])
 	}
 
 	c.JSON(http.StatusOK, f)

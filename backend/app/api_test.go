@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -348,6 +349,327 @@ func TestHandleLogoutUser(t *testing.T) {
 		api.handleLogoutUser(c)
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected status %d for valid session, got %d", http.StatusOK, w.Code)
+		}
+	})
+}
+
+// TestHandleCreateEntry tests the handleCreateEntry function for various scenarios
+func TestHandleCreateEntry(t *testing.T) {
+	api := newAPI(t)
+	defer api.db.Close()
+
+	// test user & session
+	api.db.createUser("testuser", "password123")
+	s, _ := api.db.createSession("testuser")
+
+	// test food
+	f, _ := api.db.createFoodByToken(
+		CreateFoodParams{
+			Name:         "Test Food",
+			Brand:        "Test Brand",
+			Calories:     100,
+			Carbs:        10,
+			Protein:      5,
+			Fat:          2,
+			ServingSize:  "g",
+			ServingCount: 1,
+		}, s.Token)
+
+	t.Run("unauthorized", func(t *testing.T) {
+		body := `{"food_id": 1, "meal_name": "Lunch", "date": "1901-01-01", "servings": 1}`
+		w, c := newContext(t, body)
+
+		api.handleCreateEntry(c)
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d for unauthorized request, got %d", http.StatusUnauthorized,
+				w.Code)
+		}
+	})
+
+	t.Run("invalid-servings", func(t *testing.T) {
+		body := `{"food_id": 1, "meal_name": "Lunch", "date": "1901-01-01", "servings": 0}`
+		w, c := newContext(t, body)
+		initSession(s, c)
+
+		api.handleCreateEntry(c)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d for invalid servings, got %d", http.StatusBadRequest,
+				w.Code)
+		}
+	})
+
+	t.Run("invalid-session", func(t *testing.T) {
+		s := Session{
+			UserName: "testuser",
+			Token:    "invalidtoken",
+		}
+
+		body := `{"food_id": 1, "meal_name": "Lunch", "date": "1901-01-01", "servings": 1}`
+		w, c := newContext(t, body)
+		initSession(&s, c)
+
+		api.handleCreateEntry(c)
+		if w.Code != http.StatusUnauthorized {
+			t.Error(c.Get("error"))
+			t.Errorf("Expected status %d for invalid session, got %d", http.StatusUnauthorized,
+				w.Code)
+		}
+	})
+
+	t.Run("invalid-food-id", func(t *testing.T) {
+		body := `{"food_id": 99999, "meal_name": "Lunch", "date": "1901-01-01", "servings": 1}`
+		w, c := newContext(t, body)
+		api.createSession("testuser", c)
+
+		api.handleCreateEntry(c)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d for invalid food id, got %d", http.StatusBadRequest,
+				w.Code)
+		}
+	})
+
+	t.Run("valid", func(t *testing.T) {
+		body := `{"food_id": ` + strconv.Itoa(f.ID) + `, "meal_name": "Lunch", "date": ` +
+			`"1901-01-01", "servings": "1"}`
+		w, c := newContext(t, body)
+		api.createSession("testuser", c)
+
+		api.handleCreateEntry(c)
+		if w.Code != http.StatusOK {
+			t.Error(c.Get("error"))
+			t.Errorf("Expected status %d for valid request, got %d", http.StatusOK, w.Code)
+		}
+	})
+}
+
+// TestHandleListUserEntries tests the handleListUserEntries function for various user and entry
+// scenarios.
+func TestHandleListUserEntries(t *testing.T) {
+	api := newAPI(t)
+	defer api.db.Close()
+
+	// test user & session
+	api.db.createUser("testuser", "password123")
+	s, _ := api.db.createSession("testuser")
+
+	// test food
+	f, _ := api.db.createFoodByToken(
+		CreateFoodParams{
+			Name:         "Test Food",
+			Brand:        "Test Brand",
+			Calories:     100,
+			Carbs:        10,
+			Protein:      5,
+			Fat:          2,
+			ServingSize:  "g",
+			ServingCount: 1,
+		}, s.Token)
+
+	t.Run("invalid-user", func(t *testing.T) {
+		body := `{"name": "billybobbyjoetthorton","date": "1901-01-01"}`
+		w, c := newContext(t, body)
+
+		api.handleListUserEntries(c)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d for invalid user request, got %d", http.StatusOK, w.Code)
+		}
+
+		var entries []EntryWithFoodResponse
+		err := json.Unmarshal(w.Body.Bytes(), &entries)
+		if err != nil {
+			t.Errorf("Failed to parse response body: %v", err)
+		}
+
+		if len(entries) != 0 {
+			t.Errorf("Expected 0 entries for new user, got %d", len(entries))
+		}
+	})
+
+	t.Run("valid-user-no-entries", func(t *testing.T) {
+		body := `{"name": "testuser","date": "1901-01-01"}`
+		w, c := newContext(t, body)
+
+		api.handleListUserEntries(c)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d for valid user request, got %d", http.StatusOK, w.Code)
+		}
+
+		var entries []EntryWithFoodResponse
+		err := json.Unmarshal(w.Body.Bytes(), &entries)
+		if err != nil {
+			t.Errorf("Failed to parse response body: %v", err)
+		}
+
+		if len(entries) != 0 {
+			t.Errorf("Expected 0 entries for new user, got %d", len(entries))
+		}
+	})
+
+	t.Run("valid-user-with-entries", func(t *testing.T) {
+		for i := 0; i < 3; i++ {
+			api.db.createEntryByToken(CreateEntryParams{
+				FoodId:   f.ID,
+				MealName: "Breakfast",
+				Date:     "1901-01-01",
+				Servings: 1,
+			}, s.Token)
+		}
+
+		body := `{"name": "testuser","date": "1901-01-01"}`
+		w, c := newContext(t, body)
+
+		api.handleListUserEntries(c)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d for valid user request, got %d", http.StatusOK, w.Code)
+		}
+
+		var entries []EntryWithFoodResponse
+		err := json.Unmarshal(w.Body.Bytes(), &entries)
+		if err != nil {
+			t.Errorf("Failed to parse response body: %v", err)
+		}
+
+		if len(entries) != 3 {
+			t.Errorf("Expected 3 entries for user, got %d", len(entries))
+		}
+	})
+}
+
+// TestHandleCreateFood tests the handleCreateFood function for various scenarios
+func TestHandleCreateFood(t *testing.T) {
+	api := newAPI(t)
+	defer api.db.Close()
+
+	// test user & session
+	api.db.createUser("testuser", "password123")
+	s, _ := api.db.createSession("testuser")
+
+	t.Run("unauthorized", func(t *testing.T) {
+		body := `{"name": "Test Food", "brand": "Test Brand", "calories": "100", "carbs": "10", ` +
+			`"protein": "5", "fat": "2", "serving_size": "g", "serving_count": "1"}`
+		w, c := newContext(t, body)
+
+		api.handleCreateFood(c)
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("Expected status %d for unauthorized request, got %d", http.StatusUnauthorized,
+				w.Code)
+		}
+	})
+
+	t.Run("invalid-serving-count", func(t *testing.T) {
+		body := `{"name": "Test Food", "brand": "Test Brand", "calories": "100", "carbs": "10", ` +
+			`"protein": "5", "fat": "2", "serving_size": "g", "serving_count": "0"}`
+		w, c := newContext(t, body)
+		initSession(s, c)
+
+		api.handleCreateFood(c)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d for invalid serving count, got %d", http.StatusBadRequest,
+				w.Code)
+		}
+	})
+
+	t.Run("negative-macros", func(t *testing.T) {
+		body := `{"name": "Test Food", "brand": "Test Brand", "calories": "-100", "carbs": "-10", ` +
+			`"protein": "-5", "fat": "-2", "serving_size": "g", "serving_count": "1"}`
+		w, c := newContext(t, body)
+		initSession(s, c)
+
+		api.handleCreateFood(c)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Expected status %d for negative macros, got %d", http.StatusBadRequest,
+				w.Code)
+		}
+	})
+
+	t.Run("invalid-token", func(t *testing.T) {
+		s := Session{
+			UserName: "testuser",
+			Token:    "invalidtoken",
+		}
+
+		body := `{"name": "Test Food", "brand": "Test Brand", "calories": "100", "carbs": "10", ` +
+			`"protein": "5", "fat": "2", "serving_size": "g", "serving_count": "1"}`
+		w, c := newContext(t, body)
+		initSession(&s, c)
+
+		api.handleCreateFood(c)
+		if w.Code != http.StatusUnauthorized {
+			t.Error(c.Get("error"))
+			t.Errorf("Expected status %d for invalid session token, got %d", http.StatusUnauthorized,
+				w.Code)
+		}
+	})
+
+	t.Run("valid", func(t *testing.T) {
+		body := `{"name": "Test Food", "brand": "Test Brand", "calories": "100", "carbs": "10", ` +
+			`"protein": "5", "fat": "2", "serving_size": "g", "serving_count": "1"}`
+		w, c := newContext(t, body)
+		initSession(s, c)
+
+		api.handleCreateFood(c)
+		if w.Code != http.StatusOK {
+			t.Error(c.Get("error"))
+			t.Errorf("Expected status %d for valid request, got %d", http.StatusOK, w.Code)
+		}
+	})
+}
+
+func TestHandleListFoods(t *testing.T) {
+	api := newAPI(t)
+	defer api.db.Close()
+
+	// test user & session
+	api.db.createUser("testuser", "password123")
+	s, _ := api.db.createSession("testuser")
+
+	t.Run("no-foods", func(t *testing.T) {
+		w, c := newContext(t, "")
+		api.handleListFoods(c)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d for no foods, got %d", http.StatusOK, w.Code)
+		}
+
+		var foods []FoodResponse
+		err := json.Unmarshal(w.Body.Bytes(), &foods)
+		if err != nil {
+			t.Errorf("Failed to parse response body: %v", err)
+		}
+
+		if len(foods) != 0 {
+			t.Errorf("Expected 0 foods, got %d", len(foods))
+		}
+	})
+
+	// test foods
+	for i := 1; i <= 47; i++ {
+		api.db.createFoodByToken(CreateFoodParams{
+			Name:         "Test Food " + strconv.Itoa(i),
+			Brand:        "Test Brand",
+			Calories:     100 * i,
+			Carbs:        10 * i,
+			Protein:      5 * i,
+			Fat:          2 * i,
+			ServingSize:  "g",
+			ServingCount: 1,
+		}, s.Token)
+	}
+
+	t.Run("with-foods", func(t *testing.T) {
+		w, c := newContext(t, "")
+		api.handleListFoods(c)
+		if w.Code != http.StatusOK {
+			t.Errorf("Expected status %d for foods, got %d", http.StatusOK, w.Code)
+		}
+
+		var foods []FoodResponse
+		err := json.Unmarshal(w.Body.Bytes(), &foods)
+		if err != nil {
+			t.Errorf("Failed to parse response body: %v", err)
+		}
+
+		if len(foods) != 47 {
+			t.Errorf("Expected 47 foods, got %d", len(foods))
 		}
 	})
 }
