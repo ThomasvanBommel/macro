@@ -76,6 +76,10 @@ function App() {
 function Root() {
     const notifications = useNotifications();
 
+    useEffect(() => {
+        document.title = "macro";
+    }, []);
+
     return (
         <NotificationContext value={ notifications }>
             <App />
