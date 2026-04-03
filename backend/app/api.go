@@ -56,6 +56,10 @@ func (a *API) registerAPIRoutes(r *gin.Engine) {
 	api.POST("/foods", a.handleListFoods)
 	api.POST("/entry", a.handleCreateEntry)
 	api.POST("/entries", a.handleListUserEntries)
+
+	api.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, nil)
+	})
 }
 
 // bindInput binds and validates a JSON body; on failure it writes 400 and returns false.

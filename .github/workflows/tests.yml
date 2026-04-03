@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  backend tests:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -13,3 +13,25 @@ jobs:
       
       - name: Build and run backend tests
         run: docker compose run --rm test
+  
+  fullstack tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build image
+        run: docker build --target distroless -t fullstack:${{ github.sha }} .
+
+      - name: Start
+        run: docker run --detach --rm -p 8080:8080 --name fullstack fullstack:${{ github.sha }}
+
+      - name: Health check
+        run: curl --retry 10 \
+                  --retry-delay 1 \
+                  --retry-all-errors \
+                  --fail http://localhost:8080/api/health
+      
+      - name: Cleanup
+        if: always()
+        run: docker rm -f fullstack
