@@ -17,10 +17,6 @@ help:
 	@echo "    build-image    Build the Docker image for production"
 	@echo "    push-image     Push the Docker image to Docker Hub"
 	@echo ""
-	@echo "  Git:"
-	@echo "    add            Stage all changes for commit"
-	@echo "    commit         Commit staged changes with a message"
-	@echo ""
 	@echo "  Helpers:"
 	@echo "    golang         Start a Golang shell with the backend code mounted"
 	@echo "    npm            Start a Node.js shell with the frontend code mounted"
@@ -59,16 +55,6 @@ build-image:
 
 push-image: build-image
 	docker push cekeh/macro:latest
-
-
-## Git
-
-add:
-	git add -A
-	git status
-
-commit: add
-	@read -p "Enter commit message: " msg && git commit -m "$$msg"
 
 
 ## Helpers
