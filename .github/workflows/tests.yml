@@ -18,12 +18,19 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Pred data directory
+        run: mkdir -p backend/data
       
       - name: Build image
         run: docker build --target distroless -t fullstack:${{ github.sha }} .
 
-      - name: Start
-        run: docker run --detach --rm -p 8080:8080 --name fullstack fullstack:${{ github.sha }}
+      - name: Health check
+        run: |
+          docker run --detach --rm -p 8080:8080 \
+            -v ${{ github.workspace }}/backend/data:/data \
+            -e SESSION_SECRET=ci_only_secret \
+            --name fullstack fullstack:${{ github.sha }}
 
       - name: Health check
         run: |
