@@ -156,7 +156,7 @@ func (a *API) handleRegisterUser(c *gin.Context) {
 		c.Set("error", err.Error())
 
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Username already exists"})
+			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
 		}

@@ -3,7 +3,7 @@
 ## Current Sprint (Hiring Signal First)
 
 ### 1) Quality Baseline
-- [ ] add backend tests for auth/session flow
+- [x] add backend tests for auth/session flow
 - [ ] add backend tests for entry creation/read flow
 - [ ] add frontend tests for API helpers and at least 1-2 core UI flows
 
