@@ -67,6 +67,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Build and push image
+        id: build_and_push
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -85,7 +86,7 @@ jobs:
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
       GCP_REGION: ${{ vars.GCP_REGION }}
       CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
-      IMAGE_REPO: cekeh/macro
+      IMAGE_REPO: docker.io/cekeh/macro
     steps:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
