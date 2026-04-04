@@ -53,6 +53,8 @@ function App() {
         <BrowserRouter>
         <SessionContext value={ session }>
             <Header />
+            <hr />
+            <NotificationArea />
 
             <Routes>
                 <Route index element={ <Home /> } />
@@ -67,7 +69,6 @@ function App() {
                 </Route>
             </Routes>
 
-            <NotificationArea />
         </SessionContext>
         </BrowserRouter>
     )

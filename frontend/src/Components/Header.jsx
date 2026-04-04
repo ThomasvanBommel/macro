@@ -1,7 +1,7 @@
-import { NavLink, Link, useNavigate } from 'react-router';
+import { NavLink, Link } from 'react-router';
 import { useContext } from 'react';
 
-import { SessionContext, NotificationContext } from '../Context';
+import { SessionContext } from '../Context';
 import { SessionTimer } from '../Components';
 
 // Header component, shown on all pages. Displays different links based on session state.
@@ -18,11 +18,16 @@ export default function Header() {
         whiteSpace: "nowrap"
     };
 
+    const disableLinkStyle = {
+        pointerEvents: "none",
+        opacity: 0.5,
+    };
+
     return (
-        <>
         <header style={{ display: 'flex', alignItems: 'center' }}>
             <h1 style={{ flex: "1 0", margin: 0 }}>macro</h1>
-            <nav style={{ display: 'flex', gap: '1rem' }}>
+            <nav style={{ display: 'flex', gap: '1rem', 
+                ...(session.changingState ? disableLinkStyle : {}) }}>
                 <NavLink to="/">Home</NavLink>
                 { session.isValid() ? 
                     <>
@@ -41,15 +46,5 @@ export default function Header() {
                     </>}
             </nav>
         </header>
-
-        <hr />
-
-        <div className="warning-box" style={{ display: "flex" }}>
-            <div style={{ marginRight: "0.5rem" }}>⚠️</div>
-            <span>
-                This is a development version of the app. It's subject to extreme change. 
-            </span>
-        </div>
-        </>
-    )
+    );
 }

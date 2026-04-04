@@ -8,13 +8,11 @@ export default function Profile() {
     const [date, setDate] = useState(DateString.today());
     const session = useContext(SessionContext);
 
+    if (session.changingState)
+        return <article aria-busy="true"></article>;
+
     return (
         <>  
-            <div>
-                <h2>Profile Page</h2>
-                <p>Welcome to your profile, {session?.username}!</p>
-            </div>
-
             <div style={{ display: "grid", placeItems: "center" }}>
                 <DateSelector date={ date } setDate={ setDate } />
             </div>

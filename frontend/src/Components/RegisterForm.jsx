@@ -1,10 +1,12 @@
-import { useContext } from 'react';
+import { useState, useContext } from 'react';
 
 import { handleRegisterUser, handleLoginUser } from '../api'
 import { NotificationContext, SessionContext } from '../Context';
 
-//
+// Renders a registration form and handles submission.
 export default function RegisterForm() {
+    const [loading, setLoading] = useState(false);
+
     const notifications = useContext(NotificationContext);
     const session = useContext(SessionContext);
 
@@ -15,6 +17,7 @@ export default function RegisterForm() {
         const name = form.get('name');
         const password = form.get('password');
 
+        setLoading(true);
         handleRegisterUser(name, password)
             .then(() => handleLoginUser(name, password))
             .then(session.refresh)
@@ -22,7 +25,8 @@ export default function RegisterForm() {
                 heading: "Registration failed",
                 details: error.message,
                 type: "error"
-            }));
+            }))
+            .finally(() => setLoading(false));
     }
 
     const handlePasswordChange = e => {
@@ -38,21 +42,35 @@ export default function RegisterForm() {
         target.form.submit.disabled = p1.value !== p2.value;
     }
 
+    if (session.changingState)
+        return null;
+
     return (
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} style={{ maxWidth: "40rem", margin: "0 auto" }}>
             <label>
                 Username:
                 <input type="text" name="name" required />
             </label>
             <label>
                 Password:
-                <input type="password" name="password" onChange={handlePasswordChange} required />
+                <input type="password" 
+                       name="password" 
+                       onChange={handlePasswordChange} 
+                       autoComplete="new-password"
+                       required />
             </label>
             <label>
                 Confirm :
-                <input type="password" name="confirm" onChange={handlePasswordChange} required />
+                <input type="password" 
+                       name="confirm" 
+                       onChange={handlePasswordChange} 
+                       autoComplete="new-password"
+                       required />
             </label>
-            <input type="submit" name="submit" value="Register" disabled />
+            {  loading ? 
+                <div role="button" aria-busy="true" disabled>Registering...</div> : 
+                <input type="submit" name="submit" value="Register" disabled={loading} />
+            }
         </form>
     );
 }

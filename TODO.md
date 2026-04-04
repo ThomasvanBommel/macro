@@ -9,7 +9,7 @@
 
 ### 2) User-Facing Reliability
 - [x] replace alert() usage with a reusable notification system
-- [ ] centralize API error mapping to user-friendly messages
+- [x] centralize API error mapping to user-friendly messages
 
 ### 3) Core Product Completeness
 - [ ] add ability to remove diary entries
@@ -36,7 +36,7 @@
 - [ ] create administration area
 
 ### Delivery
-- [ ] automate deployment pipeline
+- [x] automate deployment pipeline
 
 ## Documentation
 
