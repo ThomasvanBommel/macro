@@ -42,3 +42,6 @@
 
 - [x] README includes /app/data persistence note
 - [ ] add a short Architecture Decision Notes section in README
+
+
+- github-like year at a glance view
