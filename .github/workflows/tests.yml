@@ -87,6 +87,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: macro
+          path: /tmp/macro
 
       - name: Build and push image
         id: build_and_push
@@ -96,7 +97,7 @@ jobs:
           tags: cekeh/macro:latest
           file: |
             FROM gcr.io/distroless/static-debian12:latest
-            COPY macro /macro
+            COPY /tmp/macro /macro
             ENV GIN_MODE=release PORT=8080
             EXPOSE 8080
             CMD ["/macro"]
