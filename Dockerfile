@@ -42,7 +42,7 @@ RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 # production
 FROM gcr.io/distroless/static-debian12:latest AS production
-COPY ./backend/macro /macro
+COPY ./macro /macro
 ENV GIN_MODE=release PORT=8080
 EXPOSE 8080
 CMD ["/macro"]
