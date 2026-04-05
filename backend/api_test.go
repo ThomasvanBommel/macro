@@ -19,6 +19,14 @@ import (
 //go:embed migrations/*.sql
 var testMigrationFiles embed.FS
 
+// init disables Gin and Goose logging for cleaner test output.
+func init() {
+	gin.SetMode(gin.TestMode)
+	gin.DefaultWriter = nil
+
+	goose.SetLogger(goose.NopLogger())
+}
+
 // newAPI creates a new API instance with an in-memory database for testing.
 func newAPI(t *testing.T) *API {
 	t.Helper()

@@ -1,41 +1,16 @@
-# fronend
-FROM node:24-alpine AS frontend-builder
-WORKDIR /app
+# frontend
+FROM node:24-alpine AS frontend
+WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm install
-COPY frontend/ ./
+COPY frontend/ .
 RUN npm run build
 
 # backend
-FROM golang:1.26-alpine AS backend-builder
-WORKDIR /app
-RUN go env -w GOCACHE=/go-cache
-RUN go env -w GOMODCACHE=/go-mod-cache
-COPY backend/app/go.mod backend/app/go.sum ./
-RUN --mount=type=cache,target=/go-mod-cache go mod download
-COPY backend/app/ ./
-COPY --from=frontend-builder /app/build ./frontend/build
-RUN --mount=type=cache,target=/go-cache \
-    --mount=type=cache,target=/go-mod-cache \
-    CGO_ENABLED=0 \
-    GOOS=linux \
-    go build \
-    -ldflags="-s -w" \
-    -tags='no_postgres no_clickhouse no_mssql no_mysql prod' \
-    -o macro .
-
-# fullstack (production)
-FROM gcr.io/distroless/static-debian12:latest AS distroless
-COPY --from=backend-builder /app/macro .
-ENV GIN_MODE=release PORT=8080
-EXPOSE 8080
-CMD ["/macro"]
-
-# backend dev
-FROM golang:1.26-alpine AS backend-dev
+FROM golang:1.26-alpine AS backend
 RUN go install github.com/air-verse/air@latest
-WORKDIR /app
-ENV PORT=8080
+WORKDIR /repo
+ENV PORT=8080 CGO_ENABLED=0 GOOS=linux
 CMD ["air"]
 
 # goose (migration tool)

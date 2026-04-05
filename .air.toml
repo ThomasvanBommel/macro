@@ -1,20 +1,18 @@
 #:schema https://json.schemastore.org/any.json
 
 env_files = []
-root = "."
+root = "./backend"
 testdata_dir = "testdata"
 tmp_dir = "/tmp"
 
 [build]
-  cmd = "CGO_ENABLED=0 \
-         GOOS=linux \
-         go build \
+  cmd = "cd backend && go build \
          -ldflags='-s -w' \
          -tags='no_postgres no_clickhouse no_mssql no_mysql' \
          -o /macro"
   delay = 500
   entrypoint = ["/macro"]
-  exclude_dir = ["frontend", "data"]
+  exclude_dir = ["data"]
   exclude_file = []
   exclude_regex = []
   exclude_unchanged = true

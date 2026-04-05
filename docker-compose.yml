@@ -1,21 +1,11 @@
 services:
-  fullstack:
-    build:
-      context: .
-      target: distroless
-    volumes:
-      - ./backend/data:/data
-    ports:
-      - "8080:8080"
-    environment:
-      - SESSION_SECRET=this_is_dev_only
 
   backend:
     build:
       context: .
-      target: backend-dev
+      target: backend
     volumes:
-      - ./backend/app:/app
+      - .:/repo
       - ./backend/data:/data
       - go-cache:/go/pkg/mod
       - go-build:/root/.cache/go-build
@@ -29,44 +19,31 @@ services:
   frontend:
     build:
       context: .
-      target: frontend-builder
+      target: frontend
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/index.html:/app/index.html
-      - ./frontend/vite.config.js:/app/vite.config.js
-      - ./frontend/package.json:/app/package.json
+      - ./frontend/src:/frontend/src
+      - ./frontend/public:/frontend/public
+      - ./frontend/index.html:/frontend/index.html
+      - ./frontend/vite.config.js:/frontend/vite.config.js
+      - ./frontend/package.json:/frontend/package.json
+      - ./frontend/package-lock.json:/frontend/package-lock.json
     environment:
       - DEVMODE=true
     ports:
       - "5173:5173"
     command: npm run dev -- --host
   
-  test:
-    build:
-      context: .
-      target: backend-dev
-    volumes:
-      - ./backend/app:/app
-      - go-cache:/go/pkg/mod
-      - go-build:/root/.cache/go-build
-    environment:
-      - SESSION_SECRET=this_is_dev_only
-      - GOMODCACHE=/go/pkg/mod
-      - GOCACHE=/root/.cache/go-build
-    command: go test -v ./...
-  
   goose:
     build:
       context: .
       target: goose
+    working_dir: /backend
     volumes:
-      - ./backend:/app
+      - ./backend:/backend
     environment:
       - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=/app/data/macro.db
-      - GOOSE_MIGRATION_DIR=/app/migrations
-    working_dir: /app
+      - GOOSE_DBSTRING=/backend/data/macro.db
+      - GOOSE_MIGRATION_DIR=/backend/migrations
 
 volumes:
   go-cache:
