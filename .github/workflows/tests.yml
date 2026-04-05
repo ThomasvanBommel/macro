@@ -74,20 +74,19 @@ jobs:
     # outputs:
       # image_digest:
     steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v4
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v4
 
       - name: Download build artifact
         uses: actions/download-artifact@v8
         with:
           name: macro
-          path: /tmp/macro
 
       - name: Build and push image
         id: build_and_push
@@ -97,7 +96,7 @@ jobs:
           tags: cekeh/macro:latest
           file: |
             FROM gcr.io/distroless/static-debian12:latest
-            COPY /tmp/macro /macro
+            COPY macro /macro
             ENV GIN_MODE=release PORT=8080
             EXPOSE 8080
             CMD ["/macro"]
