@@ -7,8 +7,8 @@ on:
 
 jobs:
 
-  # this will likely break in the future as I removed the setup steps for node and go for speed, 
-  # but it should be fine for now since the build and test steps are cached
+  # this will likely break in the future as I removed the setup steps for node and go for speed
+  # when it breaks, just add the setup steps or update to the latest versions of node and go
   mono-build:
     runs-on: ubuntu-latest
     env:
@@ -71,6 +71,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: mono-build
+    if: github.ref == 'refs/heads/main'
     outputs:
       image_digest: ${{ steps.build_and_push.outputs.digest }}
     steps:
