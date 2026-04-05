@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
-      - run: go test -v ./...
+      - run: cd backend && go test -v ./...
 
   frontend-build:
     runs-on: ubuntu-latest
