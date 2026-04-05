@@ -54,7 +54,7 @@ services:
       - SESSION_SECRET=this_is_dev_only
       - GOMODCACHE=/go/pkg/mod
       - GOCACHE=/root/.cache/go-build
-    command: go test -v ./...
+    command: sh -c "cd backend && go test -v ./..."
   
   goose:
     build:
