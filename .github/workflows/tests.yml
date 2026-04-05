@@ -32,6 +32,13 @@ jobs:
         with:
           go-version-file: 'backend/go.mod'
           cache-dependency-path: 'backend/go.sum'
+      - id: go-cache-paths
+        run: echo "go-cache=/go/pkg/mod\ngo-build=/root/.cache/go-build" >> $GITHUB_ENV
+      - uses: actions/cache@v5
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-cache }}\n${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-cache-${{ hashFiles('backend/go.sum') }}
+          restore-keys: ${{ runner.os }}-go-cache-
       - run: cd backend && go test -v ./...
       - run: |
           cd backend && go build -ldflags="-s -w" \
