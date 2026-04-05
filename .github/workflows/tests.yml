@@ -14,37 +14,36 @@ jobs:
       GIN_MODE: release
     steps:
       - uses: actions/checkout@v6
-      # - uses: actions/setup-node@v6
-      #   with:
-      #     node-version-file: 'frontend/package.json'
-      #     cache-dependency-path: 'frontend/package-lock.json'
-      #     cache: 'npm'
-      - id: cache-npm
+      - name: Cache npm dependencies
+        id: cache-npm
         uses: actions/cache@v5
         with:
           path: 'frontend/node_modules'
           key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
-      - if: steps.cache-npm.outputs.cache-hit != 'true'
+      - name: Install npm dependencies (if missing cache)
+        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci --prefix frontend
-      - run: npm run build --prefix frontend
-      - run: mkdir -p backend/frontend && cp -r frontend/build backend/frontend/build
-      # - uses: actions/setup-go@v6
-      #   with:
-      #     go-version-file: 'backend/go.mod'
-      #     cache: false
-      - id: go-cache-paths
+      - name: Build frontend
+        run: npm run build --prefix frontend
+      - name: Copy frontend build to backend
+        run: mkdir -p backend/frontend && cp -r frontend/build backend/frontend/build
+      - name: Set Go cache paths
+        id: go-cache-paths
         run: |
           echo "go-build=$(go env GOCACHE)" >> $GITHUB_OUTPUT
           echo "go-mod=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v5
+      - name: Cache Go dependencies
+        uses: actions/cache@v5
         with:
           path: |
             ${{ steps.go-cache-paths.outputs.go-build }}
             ${{ steps.go-cache-paths.outputs.go-mod }}
           key: ${{ runner.os }}-go-cache-${{ hashFiles('backend/go.sum') }}
           restore-keys: ${{ runner.os }}-go-cache-
-      - run: cd backend && go test -v ./...
-      - run: |
+      - name: Run Go tests
+        run: cd backend && go test -v ./...
+      - name: Build Go application
+        run: |
           cd backend && go build -ldflags="-s -w" \
             -tags='no_postgres no_clickhouse no_mssql no_mysql prod' \
             -o macro .
