@@ -34,9 +34,9 @@ jobs:
           cache-dependency-path: 'backend/go.sum'
       - run: cd backend && go test -v ./...
       - run: |
-          go build -ldflags="-s -w" \
+          cd backend && go build -ldflags="-s -w" \
             -tags='no_postgres no_clickhouse no_mssql no_mysql prod' \
-            -o macro ./backend
+            -o macro .
 
   # frontend-build:
   #   runs-on: ubuntu-latest
