@@ -103,6 +103,9 @@ jobs:
       CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
       IMAGE_REPO: docker.io/cekeh/macro
       IMAGE_DIGEST: ${{ needs.publish.outputs.image_digest }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Login to Google Cloud
         uses: google-github-actions/auth@v3
