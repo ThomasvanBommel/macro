@@ -39,3 +39,9 @@ CMD ["air"]
 # goose (migration tool)
 FROM golang:1.26-alpine AS goose
 RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+
+# production
+FROM gcr.io/distroless/static-debian12:latest AS production
+ENV GIN_MODE=release PORT=8080
+EXPOSE 8080
+CMD ["/macro"]
