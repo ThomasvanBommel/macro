@@ -26,8 +26,8 @@ jobs:
           key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
       - if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci --prefix frontend
-      - run: BUILD_PATH=backend/frontend/build npm run build --prefix frontend
-
+      - run: npm run build --prefix frontend
+      - run: mkdir -p backend/frontend && cp -r frontend/build backend/frontend/build
       - uses: actions/setup-go@v6
         with:
           go-version-file: 'backend/go.mod'
