@@ -3,6 +3,7 @@ import { DateSelector, EntryList } from '../Components';
 import DateString from '../Classes/DateString';
 import { SessionContext } from '../Context';
 
+import { EntryModal } from '../Components/Modals';
 
 export default function Profile() {
     const [date, setDate] = useState(DateString.today());
@@ -18,6 +19,7 @@ export default function Profile() {
             </div>
 
             <EntryList username={ session?.username } date={ date } editable={ true } />
+            <EntryModal isOpen={ true } />
         </>
     )
 }

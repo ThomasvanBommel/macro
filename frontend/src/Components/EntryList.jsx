@@ -166,10 +166,13 @@ function EntryTable({ name, entries, updateEntries, editable, date }) {
  * @returns { JSX.Element } The rendered component
  */
 function EntryRow({ entry }) {
+    const [modalOpen, setModalOpen] = useState(false);
+
     return (
         <div style={{ display: "flex",
              justifyContent: "space-between",
-             alignItems: "center" }}>
+             alignItems: "center" }}
+             onClick={ () => setModalOpen(true) }>
             <div>
                 { entry.food.name }
                 <small style={{ opacity: 0.5, display: "flex", gap: "1ch" }} >
@@ -182,6 +185,10 @@ function EntryRow({ entry }) {
             <div>
                 <kbd>{ entry.food.serving_count * entry.servings } { entry.food.serving_size }</kbd>
             </div>
+            <CreateEntryModal key={ "entry-modal-" + entry.id }
+                              entry={ entry }
+                              isOpen={ modalOpen }
+                              onClose={ () => setModalOpen(false) } />
         </div>
     );
 }

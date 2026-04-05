@@ -4,11 +4,11 @@ import FindFoodModal from "./FindFoodModal";
 import { handleCreateEntry } from "../api";
 import { NotificationContext } from '../Context';
 
-export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, onSuccess }) {
-    const [meal, setMeal] = useState(initialMeal ?? "breakfast");
-    const [servings, setServings] = useState(1);
-    const [food, setFood] = useState(null);
-
+export default function CreateEntryModal({ entry=null, isOpen, onClose, initialMeal, date, onSuccess }) {
+    const [meal, setMeal] = useState(entry?.meal ?? initialMeal ?? "breakfast");
+    const [servings, setServings] = useState(entry?.servings ?? 1);
+    const [food, setFood] = useState(entry?.food ?? null);
+    
     const [loading, setLoading] = useState(false);
     const [foodModalOpen, setFoodModalOpen] = useState(false);
 
@@ -43,7 +43,7 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
 
     return (
         <Modal isOpen={ isOpen } onClose={ onClose }>
-            <ModalHeader title={`Create Entry Modal`} onClose={ onClose } />
+            <ModalHeader title={'Entry Modal'} onClose={ onClose } />
 
             <form onSubmit={ handleSubmit }>
                 <fieldset>
@@ -88,7 +88,7 @@ export default function CreateEntryModal({ isOpen, onClose, initialMeal, date, o
                     { loading ? (
                         <div role="button" aria-busy="true" disabled></div>
                     ) : (
-                        <input type="submit" value="Add Entry" />
+                        <input type="submit" value="Submit" />
                     ) }
                 </fieldset>
             </form>

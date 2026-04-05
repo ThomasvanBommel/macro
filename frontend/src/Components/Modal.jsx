@@ -1,13 +1,4 @@
-/**
- * A simple modal component that uses the HTML <dialog> element. It also listens for the Escape key 
- * to close the modal.
- * @param { Object } props - The component props
- * @param { boolean } props.isOpen - Whether the modal is open or not
- * @param { function } props.onClose - Callback to call when the modal should be closed (e.g. when 
- *                                     Escape is pressed)
- * @param { React.ReactNode } props.children - The content of the modal
- * @returns { JSX.Element|null } The rendered component or null if not open
- */
+// A simple modal component that can be used to display content in a dialog.
 export default function Modal({ isOpen, onClose, children }) {
     if (!isOpen) return null;
 
@@ -25,13 +16,7 @@ export default function Modal({ isOpen, onClose, children }) {
     );
 }
 
-/**
- * A simple header component for modals, with a title and a close button.
- * @param { Object } props - The component props
- * @param { string } props.title - The title to display in the header
- * @param { function } [props.onClose] - Optional callback to call when the close button is clicked
- * @returns { JSX.Element } The rendered component
- */
+// A simple header component for modals, with a title and a close button.
 export function ModalHeader({ title, onClose }) {
     return (
         <header style={{ display: "flex",
