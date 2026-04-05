@@ -1,19 +1,9 @@
 services:
-  fullstack:
-    build:
-      context: .
-      target: distroless
-    volumes:
-      - ./backend/data:/data
-    ports:
-      - "8080:8080"
-    environment:
-      - SESSION_SECRET=this_is_dev_only
 
   backend:
     build:
       context: .
-      target: backend-dev
+      target: backend
     volumes:
       - .:/repo
       - ./backend/data:/data
@@ -29,7 +19,7 @@ services:
   frontend:
     build:
       context: .
-      target: frontend-builder
+      target: frontend
     volumes:
       - ./frontend/src:/frontend/src
       - ./frontend/public:/frontend/public
@@ -42,19 +32,6 @@ services:
     ports:
       - "5173:5173"
     command: npm run dev -- --host
-  
-  test:
-    image: golang:1.26-alpine
-    working_dir: /repo
-    volumes:
-      - .:/repo
-      - go-cache:/go/pkg/mod
-      - go-build:/root/.cache/go-build
-    environment:
-      - SESSION_SECRET=this_is_dev_only
-      - GOMODCACHE=/go/pkg/mod
-      - GOCACHE=/root/.cache/go-build
-    command: sh -c "cd backend && go test -v ./..."
   
   goose:
     build:
