@@ -85,8 +85,8 @@ jobs:
         with:
           name: macro
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v4
 
       - name: Build and push image
         id: build_and_push
@@ -95,5 +95,5 @@ jobs:
           # push: true
           tags: cekeh/macro:latest
           target: production
-          
+
       
