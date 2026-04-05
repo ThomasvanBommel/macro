@@ -25,7 +25,13 @@ jobs:
           node-version-file: 'frontend/package.json'
           cache-dependency-path: 'frontend/package-lock.json'
           cache: 'npm'
-      - run: npm ci --prefix frontend
+      - id: cache-npm
+        uses: actions/cache@v5
+        with:
+          path: 'frontend/node_modules'
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+      - if: steps.cache-npm.outputs.cache-hit != 'true'
+        run: npm ci --prefix frontend
       - run: npm run build --prefix frontend
 
   # stuffs i need to optimize:
