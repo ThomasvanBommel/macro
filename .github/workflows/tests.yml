@@ -83,7 +83,7 @@ jobs:
         run: docker build -t cekeh/macro:latest --target production .
 
       - name: Health check (run)
-        run: docker run -d --rm -p 8080:8080 --name test cekeh/macro:latest
+        run: docker run -d --rm -p 8080:8080 -v data:/data --name test cekeh/macro:latest
 
       - name: Health check (test)
         run: |
