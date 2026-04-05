@@ -43,9 +43,8 @@ services:
     command: npm run dev -- --host
   
   test:
-    build:
-      context: .
-      target: backend-dev
+    image: golang:1.26-alpine
+    working_dir: /repo
     volumes:
       - .:/repo
       - go-cache:/go/pkg/mod
@@ -60,13 +59,13 @@ services:
     build:
       context: .
       target: goose
+    working_dir: /backend
     volumes:
       - ./backend:/backend
     environment:
       - GOOSE_DRIVER=sqlite3
       - GOOSE_DBSTRING=/backend/data/macro.db
       - GOOSE_MIGRATION_DIR=/backend/migrations
-    working_dir: /backend
 
 volumes:
   go-cache:

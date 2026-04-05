@@ -28,7 +28,7 @@ help:
 ## Docker Compose
 
 test:
-	docker compose run --rm --build test
+	docker compose run --rm test
 
 fullstack: test
 	docker compose up --build fullstack

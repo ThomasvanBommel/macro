@@ -10,7 +10,6 @@ RUN npm run build
 FROM golang:1.26-alpine AS backend-builder
 WORKDIR /repo
 RUN go env -w GOCACHE=/go-cache GOMODCACHE=/go-mod-cache
-# RUN go env -w GOMODCACHE=/go-mod-cache
 COPY ./go.mod ./go.sum ./
 RUN --mount=type=cache,target=/go-mod-cache go mod download
 COPY . .
