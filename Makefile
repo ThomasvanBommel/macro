@@ -28,33 +28,33 @@ help:
 ## Docker Compose
 
 test:
-	docker compose run --rm test
+	docker compose run --rm --build test
 
-# fullstack: test
-# 	docker compose up --build fullstack
+fullstack: test
+	docker compose up --build fullstack
 
-# backend: test
-# 	docker compose up --build backend
+backend: test
+	docker compose up --build backend
 
-# frontend:
-# 	docker compose up --build frontend
+frontend:
+	docker compose up --build frontend
 
-# dev:
-# 	docker compose up --build backend frontend
+dev:
+	docker compose up --build backend frontend
 
-# down:
-# 	docker compose down --remove-orphans
+down:
+	docker compose down --remove-orphans
 
 
 ## Docker image
 
-# build-image:
-# 	docker build -t macro-distroless:latest --target distroless .
-# 	docker tag macro-distroless:latest cekeh/macro:latest
-# 	docker images macro-distroless
+build-image:
+	docker build -t macro-distroless:latest --target distroless .
+	docker tag macro-distroless:latest cekeh/macro:latest
+	docker images macro-distroless
 
-# push-image: build-image
-# 	docker push cekeh/macro:latest
+push-image: build-image
+	docker push cekeh/macro:latest
 
 
 ## Helpers
@@ -62,17 +62,17 @@ test:
 golang:
 	docker run -it --rm -v .:/app -w /app golang:1.26-alpine sh
 
-# npm:
-# 	docker run -it --rm \
-# 		-v ./frontend/src:/app/src \
-# 		-v ./frontend/public:/app/public \
-# 		-v ./frontend/index.html:/app/index.html \
-# 		-v ./frontend/package.json:/app/package.json \
-# 		-v ./frontend/vite.config.js:/app/vite.config.js \
-# 		-w /app node:20-alpine sh
+npm:
+	docker run -it --rm \
+		-v ./frontend/src:/app/src \
+		-v ./frontend/public:/app/public \
+		-v ./frontend/index.html:/app/index.html \
+		-v ./frontend/package.json:/app/package.json \
+		-v ./frontend/vite.config.js:/app/vite.config.js \
+		-w /app node:20-alpine sh
 
-# sqlite:
-# 	docker run -it --rm -v ./backend/data:/app -w /app alpine/sqlite:latest macro.db
+sqlite:
+	docker run -it --rm -v ./backend/data:/app -w /app alpine/sqlite:latest macro.db
 
-# goose:
-# 	docker compose run -it --rm goose sh
+goose:
+	docker compose run -it --rm goose sh

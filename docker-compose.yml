@@ -15,7 +15,7 @@ services:
       context: .
       target: backend-dev
     volumes:
-      - ./backend/app:/app
+      - .:/repo
       - ./backend/data:/data
       - go-cache:/go/pkg/mod
       - go-build:/root/.cache/go-build
@@ -31,11 +31,11 @@ services:
       context: .
       target: frontend-builder
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/index.html:/app/index.html
-      - ./frontend/vite.config.js:/app/vite.config.js
-      - ./frontend/package.json:/app/package.json
+      - ./frontend/src:/frontend/src
+      - ./frontend/public:/frontend/public
+      - ./frontend/index.html:/frontend/index.html
+      - ./frontend/vite.config.js:/frontend/vite.config.js
+      - ./frontend/package.json:/frontend/package.json
     environment:
       - DEVMODE=true
     ports:
@@ -47,7 +47,7 @@ services:
       context: .
       target: backend-dev
     volumes:
-      - ./:/repo
+      - .:/repo
       - go-cache:/go/pkg/mod
       - go-build:/root/.cache/go-build
     environment:
@@ -61,12 +61,12 @@ services:
       context: .
       target: goose
     volumes:
-      - ./backend:/app
+      - ./backend:/backend
     environment:
       - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=/app/data/macro.db
-      - GOOSE_MIGRATION_DIR=/app/migrations
-    working_dir: /app
+      - GOOSE_DBSTRING=/backend/data/macro.db
+      - GOOSE_MIGRATION_DIR=/backend/migrations
+    working_dir: /backend
 
 volumes:
   go-cache:

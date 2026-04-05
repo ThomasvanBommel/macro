@@ -11,10 +11,10 @@ tmp_dir = "/tmp"
          go build \
          -ldflags='-s -w' \
          -tags='no_postgres no_clickhouse no_mssql no_mysql' \
-         -o /macro"
+         -o /macro ./backend"
   delay = 500
   entrypoint = ["/macro"]
-  exclude_dir = ["frontend", "data"]
+  exclude_dir = ["..", ".git", ".github", "frontend", "data"]
   exclude_file = []
   exclude_regex = []
   exclude_unchanged = true

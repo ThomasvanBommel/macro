@@ -1,20 +1,20 @@
-# fronend
+# frontend
 FROM node:24-alpine AS frontend-builder
-WORKDIR /app
+WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm install
-COPY frontend/ ./
+COPY frontend/ .
 RUN npm run build
 
 # backend
 FROM golang:1.26-alpine AS backend-builder
-WORKDIR /app
-RUN go env -w GOCACHE=/go-cache
-RUN go env -w GOMODCACHE=/go-mod-cache
-COPY backend/app/go.mod backend/app/go.sum ./
+WORKDIR /repo
+RUN go env -w GOCACHE=/go-cache GOMODCACHE=/go-mod-cache
+# RUN go env -w GOMODCACHE=/go-mod-cache
+COPY ./go.mod ./go.sum ./
 RUN --mount=type=cache,target=/go-mod-cache go mod download
-COPY backend/app/ ./
-COPY --from=frontend-builder /app/build ./frontend/build
+COPY . .
+COPY --from=frontend-builder /frontend/build ./backend/frontend/build
 RUN --mount=type=cache,target=/go-cache \
     --mount=type=cache,target=/go-mod-cache \
     CGO_ENABLED=0 \
@@ -22,11 +22,11 @@ RUN --mount=type=cache,target=/go-cache \
     go build \
     -ldflags="-s -w" \
     -tags='no_postgres no_clickhouse no_mssql no_mysql prod' \
-    -o macro .
+    -o macro ./backend
 
 # fullstack (production)
 FROM gcr.io/distroless/static-debian12:latest AS distroless
-COPY --from=backend-builder /app/macro .
+COPY --from=backend-builder /repo/macro .
 ENV GIN_MODE=release PORT=8080
 EXPOSE 8080
 CMD ["/macro"]
