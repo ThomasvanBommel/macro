@@ -80,7 +80,11 @@ jobs:
           name: macro
 
       - name: Build image
-        run: docker build -t cekeh/macro:latest --target production .
+        id: build_and_push
+        uses: docker/build-push-action@v7
+        with:
+          tags: cekeh/macro:latest
+          target: production
 
       - name: Health check (run)
         run: docker run -d --rm -p 8080:8080 -v data:/data --name test cekeh/macro:latest
@@ -101,15 +105,12 @@ jobs:
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
       - name: Push image
-        run: docker push cekeh/macro:latest
-
-      # - name: Build and push image
-      #   id: build_and_push
-      #   uses: docker/build-push-action@v7
-      #   with:
-      #     tags: cekeh/macro:latest
-      #     target: production
-      #     push: true
+        id: build_and_push
+        uses: docker/build-push-action@v7
+        with:
+          tags: cekeh/macro:latest
+          target: production
+          push: true
 
   # deploy:
   #   runs-on: ubuntu-latest
