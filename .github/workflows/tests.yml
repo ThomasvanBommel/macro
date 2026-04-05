@@ -84,7 +84,7 @@ jobs:
       - name: Build image
         uses: docker/build-push-action@v7
         with:
-          context: "{{defaultContext}}"
+          context: .
           tags: cekeh/macro:latest
           target: production
 
