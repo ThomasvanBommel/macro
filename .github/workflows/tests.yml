@@ -74,6 +74,8 @@ jobs:
     outputs:
       image_digest: ${{ steps.build_and_push.outputs.digest }}
     steps:
+      - uses: actions/checkout@v6
+      
       - name: Download build artifact
         uses: actions/download-artifact@v8
         with:
