@@ -47,7 +47,7 @@ services:
       context: .
       target: backend-dev
     volumes:
-      - ./backend/app:/app
+      - ./:/repo
       - go-cache:/go/pkg/mod
       - go-build:/root/.cache/go-build
     environment:

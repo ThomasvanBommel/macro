@@ -34,7 +34,7 @@ CMD ["/macro"]
 # backend dev
 FROM golang:1.26-alpine AS backend-dev
 RUN go install github.com/air-verse/air@latest
-WORKDIR /app
+WORKDIR /repo
 ENV PORT=8080
 CMD ["air"]
 
