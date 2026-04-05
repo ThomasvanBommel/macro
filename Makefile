@@ -69,6 +69,7 @@ npm:
 		-v ./frontend/index.html:/app/index.html \
 		-v ./frontend/package.json:/app/package.json \
 		-v ./frontend/vite.config.js:/app/vite.config.js \
+		-v ./frontend/package-lock.json:/app/package-lock.json \
 		-w /app node:20-alpine sh
 
 sqlite:
