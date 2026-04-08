@@ -271,3 +271,20 @@ func (db *Database) createEntryByToken(entry CreateEntryParams, token string) (*
 
 	return db.getEntryWithFoodById(id)
 }
+
+// searchFoodsByName returns foods with names partially matching the query.
+func (db *Database) searchFoodsByName(query string) ([]Food, error) {
+	defer Trace("searchFoodsByName(query)", "query", query)()
+
+	q := `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
+	     	serving_count
+		 FROM food
+		 WHERE LOWER(name) LIKE LOWER(?);`
+
+	rows, err := db.Query(q, "%"+query+"%")
+	if err != nil {
+		return nil, err
+	}
+
+	return collectRows(rows, scanFoods)
+}

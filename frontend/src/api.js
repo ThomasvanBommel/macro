@@ -69,3 +69,8 @@ export async function handleCreateFood(food) {
 export async function handleGetDiary(name, date) {
     return await postJSON("/api/diary", { name: name, date: date });
 }
+
+// Fetches a list of foods matching the search query. Returns an array of food data.
+export async function handleSearchFoods(query) {
+    return await postJSON("/api/food/search", { query });
+}

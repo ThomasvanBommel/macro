@@ -57,6 +57,7 @@ func (a *API) registerAPIRoutes(r *gin.Engine) {
 	api.POST("/entry", a.handleCreateEntry)
 	api.POST("/entries", a.handleListUserEntries)
 	api.POST("/diary", a.handleGetDiary)
+	api.POST("/food/search", a.handleFoodSearch)
 
 	api.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, nil)
@@ -506,4 +507,31 @@ func (a *API) handleGetDiary(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// handleFoodSearch returns foods matching a search query.
+func (a *API) handleFoodSearch(c *gin.Context) {
+	var in struct {
+		Query string `json:"query"`
+	}
+
+	if !bindInput(c, &in) {
+		return
+	}
+
+	foods, err := a.db.searchFoodsByName(in.Query)
+	if err != nil {
+		c.Set("error", err.Error())
+
+		if strings.Contains(err.Error(), "no rows in result set") {
+			c.JSON(http.StatusOK, []FoodResponse{})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search foods"})
+		return
+	}
+
+	c.JSON(http.StatusOK, foods)
+
 }
