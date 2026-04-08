@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MdClose, MdRefresh } from "react-icons/md";
+import { MdAdd, MdClose, MdRefresh } from "react-icons/md";
 
 
 import { handleSearchFoods } from "../../api";
@@ -10,7 +10,8 @@ export default function EntryModal({ open, defaultMeal, entry, close }) {
     
     const [query, setQuery] = useState("");
     const [lastQuery, setLastQuery] = useState("");
-    const [lastQueryTime, setLastQueryTime] = useState(0);
+
+    const [selectedFood, setSelectedFood] = useState(entry?.food.id ?? null);
 
     window.onkeydown = e => {
         e.stopImmediatePropagation();
@@ -18,16 +19,35 @@ export default function EntryModal({ open, defaultMeal, entry, close }) {
             close();
     }
 
+    const refreshSearchResults = () => {
+        setSelectedFood(null);
+
+        handleSearchFoods(query)
+            .then(setFood);
+            // TODO: handle errors
+
+        setLastQuery(query);
+    }
+
     useEffect(() => {
-        if (query.length > 2 && Date.now() - lastQueryTime > 500) {
-            handleSearchFoods(query).then(setFood);
-            setLastQueryTime(Date.now());
-        }
+        let t = setTimeout(() => {
+            if (query.length > 2 && query !== lastQuery)
+                refreshSearchResults();
+        }, 500);
+
+        return () => clearTimeout(t);
     }, [query]);
 
+    const handleSubmit = e => {
+        e.preventDefault();
+
+    };
 
     return (
-        <FormModal title={ entry ? "Edit Entry" : "Add Entry" } isOpen={ open } onClose={ close }>
+        <FormModal title={ entry ? "Edit Entry" : "Add Entry" } 
+                   isOpen={ open } 
+                   onClose={ close }
+                   onSubmit={ handleSubmit }>
             <label>
                 Meal
                 <select value={ meal } onChange={ e => setMeal(e.target.value) } required>
@@ -37,16 +57,38 @@ export default function EntryModal({ open, defaultMeal, entry, close }) {
                     <option value="snacks">Snack</option>
                 </select>
             </label>
-            <label>
-                Food
-                <div role="search">
-                    <input type="search" 
-                        value={ query } 
-                        onChange={ e => setQuery(e.target.value) }
-                        placeholder="Search for food..." />
-                    <button><MdRefresh /></button>
-                </div>
-            </label>
+            <div role="search">
+                <button className="green" 
+                        title="Add a new food item"
+                        style={{ lineHeight: 0 }}
+                        onClick={ e => { e.preventDefault(); /* TODO */ } }>
+                    <MdAdd />
+                </button>
+                <input type="search" 
+                    value={ query } 
+                    onChange={ e => setQuery(e.target.value) }
+                    placeholder="Search for food..." />
+                <button onClick={ e => { e.preventDefault(); refreshSearchResults(); } }
+                        title="Refresh search results"
+                        style={{ lineHeight: 0 }}>
+                    <MdRefresh />
+                </button>
+            </div>
+            <div>
+                {  !food ? null : food.map(f => 
+                    <label key={f.id} style={{ 
+                        width: "100%", 
+                        marginBottom: "var(--pico-spacing)" }}>
+                        <input type="radio"  
+                                name="food" 
+                                value={ f.id }
+                                checked={ selectedFood === f.id }
+                                onChange={ e => setSelectedFood(f.id) }
+                                required />
+                        { f.name }
+                    </label>
+                ) }
+            </div>
             <label>
                 Servings
                 <input type="number" min="0" step="0.1" value="1" required />
@@ -89,9 +131,9 @@ function FormModal({ title, isOpen, onClose, onSubmit, children }) {
                 </header>
                 <form style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}
                       onSubmit={ onSubmit }>
-                    <section style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
+                    <div style={{ overflowY: "auto", flex: 1, minHeight: 0, padding: "0.25rem" }}>
                         { children }
-                    </section>
+                    </div>
                     <input type="submit" value="Submit" style={{ margin: 0 }} />
                 </form>
             </article>

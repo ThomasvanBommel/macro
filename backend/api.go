@@ -532,6 +532,12 @@ func (a *API) handleFoodSearch(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, foods)
+	f := make([]FoodResponse, len(foods))
+
+	for i := range foods {
+		f[i] = toFoodResponse(&foods[i])
+	}
+
+	c.JSON(http.StatusOK, f)
 
 }
