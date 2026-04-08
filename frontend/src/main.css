@@ -1,3 +1,10 @@
+:root {
+    --protein-color: dodgerblue;
+    --carb-color: green;
+    --fat-color: orange;
+    --kcal-color: crimson;
+}
+
 .green {
     --pico-primary-background: #43a047;
     --pico-primary-border: #43a047;
@@ -20,7 +27,7 @@
     --pico-background-color: #332b00;
     --pico-border-color: #fdd835;
     --pico-color: #fff9c4;
-        background-color: rgba(253, 216, 53, 0.4);
+    background-color: rgba(253, 216, 53, 0.4);
     margin-bottom: var(--pico-spacing);
     padding: 1rem;
 }
@@ -32,4 +39,21 @@
         --pico-color: #e65100;
         background-color: rgba(253, 216, 53, 0.1);
     }
+}
+
+.hflex {
+    display: flex;
+}
+
+.hflex > * {
+    flex: 1;
+}
+
+.vflex {
+    display: flex;
+    flex-direction: column;
+}
+
+.m0 {
+    margin: 0;
 }

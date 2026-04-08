@@ -64,3 +64,8 @@ export async function handleFetchFoodList() {
 export async function handleCreateFood(food) {
     return await postJSON("/api/food", food);
 }
+
+// Fetches the diary data for a user on a specific date, including entries and totals.
+export async function handleGetDiary(name, date) {
+    return await postJSON("/api/diary", { name: name, date: date });
+}

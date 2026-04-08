@@ -1,9 +1,7 @@
 import { useState, useContext } from 'react';
-import { DateSelector, EntryList } from '../Components';
+import { DateSelector, EntryList, Diary } from '../Components';
 import DateString from '../Classes/DateString';
 import { SessionContext } from '../Context';
-
-import { EntryModal } from '../Components/Modals';
 
 export default function Profile() {
     const [date, setDate] = useState(DateString.today());
@@ -14,12 +12,13 @@ export default function Profile() {
 
     return (
         <>  
+            <Diary username={ session?.username } />
+
             <div style={{ display: "grid", placeItems: "center" }}>
                 <DateSelector date={ date } setDate={ setDate } />
             </div>
 
             <EntryList username={ session?.username } date={ date } editable={ true } />
-            <EntryModal isOpen={ true } />
         </>
     )
 }

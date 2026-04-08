@@ -3,16 +3,7 @@ import { handleFetchEntryList } from '../api';
 import { CreateEntryModal } from '../Components';
 import { NotificationContext } from '../Context';
 
-/**
- * Component to display a list of entries for a given user and date. Also displays macros for each 
- * meal and entry, and allows adding new entries.
- * @component
- * @param { Object } props - The component props
- * @param { string } props.username - the username to fetch entries for
- * @param { string } props.date - the date to fetch entries for, in YYYY-MM-DD format
- * @param { boolean } [props.editable=false] - whether the entries should be editable
- * @returns { JSX.Element } The rendered component
- */
+// Component to display a list of entries for a given date, grouped by meal.
 export default function EntryList({ username, date, editable=false }) {
     const totals_init = { protein: 0, carbs: 0, fat: 0, calories: 0 };
 

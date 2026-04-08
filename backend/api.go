@@ -56,6 +56,7 @@ func (a *API) registerAPIRoutes(r *gin.Engine) {
 	api.POST("/foods", a.handleListFoods)
 	api.POST("/entry", a.handleCreateEntry)
 	api.POST("/entries", a.handleListUserEntries)
+	api.POST("/diary", a.handleGetDiary)
 
 	api.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, nil)
@@ -423,4 +424,86 @@ func (a *API) handleListFoods(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, f)
+}
+
+// handleGetDiary returns all entries for a user and date, grouped by meal with totals.
+func (a *API) handleGetDiary(c *gin.Context) {
+	defer Trace("handleGetDiary(c *gin.Context)")()
+
+	var in ListUserEntriesInput
+	if !bindInput(c, &in) {
+		return
+	}
+
+	res, err := a.db.listUserEntriesWithFoodByNameAndDate(in.Name, in.Date)
+	if err != nil {
+		c.Set("error", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user profile"})
+		return
+	}
+
+	type Totals struct {
+		Calories float64 `json:"calories"`
+		Carbs    float64 `json:"carbs"`
+		Protein  float64 `json:"protein"`
+		Fat      float64 `json:"fat"`
+	}
+
+	type Diary struct {
+		Totals  Totals                  `json:"totals"`
+		Entries []EntryWithFoodResponse `json:"entries"`
+	}
+
+	type Response struct {
+		Totals    Totals `json:"totals"`
+		Breakfast Diary  `json:"breakfast"`
+		Lunch     Diary  `json:"lunch"`
+		Dinner    Diary  `json:"dinner"`
+		Snacks    Diary  `json:"snacks"`
+	}
+
+	response := Response{
+		Totals:    Totals{},
+		Breakfast: Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
+		Lunch:     Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
+		Dinner:    Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
+		Snacks:    Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
+	}
+
+	for i := range res {
+		entry := toEntryWithFoodResponse(&res[i])
+		response.Totals.Calories += entry.Food.Calories * entry.Servings
+		response.Totals.Carbs += entry.Food.Carbs * entry.Servings
+		response.Totals.Protein += entry.Food.Protein * entry.Servings
+		response.Totals.Fat += entry.Food.Fat * entry.Servings
+
+		switch strings.ToLower(entry.MealName) {
+		case "breakfast":
+			response.Breakfast.Entries = append(response.Breakfast.Entries, entry)
+			response.Breakfast.Totals.Calories += entry.Food.Calories * entry.Servings
+			response.Breakfast.Totals.Carbs += entry.Food.Carbs * entry.Servings
+			response.Breakfast.Totals.Protein += entry.Food.Protein * entry.Servings
+			response.Breakfast.Totals.Fat += entry.Food.Fat * entry.Servings
+		case "lunch":
+			response.Lunch.Entries = append(response.Lunch.Entries, entry)
+			response.Lunch.Totals.Calories += entry.Food.Calories * entry.Servings
+			response.Lunch.Totals.Carbs += entry.Food.Carbs * entry.Servings
+			response.Lunch.Totals.Protein += entry.Food.Protein * entry.Servings
+			response.Lunch.Totals.Fat += entry.Food.Fat * entry.Servings
+		case "dinner":
+			response.Dinner.Entries = append(response.Dinner.Entries, entry)
+			response.Dinner.Totals.Calories += entry.Food.Calories * entry.Servings
+			response.Dinner.Totals.Carbs += entry.Food.Carbs * entry.Servings
+			response.Dinner.Totals.Protein += entry.Food.Protein * entry.Servings
+			response.Dinner.Totals.Fat += entry.Food.Fat * entry.Servings
+		case "snacks":
+			response.Snacks.Entries = append(response.Snacks.Entries, entry)
+			response.Snacks.Totals.Calories += entry.Food.Calories * entry.Servings
+			response.Snacks.Totals.Carbs += entry.Food.Carbs * entry.Servings
+			response.Snacks.Totals.Protein += entry.Food.Protein * entry.Servings
+			response.Snacks.Totals.Fat += entry.Food.Fat * entry.Servings
+		}
+	}
+
+	c.JSON(http.StatusOK, response)
 }
