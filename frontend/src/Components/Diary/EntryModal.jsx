@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { MdAdd, MdClose, MdRefresh } from "react-icons/md";
+import { useState, useEffect, useRef } from 'react';
+import { MdAdd, MdRefresh } from "react-icons/md";
 
 import { handleSearchFoods } from "../../api";
 import Modal from './Modal';
@@ -29,6 +29,7 @@ export default function EntryModal({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    // form reset
     useEffect(() => {
         if (!isOpen) return;
 
@@ -39,6 +40,38 @@ export default function EntryModal({
         setSearchResults(initialFood ? [initialFood] : []);
         setError("");
     }, [isOpen, initialMeal, initialFood, initialServings]);
+
+    // search
+    const version = useRef(0);
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const trimmed = searchString.trim();
+        if (trimmed.length < 2) {
+            setSearchResults(food ? [food] : []);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        setError("");
+
+        const currentVersion = ++version.current;
+        const t = setTimeout(() => {
+            handleSearchFoods(trimmed)
+                .then(data => {
+                    if (currentVersion !== version.current) return;
+                    setSearchResults(data ?? []);
+                })
+                .catch(err => {
+                    if (currentVersion !== version.current) return;
+                    setError(err.error ?? "Failed to fetch search results.");
+                })
+                .finally(() => currentVersion === version.current && setLoading(false));
+        }, 350);
+
+        return () => clearTimeout(t);
+    }, [searchString]);
     
 
 
@@ -69,24 +102,33 @@ export default function EntryModal({
         <style>{`
             .entry-form {
                 padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
+                display: flex;
+                flex-direction: column;
+                max-height: 50vh;
+                gap: var(--pico-spacing);
 
-                & > div[role="search"] {
+                & > * { margin: 0; }
 
-                    & > button { line-height: 0; }
-                }
-
+                & > div[role="search"] button { line-height: 0; }
                 & > input { margin-bottom: 0; }
+                & legend { margin-bottom: calc(var(--pico-spacing) * .25); }
                 & label { width: 100%; }
 
                 & .search-results {
-                    // background-color:red;
-                    // padding: 0.5rem;
                     border: 2px solid hsl(from var(--pico-color) h s l / 20%);
+                    // min-height: 0;
+                    // display: flex;
+                    // flex-direction: column;
+
+                    & > div {
+                        padding: calc(var(--pico-spacing) * 0.5);
+                        opacity: 0.5;
+                    }
 
                     & label {
                         display: flex;
-                        gap: 0.5rem;
-                        padding: 0.25rem;
+                        gap: calc(var(--pico-spacing) * 0.5);
+                        padding: calc(var(--pico-spacing) * 0.5);
                         margin: 0;
                     }
 
@@ -99,9 +141,8 @@ export default function EntryModal({
                         background-color: hsl(from var(--pico-color) h s l / 10%);
                     }
 
-                    & input[type="radio"] {
-                        margin:0;
-                    }
+                    & input[type="radio"] { margin:0; }
+                    & small { opacity: 0.5; }
                 }
             }
         `}</style>
@@ -128,20 +169,26 @@ export default function EntryModal({
                     <MdRefresh />
                 </button>
             </div>
-            <label>
-                Food
+            <fieldset className="food-search-results">
+                <legend>Food</legend>
                 <div className="search-results">
-                    <label>
-                        <div>
-                            <input type="radio" />
-                        </div>
-                        <div>
-                            Apple
-                            <div>100p - 50c - 200f - 666kcal</div>
-                        </div>
-                    </label>
+                    { loading ? <div className="loading" aria-busy="true">Loading...</div> : (<>
+                        { searchResults.length === 0 ? <div>No results found.</div> : searchResults.map(food => (
+                            <label key={ food.id }>
+                                <div><input type="radio" name="food_id" value={ food.id } required /></div>
+                                <div>
+                                    { food.name }
+                                    {  food.brand && <><br /><small>({ food.brand })</small></> }
+                                    <br />
+                                    <small>
+                                        { food.protein }p - { food.carbs }c - { food.fat }f - { food.calories }kcal
+                                    </small>
+                                </div>
+                            </label>
+                        )) }
+                    </>) }
                 </div>
-            </label>
+            </fieldset>
             <label>
                 Servings
                 <input type="number" min="0" step="0.01" value={ servings } onChange={ e => setServings(e.target.value) } required />

@@ -35,9 +35,8 @@ export default function Modal({
             }
 
             .modal > article {
-                display: flex;
-                flex-direction: column;
                 padding: 0;
+                overflow: clip; // probably not what we want
             }
 
             .modal > article > header {
