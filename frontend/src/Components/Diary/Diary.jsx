@@ -4,6 +4,7 @@ import { MdAdd, MdArrowBackIos, MdArrowForwardIos } from "react-icons/md";
 
 import { handleGetDiary } from "../../api";
 import EntryModal from './EntryModal';
+import EntryModal2 from './EntryModal2';
 
 const valid = d => d instanceof Date && !isNaN(d.getTime());
 const today = (new Date()).toLocaleString("sv-SE").slice(0, 10);
@@ -20,11 +21,11 @@ export default function Diary({ username, defaultDate }) {
     const [loading, setLoading] = useState(true);
 
     const [entryModalState, setEntryModalState] = 
-        useState({ open: false, meal: null, entry: null });
+        useState({ isOpen: false, defaultMeal: null, entry: null });
 
-    const addEntry = meal => setEntryModalState({ open: true, meal, entry: null });
-    const editEntry = entry => setEntryModalState({ open: true, meal: null, entry });
-    const closeEntryModal = () => setEntryModalState({ open: false, meal: null, entry: null });
+    const addEntry = meal => setEntryModalState({ isOpen: true, defaultMeal: meal, entry: null });
+    const editEntry = entry => setEntryModalState({ isOpen: true, defaultMeal: null, entry });
+    const closeEntryModal = () => setEntryModalState({ isOpen: false, defaultMeal: null, entry: null });
 
     useEffect(() => {
         setLoading(true);
@@ -55,6 +56,9 @@ export default function Diary({ username, defaultDate }) {
             </> }
             { createPortal(<EntryModal {...entryModalState} close={ closeEntryModal } />, 
                 document.body) }
+
+            {/* { createPortal(<EntryModal2 isOpen={ true } />, 
+                document.body) } */}
         </>
     );
 }
