@@ -34,10 +34,7 @@ export default function Modal({
                 background-color: hsl(from var(--pico-color) h s l / 10%);
             }
 
-            .modal > article {
-                padding: 0;
-                // overflow: clip; // probably not what we want
-            }
+            .modal > article { padding: 0; }
 
             .modal > article > header {
                 display: flex;

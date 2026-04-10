@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { DateSelector, EntryList, Diary } from '../Components';
+import { Diary } from '../Components';
 import DateString from '../Classes/DateString';
 import { SessionContext } from '../Context';
 

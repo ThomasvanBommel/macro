@@ -3,9 +3,8 @@ import { createPortal } from 'react-dom';
 import { MdAdd, MdArrowBackIos, MdArrowForwardIos } from "react-icons/md";
 
 import { handleGetDiary, handleCreateEntry } from "../../api";
-// import { AddEntryModal } from './EntryModal';
 import EntryModal from './EntryModal';
-// import EntryModal2 from './EntryModal2';
+import FoodModal from './FoodModal';
 
 const valid = d => d instanceof Date && !isNaN(d.getTime());
 const today = (new Date()).toLocaleString("sv-SE").slice(0, 10);
@@ -25,6 +24,8 @@ export default function Diary({ username, defaultDate }) {
     const [AddEntryModalOpen, setAddEntryModalOpen] = useState(false);
     const [AddEntryInitialMeal, setAddEntryInitialMeal] = useState("breakfast");
 
+    const [AddFoodModalOpen, setAddFoodModalOpen] = useState(false);
+
     const handleAddEntrySubmit = ({ meal, food, servings }) => {
         if (!food || !meal || !servings) return; // TODO: handle errors
 
@@ -34,6 +35,15 @@ export default function Diary({ username, defaultDate }) {
                 setAddEntryModalOpen(false);
             })
             .catch(e => console.error(e));
+    };
+
+    const handleOpenAddFoodModal = e => {
+        e.preventDefault();
+        setAddFoodModalOpen(true);
+    };
+
+    const handleAddFoodModalSuccess = food => {
+        setAddFoodModalOpen(false);
     };
 
     useEffect(() => {
@@ -73,12 +83,17 @@ export default function Diary({ username, defaultDate }) {
                 <EntryModal 
                     isOpen={ AddEntryModalOpen } 
                     onClose={ () => setAddEntryModalOpen(false) } 
+                    onNewFood={ handleOpenAddFoodModal }
                     initialMeal={ AddEntryInitialMeal } 
                     onSubmit={ handleAddEntrySubmit } />
                 , document.body) }
 
-            {/* { createPortal(<EntryModal2 isOpen={ true } />, 
-                document.body) } */}
+            { createPortal(
+                <FoodModal 
+                    isOpen={ AddFoodModalOpen } 
+                    onClose={ () => setAddFoodModalOpen(false) }
+                    onSuccess={ handleAddFoodModalSuccess } />
+                , document.body) }
         </>
     );
 }

@@ -7,52 +7,16 @@ import Modal from './Modal';
 
 const MEAL_OPTIONS = [
     { value: "breakfast", label: "Breakfast" },
-    { value: "lunch", label: "Lunch" },
-    { value: "dinner", label: "Dinner" },
-    { value: "snacks", label: "Snack" },
+    { value: "lunch",     label: "Lunch" },
+    { value: "dinner",    label: "Dinner" },
+    { value: "snacks",    label: "Snack" },
 ];
-
-export function AddEntryModal({
-    isOpen,
-    onClose,
-    onSubmit,
-    initialMeal = "breakfast"
-}) {
-    const handleSubmit = ({ meal, food, servings }) => {
-        if (!food || !meal || !servings) return new Error("Missing required fields.");
-
-        // handleCreateEntry(food.id, meal, new Date(), servings)
-    }
-
-    return <EntryModal 
-        isOpen={ isOpen } 
-        onClose={ onClose } 
-        onSubmit={ handleSubmit }
-        initialMeal={ initialMeal } />;
-}
-
-export function EditEntryModal({
-    isOpen,
-    onClose,
-    onSubmit,
-    initialMeal,
-    initialFood,
-    initialServings
-}) {
-    return <EntryModal 
-        isOpen={ isOpen } 
-        onClose={ onClose }
-        onSubmit={ onSubmit }
-        initialMeal={ initialMeal }
-        initialFood={ initialFood }
-        initialServings={ initialServings }
-        editMode={ true } />;
-}
 
 export default function EntryModal({ 
     isOpen, 
     onClose,
     onSubmit,
+    onNewFood,
     initialMeal = "breakfast",
     initialFood = null,
     initialServings = 1,
@@ -212,7 +176,7 @@ export default function EntryModal({
             }
         `}</style>
 
-        <form className="entry-form" onSubmit={ onSubmit }>
+        <form className="entry-form" onSubmit={ handleSubmit }>
             <label>
                 Meal
                 <select value={ meal } onChange={ e => setMeal(e.target.value) } required>
@@ -221,7 +185,7 @@ export default function EntryModal({
                 </select>
             </label>
             <div role="search">
-                <button className="green" title="Add a new food item" disabled>
+                <button className="green" title="Add a new food item" onClick={ onNewFood }>
                     <MdAdd />
                 </button>
                 <input
@@ -293,8 +257,8 @@ export default function EntryModal({
             </center>
             <fieldset className="submit-row">
                 { editMode && 
-                    <input type="submit" className="red" value="Delete" onClick={ handleSubmit } />}
-                    <input type="submit" value="Save" onClick={ handleSubmit } 
+                    <input type="submit" className="red" value="Delete" />}
+                    <input type="submit" value="Save"
                         disabled={ !food || servings === "0" } />
             </fieldset>
         </form>
