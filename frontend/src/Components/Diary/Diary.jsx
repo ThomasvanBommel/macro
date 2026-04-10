@@ -26,15 +26,9 @@ export default function Diary({ username, defaultDate }) {
 
     const [AddFoodModalOpen, setAddFoodModalOpen] = useState(false);
 
-    const handleAddEntrySubmit = ({ meal, food, servings }) => {
-        if (!food || !meal || !servings) return; // TODO: handle errors
-
-        handleCreateEntry(food.id, meal, date, servings)
-            .then(() => {
-                setRefresh(prev => prev + 1);
-                setAddEntryModalOpen(false);
-            })
-            .catch(e => console.error(e));
+    const handleAddEntrySuccess = () => {
+        setAddEntryModalOpen(false);
+        setRefresh(prev => prev + 1);
     };
 
     const handleOpenAddFoodModal = e => {
@@ -81,11 +75,12 @@ export default function Diary({ username, defaultDate }) {
             </> }
             { createPortal(
                 <EntryModal 
+                    date={ date }
                     isOpen={ AddEntryModalOpen } 
                     onClose={ () => setAddEntryModalOpen(false) } 
                     onNewFood={ handleOpenAddFoodModal }
                     initialMeal={ AddEntryInitialMeal } 
-                    onSubmit={ handleAddEntrySubmit } />
+                    onSuccess={ handleAddEntrySuccess } />
                 , document.body) }
 
             { createPortal(

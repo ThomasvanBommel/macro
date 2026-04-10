@@ -12,10 +12,11 @@ const MEAL_OPTIONS = [
     { value: "snacks",    label: "Snack" },
 ];
 
-export default function EntryModal({ 
+export default function EntryModal({
+    date,
     isOpen, 
     onClose,
-    onSubmit,
+    onSuccess,
     onNewFood,
     initialMeal = "breakfast",
     initialFood = null,
@@ -27,6 +28,7 @@ export default function EntryModal({
     const [servings, setServings] = useState(initialServings);
     const [searchString, setSearchString] = useState(initialFood?.name ?? "");
     const [searchResults, setSearchResults] = useState([]);
+    const [loadingFood, setLoadingFood] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
@@ -42,7 +44,7 @@ export default function EntryModal({
         setSearchString(initialFood?.name ?? "");
         setSearchResults(initialFood ? [initialFood] : []);
         setError("");
-    }, [isOpen, initialMeal, initialFood, initialServings]);
+    }, [date, isOpen, initialMeal, initialFood, initialServings]);
 
     // search
     const version = useRef(0);
@@ -51,7 +53,7 @@ export default function EntryModal({
 
         setFood(null);
         setServings(1);
-        setLoading(true);
+        setLoadingFood(true);
         setError("");
 
         const currentVersion = ++version.current;
@@ -65,7 +67,7 @@ export default function EntryModal({
                     if (currentVersion !== version.current) return;
                     setError(err.error ?? "Failed to fetch search results.");
                 })
-                .finally(() => currentVersion === version.current && setLoading(false));
+                .finally(() => currentVersion === version.current && setLoadingFood(false));
         }, 350);
 
         return t;
@@ -78,7 +80,7 @@ export default function EntryModal({
         const trimmed = searchString.trim();
         if (trimmed.length < 2) {
             setSearchResults(food ? [food] : []);
-            setLoading(false);
+            setLoadingFood(false);
             return;
         }
 
@@ -89,10 +91,18 @@ export default function EntryModal({
     const handleSubmit = e => {
         e.preventDefault();
 
-        // setLoading(true);
-        onSubmit?.({
-            meal, food, servings
-        }).finally(() => setLoading(false));
+        if (!food || !meal || servings <= 0) return;
+        // TODO: inform user of missing fields
+
+        setLoading(true);
+        handleCreateEntry(food.id, meal, date, servings)
+            .then(data => {
+                if (data.error)
+                    throw new Error(data.error);
+
+                onSuccess();
+            }).catch(console.error) // TODO: error handling
+            .finally(() => setLoading(false));
     }
 
     return <Modal title={ editMode ? "Edit Entry" : "Add Entry" } isOpen={ isOpen } 
@@ -201,7 +211,7 @@ export default function EntryModal({
             <fieldset className="food-search-results">
                 <legend>Food</legend>
                 <div className="search-results">
-                    { loading ? <div className="loading" aria-busy="true">Loading...</div> : (<>
+                    { loadingFood ? <div className="loading" aria-busy="true">Loading...</div> : (<>
                         { searchResults.length === 0 ? <div>No results found.</div> : 
                             searchResults.map(f => {
                                 if (food && food.id !== f.id) return;
@@ -259,7 +269,7 @@ export default function EntryModal({
                 { editMode && 
                     <input type="submit" className="red" value="Delete" />}
                     <input type="submit" value="Save"
-                        disabled={ !food || servings === "0" } />
+                        disabled={ !food || servings === "0" || loading } />
             </fieldset>
         </form>
     </Modal>;
