@@ -23,10 +23,12 @@ export default function Diary({ username, defaultDate }) {
 
     const [AddEntryModalOpen, setAddEntryModalOpen] = useState(false);
     const [AddEntryInitialMeal, setAddEntryInitialMeal] = useState("breakfast");
+    const [AddEntryInitialFood, setAddEntryInitialFood] = useState(null);
 
     const [AddFoodModalOpen, setAddFoodModalOpen] = useState(false);
 
     const handleAddEntrySuccess = () => {
+        setAddEntryInitialFood(null);
         setAddEntryModalOpen(false);
         setRefresh(prev => prev + 1);
     };
@@ -37,6 +39,7 @@ export default function Diary({ username, defaultDate }) {
     };
 
     const handleAddFoodModalSuccess = food => {
+        setAddEntryInitialFood(food);
         setAddFoodModalOpen(false);
     };
 
@@ -80,6 +83,7 @@ export default function Diary({ username, defaultDate }) {
                     onClose={ () => setAddEntryModalOpen(false) } 
                     onNewFood={ handleOpenAddFoodModal }
                     initialMeal={ AddEntryInitialMeal } 
+                    initialFood={ AddEntryInitialFood }
                     onSuccess={ handleAddEntrySuccess } />
                 , document.body) }
 

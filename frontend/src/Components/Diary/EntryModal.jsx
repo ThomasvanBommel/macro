@@ -46,13 +46,18 @@ export default function EntryModal({
         setError("");
     }, [date, isOpen, initialMeal, initialFood, initialServings]);
 
+    const clear = e => {
+        e?.preventDefault(); // eww, fix this
+
+        setFood(null);
+        setServings(1);
+    };
+
     // search
     const version = useRef(0);
     const search = e => {
         e?.preventDefault();
 
-        setFood(null);
-        setServings(1);
         setLoadingFood(true);
         setError("");
 
@@ -204,7 +209,7 @@ export default function EntryModal({
                     onChange={ e => setSearchString(e.target.value) }
                     placeholder="Search for food..." 
                 />
-                <button title="Refresh search results" onClick={ search }>
+                <button title="Refresh search results" onClick={ e => clear(e) || search() }>
                     <MdRefresh />
                 </button>
             </div>
@@ -218,8 +223,13 @@ export default function EntryModal({
                                 return (
                                     <label key={ f.id }>
                                         <div>
-                                            <input type="radio" name="food_id" value={ f.id } 
-                                                onClick={ () => setFood(f) } required />
+                                            <input 
+                                                type="radio" 
+                                                name="food_id" 
+                                                value={ f.id } 
+                                                onClick={ () => setFood(f) } 
+                                                defaultChecked={ food?.id === f.id }
+                                                required />
                                         </div>
                                         <div>
                                             <div>
