@@ -36,7 +36,7 @@ export default function Modal({
 
             .modal > article {
                 padding: 0;
-                overflow: clip; // probably not what we want
+                // overflow: clip; // probably not what we want
             }
 
             .modal > article > header {

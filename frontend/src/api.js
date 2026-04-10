@@ -51,7 +51,7 @@ export async function handleFetchEntryList(name, datestr) {
 /** Creates an entry for the active user. */
 export async function handleCreateEntry(id, meal, date, servings) {
     return await postJSON("/api/entry", { 
-        food_id: id, meal_name: meal, date: date.value, servings 
+        food_id: id, meal_name: meal, date: date, servings 
     });
 }
 

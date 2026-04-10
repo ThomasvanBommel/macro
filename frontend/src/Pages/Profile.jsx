@@ -14,11 +14,11 @@ export default function Profile() {
         <>  
             <Diary username={ session?.username } />
 
-            <div style={{ display: "grid", placeItems: "center" }}>
+            {/* <div style={{ display: "grid", placeItems: "center" }}>
                 <DateSelector date={ date } setDate={ setDate } />
-            </div>
+            </div> */}
 
-            <EntryList username={ session?.username } date={ date } editable={ true } />
+            {/* <EntryList username={ session?.username } date={ date } editable={ true } /> */}
         </>
     )
 }

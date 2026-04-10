@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MdAdd, MdArrowBackIos, MdArrowForwardIos } from "react-icons/md";
 
-import { handleGetDiary } from "../../api";
+import { handleGetDiary, handleCreateEntry } from "../../api";
+// import { AddEntryModal } from './EntryModal';
 import EntryModal from './EntryModal';
-import EntryModal2 from './EntryModal2';
+// import EntryModal2 from './EntryModal2';
 
 const valid = d => d instanceof Date && !isNaN(d.getTime());
 const today = (new Date()).toLocaleString("sv-SE").slice(0, 10);
@@ -16,16 +17,24 @@ const stod = s => new Date(s);
 // - username: the username of the diary to display
 // - defaultDate: the initial date to display, in YYYY-MM-DD format (defaults to today)
 export default function Diary({ username, defaultDate }) {
+    const [refresh, setRefresh] = useState(0);
     const [data, setData] = useState(null);
     const [date, setDate] = useState(defaultDate ?? today);
     const [loading, setLoading] = useState(true);
 
-    const [entryModalState, setEntryModalState] = 
-        useState({ isOpen: false, defaultMeal: null, entry: null });
+    const [AddEntryModalOpen, setAddEntryModalOpen] = useState(false);
+    const [AddEntryInitialMeal, setAddEntryInitialMeal] = useState("breakfast");
 
-    const addEntry = meal => setEntryModalState({ isOpen: true, defaultMeal: meal, entry: null });
-    const editEntry = entry => setEntryModalState({ isOpen: true, defaultMeal: null, entry });
-    const closeEntryModal = () => setEntryModalState({ isOpen: false, defaultMeal: null, entry: null });
+    const handleAddEntrySubmit = ({ meal, food, servings }) => {
+        if (!food || !meal || !servings) return; // TODO: handle errors
+
+        handleCreateEntry(food.id, meal, date, servings)
+            .then(() => {
+                setRefresh(prev => prev + 1);
+                setAddEntryModalOpen(false);
+            })
+            .catch(e => console.error(e));
+    };
 
     useEffect(() => {
         setLoading(true);
@@ -34,11 +43,17 @@ export default function Diary({ username, defaultDate }) {
             .then(setData)
             .finally(() => setLoading(false));
             // TODO: handle errors
-    }, [username, date]);
+    }, [username, date, refresh]);
 
     const mealSectionProps = meal => {
         const key = meal.toLowerCase();
-        return { meal, diary: data?.[key], addEntry, editEntry };
+        return { 
+            meal, diary: data?.[key], 
+            addEntry: m => {
+                setAddEntryInitialMeal(m);
+                setAddEntryModalOpen(true);
+            }, 
+            editEntry: () => {} };
     }
 
     return (
@@ -54,8 +69,13 @@ export default function Diary({ username, defaultDate }) {
             { !data?.dinner    ? null : <MealSection {...mealSectionProps("Dinner")} /> }
             { !data?.snacks    ? null : <MealSection {...mealSectionProps("Snacks")} /> }
             </> }
-            { createPortal(<EntryModal {...entryModalState} close={ closeEntryModal } />, 
-                document.body) }
+            { createPortal(
+                <EntryModal 
+                    isOpen={ AddEntryModalOpen } 
+                    onClose={ () => setAddEntryModalOpen(false) } 
+                    initialMeal={ AddEntryInitialMeal } 
+                    onSubmit={ handleAddEntrySubmit } />
+                , document.body) }
 
             {/* { createPortal(<EntryModal2 isOpen={ true } />, 
                 document.body) } */}
@@ -137,30 +157,30 @@ function DailyTotals({ totals }) {
                     margin: "0.5rem 0 0 0" }}>
                     <div style={{ 
                         height: "1rem",
-                        flex: t.protein,
+                        flex: t.protein*100,
                         background: "var(--protein-color)" }}></div>
                     <div style={{ 
                         height: "1rem",
-                        flex: t.carbs,
+                        flex: t.carbs*100,
                         background: "var(--carb-color)" }}></div>
                     <div style={{ 
                         height: "1rem",
-                        flex: t.fat,
+                        flex: t.fat*100,
                         background: "var(--fat-color)" }}></div>
                 </center>
 
                 <center role="group" style={{ gap: "0.5rem", marginBottom: "0.5rem" }}>
                     <div style={{ 
                         height: "1rem",
-                        flex: t.protein,
+                        flex: t.protein*100,
                         color: "var(--protein-color)" }}>{ pct("protein") }</div>
                     <div style={{ 
                         height: "1rem",
-                        flex: t.carbs,
+                        flex: t.carbs*100,
                         color: "var(--carb-color)" }}>{ pct("carbs") }</div>
                     <div style={{ 
                         height: "1rem",
-                        flex: t.fat,
+                        flex: t.fat*100,
                         color: "var(--fat-color)" }}>{ pct("fat") }</div>
                 </center>
             </>}
@@ -183,10 +203,10 @@ function MealSection({ meal, diary, addEntry, editEntry }) {
             <div style={{ flex: 1 }}>
                 { e.food.name }
                 <div style={{ display: "flex", gap: "0.5rem", opacity: 0.5 }}>
-                    <small>{ e.servings * e.food.protein }p</small>
-                    <small>{ e.servings * e.food.carbs }c</small>
-                    <small>{ e.servings * e.food.fat }f</small>
-                    <small>{ e.servings * e.food.calories }kcal</small>
+                    <small>{ (e.servings * e.food.protein / e.food.serving_count).toFixed(2) }p</small>
+                    <small>{ (e.servings * e.food.carbs / e.food.serving_count).toFixed(2) }c</small>
+                    <small>{ (e.servings * e.food.fat / e.food.serving_count).toFixed(2) }f</small>
+                    <small>{ (e.servings * e.food.calories / e.food.serving_count).toFixed(2) }kcal</small>
                 </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>

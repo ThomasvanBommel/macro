@@ -279,9 +279,27 @@ func (db *Database) searchFoodsByName(query string) ([]Food, error) {
 	q := `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
 	     	serving_count
 		 FROM food
-		 WHERE LOWER(name) LIKE LOWER(?);`
+		 WHERE LOWER(name) LIKE LOWER(?)
+		 ORDER BY name ASC;`
 
 	rows, err := db.Query(q, "%"+query+"%")
+	if err != nil {
+		return nil, err
+	}
+
+	return collectRows(rows, scanFoods)
+}
+
+func (db *Database) searchFoodsByNameSortedUserFromTokenFirst(query string, token string) ([]Food, error) {
+	defer Trace("searchFoodsByNameSortedUserFromTokenFirst(query, token)", "query", query, "token", token)()
+
+	q := `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
+	     	serving_count
+		 FROM food
+		 WHERE LOWER(name) LIKE LOWER(?)
+		 ORDER BY (user_name = (SELECT user_name FROM session WHERE token = ?)) DESC, name ASC;`
+
+	rows, err := db.Query(q, "%"+query+"%", token)
 	if err != nil {
 		return nil, err
 	}

@@ -473,36 +473,36 @@ func (a *API) handleGetDiary(c *gin.Context) {
 
 	for i := range res {
 		entry := toEntryWithFoodResponse(&res[i])
-		response.Totals.Calories += entry.Food.Calories * entry.Servings
-		response.Totals.Carbs += entry.Food.Carbs * entry.Servings
-		response.Totals.Protein += entry.Food.Protein * entry.Servings
-		response.Totals.Fat += entry.Food.Fat * entry.Servings
+		response.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
+		response.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
+		response.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
+		response.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
 
 		switch strings.ToLower(entry.MealName) {
 		case "breakfast":
 			response.Breakfast.Entries = append(response.Breakfast.Entries, entry)
-			response.Breakfast.Totals.Calories += entry.Food.Calories * entry.Servings
-			response.Breakfast.Totals.Carbs += entry.Food.Carbs * entry.Servings
-			response.Breakfast.Totals.Protein += entry.Food.Protein * entry.Servings
-			response.Breakfast.Totals.Fat += entry.Food.Fat * entry.Servings
+			response.Breakfast.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
+			response.Breakfast.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
+			response.Breakfast.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
+			response.Breakfast.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
 		case "lunch":
 			response.Lunch.Entries = append(response.Lunch.Entries, entry)
-			response.Lunch.Totals.Calories += entry.Food.Calories * entry.Servings
-			response.Lunch.Totals.Carbs += entry.Food.Carbs * entry.Servings
-			response.Lunch.Totals.Protein += entry.Food.Protein * entry.Servings
-			response.Lunch.Totals.Fat += entry.Food.Fat * entry.Servings
+			response.Lunch.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
+			response.Lunch.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
+			response.Lunch.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
+			response.Lunch.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
 		case "dinner":
 			response.Dinner.Entries = append(response.Dinner.Entries, entry)
-			response.Dinner.Totals.Calories += entry.Food.Calories * entry.Servings
-			response.Dinner.Totals.Carbs += entry.Food.Carbs * entry.Servings
-			response.Dinner.Totals.Protein += entry.Food.Protein * entry.Servings
-			response.Dinner.Totals.Fat += entry.Food.Fat * entry.Servings
+			response.Dinner.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
+			response.Dinner.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
+			response.Dinner.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
+			response.Dinner.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
 		case "snacks":
 			response.Snacks.Entries = append(response.Snacks.Entries, entry)
-			response.Snacks.Totals.Calories += entry.Food.Calories * entry.Servings
-			response.Snacks.Totals.Carbs += entry.Food.Carbs * entry.Servings
-			response.Snacks.Totals.Protein += entry.Food.Protein * entry.Servings
-			response.Snacks.Totals.Fat += entry.Food.Fat * entry.Servings
+			response.Snacks.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
+			response.Snacks.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
+			response.Snacks.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
+			response.Snacks.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
 		}
 	}
 
@@ -519,7 +519,19 @@ func (a *API) handleFoodSearch(c *gin.Context) {
 		return
 	}
 
-	foods, err := a.db.searchFoodsByName(in.Query)
+	// get session token
+	t, exists := getSessionToken(c)
+
+	var foods []Food
+	var err error
+
+	if exists {
+		foods, err = a.db.searchFoodsByNameSortedUserFromTokenFirst(in.Query, t)
+	} else {
+		foods, err = a.db.searchFoodsByName(in.Query)
+	}
+
+	// foods, err := a.db.searchFoodsByName(in.Query)
 	if err != nil {
 		c.Set("error", err.Error())
 
