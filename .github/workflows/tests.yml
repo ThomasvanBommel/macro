@@ -7,7 +7,7 @@ jobs:
 
   # this will likely break in the future as I removed the setup steps for node and go for speed
   # when it breaks, just add the setup steps or update to the latest versions of node and go
-  mono-build:
+  build:
     runs-on: ubuntu-latest
     env:
       CGO_ENABLED: 0
