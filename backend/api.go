@@ -59,6 +59,9 @@ func (a *API) registerAPIRoutes(r *gin.Engine) {
 	api.POST("/diary", a.handleGetDiary)
 	api.POST("/food/search", a.handleFoodSearch)
 
+	api.POST("/entry/edit", a.handleEditEntry)
+	api.POST("/entry/delete", a.handleDeleteEntry)
+
 	api.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, nil)
 	})
@@ -242,9 +245,9 @@ func scaleForStorage(n json.Number) int {
 	return int(roundToTwoDecimalPlaces(f) * 100)
 }
 
-// toCreateEntryParams converts a CreateEntryInput to CreateEntryParams, applying necessary scaling.
-func toCreateEntryParams(in *CreateEntryInput) CreateEntryParams {
-	return CreateEntryParams{
+// toEntryParams converts a CreateEntryInput to EntryParams, applying necessary scaling.
+func toEntryParams(in *CreateEntryInput) EntryParams {
+	return EntryParams{
 		FoodId:   *in.FoodId,
 		MealName: in.MealName,
 		Date:     in.Date,
@@ -312,7 +315,7 @@ func (a *API) handleCreateEntry(c *gin.Context) {
 		return
 	}
 
-	p := toCreateEntryParams(&in)
+	p := toEntryParams(&in)
 	if p.Servings < 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Servings must be greater than 0"})
 		return
@@ -519,7 +522,6 @@ func (a *API) handleFoodSearch(c *gin.Context) {
 		return
 	}
 
-	// get session token
 	t, exists := getSessionToken(c)
 
 	var foods []Food
@@ -551,5 +553,90 @@ func (a *API) handleFoodSearch(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, f)
+}
 
+// handleEditEntry edits an existing entry for the authenticated user.
+func (a *API) handleEditEntry(c *gin.Context) {
+	t, exsits := getSessionToken(c)
+	if !exsits {
+		c.Set("error", "No active session")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	type EditEntryInput struct {
+		ID int `json:"id" binding:"required"`
+		CreateEntryInput
+	}
+
+	var in EditEntryInput
+	if !bindInput(c, &in) {
+		return
+	}
+
+	p := toEntryParams(&in.CreateEntryInput)
+	if p.Servings < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Servings must be greater than 0"})
+		return
+	}
+
+	e, err := a.db.editEntryAuthByToken(in.ID, p, t)
+	if err != nil {
+		c.Set("error", err.Error())
+
+		if strings.Contains(err.Error(), "Unauthorized") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		if strings.Contains(err.Error(), "no rows in result set") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entry ID or food ID"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to edit entry"})
+		return
+	}
+
+	r := toEntryWithFoodResponse(e)
+	c.JSON(http.StatusOK, r)
+}
+
+// handleDeleteEntry deletes an existing entry for the authenticated user.
+func (a *API) handleDeleteEntry(c *gin.Context) {
+	t, exsits := getSessionToken(c)
+	if !exsits {
+		c.Set("error", "No active session")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	type DeleteEntryInput struct {
+		ID int `json:"id" binding:"required"`
+	}
+
+	var in DeleteEntryInput
+	if !bindInput(c, &in) {
+		return
+	}
+
+	err := a.db.deleteEntryAuthByToken(in.ID, t)
+	if err != nil {
+		c.Set("error", err.Error())
+
+		if strings.Contains(err.Error(), "Unauthorized") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		if strings.Contains(err.Error(), "no rows in result set") {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entry ID"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete entry"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Entry deleted successfully"})
 }

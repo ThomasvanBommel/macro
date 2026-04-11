@@ -261,8 +261,7 @@ func (db *Database) getEntryWithFoodById(id int) (*EntryWithFood, error) {
 }
 
 // createEntryByToken inserts an entry for the session user and returns the hydrated record.
-func (db *Database) createEntryByToken(entry CreateEntryParams, token string) (*EntryWithFood,
-	error) {
+func (db *Database) createEntryByToken(entry EntryParams, token string) (*EntryWithFood, error) {
 	defer Trace("createEntryByToken(entry, token)", "entry", entry, "token", token)()
 
 	q := `INSERT INTO entry (user_name, food_id, meal_name, date, servings)
@@ -298,6 +297,8 @@ func (db *Database) searchFoodsByName(query string) ([]Food, error) {
 	return collectRows(rows, scanFoods)
 }
 
+// searchFoodsByNameSortedUserFromTokenFirst returns foods matching the query, sorted with the
+// session user's foods first.
 func (db *Database) searchFoodsByNameSortedUserFromTokenFirst(query string, token string) ([]Food, error) {
 	defer Trace("searchFoodsByNameSortedUserFromTokenFirst(query, token)", "query", query, "token", token)()
 
@@ -313,4 +314,33 @@ func (db *Database) searchFoodsByNameSortedUserFromTokenFirst(query string, toke
 	}
 
 	return collectRows(rows, scanFoods)
+}
+
+// editEntryAuthByToken updates an entry if it belongs to the session user and returns the record.
+func (db *Database) editEntryAuthByToken(id int, p EntryParams, t string) (*EntryWithFood, error) {
+	defer Trace("editEntryAuthByToken(id, params, token)", "id", id, "params", p, "token", t)()
+
+	q := `UPDATE entry
+		  SET food_id = ?, meal_name = ?, date = ?, servings = ?
+		  WHERE id = ? AND user_name = (SELECT user_name FROM session WHERE token = ?)
+		  RETURNING id;`
+
+	var entryId int
+	err := db.QueryRow(q, p.FoodId, p.MealName, p.Date, p.Servings, id, t).Scan(&entryId)
+	if err != nil {
+		return nil, err
+	}
+
+	return db.getEntryWithFoodById(entryId)
+}
+
+// deleteEntryAuthByToken deletes an entry if it belongs to the session user.
+func (db *Database) deleteEntryAuthByToken(id int, token string) error {
+	defer Trace("deleteEntryAuthByToken(id, token)", "id", id, "token", token)()
+
+	q := `DELETE 
+	      FROM entry 
+		  WHERE id = ? AND user_name = (SELECT user_name FROM session WHERE token = ?);`
+	_, err := db.Exec(q, id, token)
+	return err
 }

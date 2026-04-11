@@ -1,7 +1,11 @@
 import { useState, useEffect, useContext, useRef } from 'react';
 import { MdAdd, MdRefresh, MdStar } from "react-icons/md";
 
-import { handleSearchFoods, handleCreateEntry } from "../../api";
+import {
+    handleSearchFoods, 
+    handleCreateEntry, 
+    handleEditEntry, 
+    handleDeleteEntry } from "../../api";
 import { SessionContext } from '../../Context';
 import Modal from './Modal';
 
@@ -21,7 +25,7 @@ export default function EntryModal({
     initialMeal = "breakfast",
     initialFood = null,
     initialServings = 1,
-    editMode = false
+    entryID = null // used to identify entry for editing, null for creating new entry
 }) {
     const [meal, setMeal] = useState(initialMeal);
     const [food, setFood] = useState(initialFood);
@@ -100,7 +104,11 @@ export default function EntryModal({
         // TODO: inform user of missing fields
 
         setLoading(true);
-        handleCreateEntry(food.id, meal, date, servings)
+        const action = entryID
+            ? handleEditEntry(entryID, food.id, meal, date, servings)
+            : handleCreateEntry(food.id, meal, date, servings);
+
+        action
             .then(data => {
                 if (data.error)
                     throw new Error(data.error);
@@ -110,7 +118,23 @@ export default function EntryModal({
             .finally(() => setLoading(false));
     }
 
-    return <Modal title={ editMode ? "Edit Entry" : "Add Entry" } isOpen={ isOpen } 
+    const handleDelete = e => {
+        e.preventDefault();
+
+        if (!entryID) return;
+
+        setLoading(true);
+        handleDeleteEntry(entryID)
+            .then(data => {
+                if (data.error)
+                    throw new Error(data.error);
+
+                onSuccess();
+            }).catch(console.error) // TODO: error handling
+            .finally(() => setLoading(false));
+    }
+
+    return <Modal title={ entryID ? `Edit Entry (${ entryID })` : "Add Entry" } isOpen={ isOpen } 
         onClose={ onClose }>
         <style>{`
             .entry-form {
@@ -261,7 +285,7 @@ export default function EntryModal({
             </fieldset>
             <label>
                 Servings { food && `( ${food?.serving_size} )` }
-                <input type="number" min={ editMode ? 0 : 1 } step="0.01" value={ servings } 
+                <input type="number" min="0.01" step="0.01" value={ servings } 
                     onChange={ e => setServings(e.target.value) } required />
             </label>
             <center className="totals">
@@ -276,8 +300,8 @@ export default function EntryModal({
                 </div>
             </center>
             <fieldset className="submit-row">
-                { editMode && 
-                    <input type="submit" className="red" value="Delete" />}
+                { entryID && 
+                    <input type="submit" className="red" value="Delete" onClick={ handleDelete } />}
                     <input type="submit" value="Save"
                         disabled={ !food || servings === "0" || loading } />
             </fieldset>

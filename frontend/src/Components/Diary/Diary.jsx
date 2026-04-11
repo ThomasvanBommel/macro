@@ -24,14 +24,25 @@ export default function Diary({ username, defaultDate }) {
     const [AddEntryModalOpen, setAddEntryModalOpen] = useState(false);
     const [AddEntryInitialMeal, setAddEntryInitialMeal] = useState("breakfast");
     const [AddEntryInitialFood, setAddEntryInitialFood] = useState(null);
+    const [AddEntryInitialServings, setAddEntryInitialServings] = useState(1);
+    const [AddEntryEntryID, setAddEntryEntryID] = useState(null);
 
     const [AddFoodModalOpen, setAddFoodModalOpen] = useState(false);
 
     const handleAddEntrySuccess = () => {
         setAddEntryInitialFood(null);
+        setAddEntryInitialServings(1);
+        setAddEntryEntryID(null);
         setAddEntryModalOpen(false);
         setRefresh(prev => prev + 1);
     };
+
+    const handleAddEntryOnClose = () => {
+        setAddEntryInitialFood(null);
+        setAddEntryInitialServings(1);
+        setAddEntryEntryID(null);
+        setAddEntryModalOpen(false);
+    }
 
     const handleOpenAddFoodModal = e => {
         e.preventDefault();
@@ -60,7 +71,13 @@ export default function Diary({ username, defaultDate }) {
                 setAddEntryInitialMeal(m);
                 setAddEntryModalOpen(true);
             }, 
-            editEntry: () => {} };
+            editEntry: ({ id, food, servings }) => {
+                setAddEntryInitialMeal(meal);
+                setAddEntryInitialFood(food);
+                setAddEntryInitialServings(servings);
+                setAddEntryEntryID(id);
+                setAddEntryModalOpen(true);
+            } };
     }
 
     return (
@@ -80,10 +97,12 @@ export default function Diary({ username, defaultDate }) {
                 <EntryModal 
                     date={ date }
                     isOpen={ AddEntryModalOpen } 
-                    onClose={ () => setAddEntryModalOpen(false) } 
+                    onClose={ handleAddEntryOnClose } 
                     onNewFood={ handleOpenAddFoodModal }
                     initialMeal={ AddEntryInitialMeal } 
                     initialFood={ AddEntryInitialFood }
+                    initialServings={ AddEntryInitialServings }
+                    entryID={ AddEntryEntryID }
                     onSuccess={ handleAddEntrySuccess } />
                 , document.body) }
 

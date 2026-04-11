@@ -116,7 +116,7 @@ type CreateFoodParams struct {
 	ServingCount int
 }
 
-type CreateEntryParams struct {
+type EntryParams struct {
 	FoodId   int
 	MealName string
 	Date     string

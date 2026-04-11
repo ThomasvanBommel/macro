@@ -42,7 +42,6 @@ export async function handleLogoutUser() {
     document.cookie = "macro_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
-
 /** Fetches entries for a user on a specific date. */
 export async function handleFetchEntryList(name, datestr) {
     return await postJSON("/api/entries", { name: name, date: datestr.value });
@@ -73,4 +72,16 @@ export async function handleGetDiary(name, date) {
 // Fetches a list of foods matching the search query. Returns an array of food data.
 export async function handleSearchFoods(query) {
     return await postJSON("/api/food/search", { query });
+}
+
+// Edits an existing entry by ID for the active user. Returns the updated entry data.
+export async function handleEditEntry(id, foodID, mealName, date, servings) {
+    return await postJSON("/api/entry/edit", { 
+        id: id, food_id: foodID, meal_name: mealName, date, servings 
+    });
+}
+
+// Deletes an entry by ID for the active user. Returns a success message.
+export async function handleDeleteEntry(id) {
+    return await postJSON("/api/entry/delete", { id });
 }
