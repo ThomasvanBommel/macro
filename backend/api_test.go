@@ -515,7 +515,7 @@ func TestHandleListUserEntries(t *testing.T) {
 
 	t.Run("valid-user-with-entries", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			api.db.createEntryByToken(CreateEntryParams{
+			api.db.createEntryByToken(EntryParams{
 				FoodId:   f.ID,
 				MealName: "Breakfast",
 				Date:     "1901-01-01",
