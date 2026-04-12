@@ -1,8 +1,9 @@
-package main
+package db
 
 import (
 	"database/sql"
 	"embed"
+	"macro/util"
 
 	"github.com/pressly/goose/v3"
 	"golang.org/x/crypto/bcrypt"
@@ -15,17 +16,17 @@ type Database struct {
 }
 
 //go:embed migrations/*.sql
-var migrationFiles embed.FS
+var MigrationFiles embed.FS
 
-// InitDatabase opens the primary DB connection and applies migrations.
-func InitDatabase() *Database {
+// NewDatabase opens the primary DB connection and applies migrations.
+func NewDatabase() *Database {
 	db := openDatabase("/data/macro.db")
 
 	// Apply migrations
-	goose.SetBaseFS(migrationFiles)
+	goose.SetBaseFS(MigrationFiles)
 	err := goose.SetDialect("sqlite3")
-	FatalOnError(err, "Failed to set goose dialect")
-	FatalOnError(goose.Up(db, "migrations"), "Failed to apply migrations")
+	util.FatalOnError(err, "Failed to set goose dialect")
+	util.FatalOnError(goose.Up(db, "migrations"), "Failed to apply migrations")
 
 	// TODO: start session cleanup ticker
 
@@ -34,10 +35,10 @@ func InitDatabase() *Database {
 
 // openDatabase opens a SQLite connection and sets connection limits.
 func openDatabase(path string) *sql.DB {
-	defer Trace("openDatabase(path)", "path", path)()
+	defer util.Trace("openDatabase(path)", "path", path)()
 
 	db, err := sql.Open("sqlite", path)
-	FatalOnError(err, "Failed to open database")
+	util.FatalOnError(err, "Failed to open database")
 
 	// Set PRAGMAs for performance. WAL allows concurrent reads/writes, the others speed up writes.
 	_, err = db.Exec(`
@@ -45,15 +46,15 @@ func openDatabase(path string) *sql.DB {
 		PRAGMA synchronous = OFF;
 		PRAGMA cache_size = -10000;
 	`)
-	FatalOnError(err, "Failed to set PRAGMAs")
+	util.FatalOnError(err, "Failed to set PRAGMAs")
 
 	db.SetMaxOpenConns(1)
 	return db
 }
 
-// createUser hashes the password and inserts a new user.
-func (db *Database) createUser(name string, password string) error {
-	defer Trace("createUser(name, password)", "name", name)()
+// CreateUser hashes the password and inserts a new user.
+func (db *Database) CreateUser(name string, password string) error {
+	defer util.Trace("CreateUser(name, password)", "name", name)()
 
 	// Password can be max 72 bytes
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), -1)
@@ -66,11 +67,11 @@ func (db *Database) createUser(name string, password string) error {
 	return err
 }
 
-// createSession creates a 1-hour session and returns its record.
-func (db *Database) createSession(name string) (*Session, error) {
-	defer Trace("createSession(userName)", "userName", name)()
+// CreateSession creates a 1-hour session and returns its record.
+func (db *Database) CreateSession(name string) (*Session, error) {
+	defer util.Trace("CreateSession(userName)", "userName", name)()
 
-	t := GenerateRandomHexString(32)
+	t := util.GenerateRandomHexString(32)
 
 	q := `INSERT INTO session (user_name, token, expires)
 		  VALUES (?, ?, datetime('now', '+1 hour'))
@@ -85,9 +86,9 @@ func (db *Database) createSession(name string) (*Session, error) {
 	return &s, nil
 }
 
-// getSessionByToken returns the session for a token.
-func (db *Database) getSessionByToken(token string) (*Session, error) {
-	defer Trace("getSessionByToken(token)", "token", token)()
+// GetSessionByToken returns the session for a token.
+func (db *Database) GetSessionByToken(token string) (*Session, error) {
+	defer util.Trace("GetSessionByToken(token)", "token", token)()
 
 	var s Session
 	q := `SELECT user_name, token, created, expires 
@@ -102,18 +103,18 @@ func (db *Database) getSessionByToken(token string) (*Session, error) {
 	return &s, nil
 }
 
-// deleteSession deletes a session by token.
-func (db *Database) deleteSession(token string) error {
-	defer Trace("deleteSession(token)", "token", token)()
+// DeleteSession deletes a session by token.
+func (db *Database) DeleteSession(token string) error {
+	defer util.Trace("DeleteSession(token)", "token", token)()
 
 	q := `DELETE FROM session WHERE token = ?;`
 	_, err := db.Exec(q, token)
 	return err
 }
 
-// getUserByNameAndPassword authenticates a user via bcrypt hash comparison.
-func (db *Database) getUserByNameAndPassword(name string, password string) (*User, error) {
-	defer Trace("getUserByNameAndPassword(name, password)", "name", name)()
+// GetUserByNameAndPassword authenticates a user via bcrypt hash comparison.
+func (db *Database) GetUserByNameAndPassword(name string, password string) (*User, error) {
+	defer util.Trace("GetUserByNameAndPassword(name, password)", "name", name)()
 
 	var u User
 	q := "SELECT name, password_hash, created FROM user WHERE name = ?;"
@@ -167,10 +168,10 @@ func scanEntryWithFood(scanner rowScanner) (EntryWithFood, error) {
 	return e, err
 }
 
-// listUserEntriesWithFoodByNameAndDate returns joined entries and foods for a user/date.
-func (db *Database) listUserEntriesWithFoodByNameAndDate(name string, date string) (
+// ListUserEntriesWithFoodByNameAndDate returns joined entries and foods for a user/date.
+func (db *Database) ListUserEntriesWithFoodByNameAndDate(name string, date string) (
 	[]EntryWithFood, error) {
-	defer Trace("listUserEntriesWithFoodByNameAndDate(name, date)", "name", name, "date", date)()
+	defer util.Trace("ListUserEntriesWithFoodByNameAndDate(name, date)", "name", name, "date", date)()
 
 	q := `SELECT e.id, e.user_name, e.meal_name, e.date, e.servings, e.created,
 				 f.id, f.name, f.brand, f.created, f.user_name, f.calories, f.carbs, f.protein, 
@@ -187,9 +188,9 @@ func (db *Database) listUserEntriesWithFoodByNameAndDate(name string, date strin
 	return collectRows(rows, scanEntryWithFood)
 }
 
-// createFoodByToken inserts a food tied to the user resolved from session token.
-func (db *Database) createFoodByToken(food CreateFoodParams, token string) (*Food, error) {
-	defer Trace("createFoodByToken(food, token)", "food", food, "token", token)()
+// CreateFoodByToken inserts a food tied to the user resolved from session token.
+func (db *Database) CreateFoodByToken(food FoodParams, token string) (*Food, error) {
+	defer util.Trace("CreateFoodByToken(food, token)", "food", food, "token", token)()
 
 	q := `INSERT INTO food (name, brand, user_name, calories, carbs, protein, fat, serving_size, 
 		  	serving_count)
@@ -213,7 +214,7 @@ func (db *Database) createFoodByToken(food CreateFoodParams, token string) (*Foo
 
 // scanFoods maps a food row to Food.
 func scanFoods(scanner rowScanner) (Food, error) {
-	defer Trace("scanFoods(scanner)")()
+	defer util.Trace("scanFoods(scanner)")()
 
 	var f Food
 	err := scanner.Scan(&f.ID, &f.Name, &f.Brand, &f.Created, &f.UserName, &f.Calories, &f.Carbs,
@@ -221,9 +222,9 @@ func scanFoods(scanner rowScanner) (Food, error) {
 	return f, err
 }
 
-// listFoods returns all foods.
-func (db *Database) listFoods() ([]Food, error) {
-	defer Trace("listFoods()")()
+// ListFoods returns all foods.
+func (db *Database) ListFoods() ([]Food, error) {
+	defer util.Trace("ListFoods()")()
 
 	q := `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
 	     	serving_count
@@ -239,7 +240,7 @@ func (db *Database) listFoods() ([]Food, error) {
 
 // getEntryWithFoodById returns one joined entry+food record by entry ID.
 func (db *Database) getEntryWithFoodById(id int) (*EntryWithFood, error) {
-	defer Trace("getEntryWithFoodById(id)", "id", id)()
+	defer util.Trace("getEntryWithFoodById(id)", "id", id)()
 
 	q := `SELECT e.id, e.user_name, e.meal_name, e.date, e.servings, e.created,
 				 f.id, f.name, f.brand, f.created, f.user_name, f.calories, f.carbs, f.protein, 
@@ -260,9 +261,9 @@ func (db *Database) getEntryWithFoodById(id int) (*EntryWithFood, error) {
 	return &e, nil
 }
 
-// createEntryByToken inserts an entry for the session user and returns the hydrated record.
-func (db *Database) createEntryByToken(entry EntryParams, token string) (*EntryWithFood, error) {
-	defer Trace("createEntryByToken(entry, token)", "entry", entry, "token", token)()
+// CreateEntryByToken inserts an entry for the session user and returns the hydrated record.
+func (db *Database) CreateEntryByToken(entry EntryParams, token string) (*EntryWithFood, error) {
+	defer util.Trace("CreateEntryByToken(entry, token)", "entry", entry, "token", token)()
 
 	q := `INSERT INTO entry (user_name, food_id, meal_name, date, servings)
 		  VALUES ((
@@ -279,9 +280,9 @@ func (db *Database) createEntryByToken(entry EntryParams, token string) (*EntryW
 	return db.getEntryWithFoodById(id)
 }
 
-// searchFoodsByName returns foods with names partially matching the query.
-func (db *Database) searchFoodsByName(query string) ([]Food, error) {
-	defer Trace("searchFoodsByName(query)", "query", query)()
+// SearchFoodsByName returns foods with names partially matching the query.
+func (db *Database) SearchFoodsByName(query string) ([]Food, error) {
+	defer util.Trace("SearchFoodsByName(query)", "query", query)()
 
 	q := `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
 	     	serving_count
@@ -297,10 +298,10 @@ func (db *Database) searchFoodsByName(query string) ([]Food, error) {
 	return collectRows(rows, scanFoods)
 }
 
-// searchFoodsByNameSortedUserFromTokenFirst returns foods matching the query, sorted with the
+// SearchFoodsByNameSortedUserFromTokenFirst returns foods matching the query, sorted with the
 // session user's foods first.
-func (db *Database) searchFoodsByNameSortedUserFromTokenFirst(query string, token string) ([]Food, error) {
-	defer Trace("searchFoodsByNameSortedUserFromTokenFirst(query, token)", "query", query, "token", token)()
+func (db *Database) SearchFoodsByNameSortedUserFromTokenFirst(query string, token string) ([]Food, error) {
+	defer util.Trace("SearchFoodsByNameSortedUserFromTokenFirst(query, token)", "query", query, "token", token)()
 
 	q := `SELECT id, name, brand, created, user_name, calories, carbs, protein, fat, serving_size, 
 	     	serving_count
@@ -316,9 +317,9 @@ func (db *Database) searchFoodsByNameSortedUserFromTokenFirst(query string, toke
 	return collectRows(rows, scanFoods)
 }
 
-// editEntryAuthByToken updates an entry if it belongs to the session user and returns the record.
-func (db *Database) editEntryAuthByToken(id int, p EntryParams, t string) (*EntryWithFood, error) {
-	defer Trace("editEntryAuthByToken(id, params, token)", "id", id, "params", p, "token", t)()
+// EditEntryAuthByToken updates an entry if it belongs to the session user and returns the record.
+func (db *Database) EditEntryAuthByToken(id int, p EntryParams, t string) (*EntryWithFood, error) {
+	defer util.Trace("EditEntryAuthByToken(id, params, token)", "id", id, "params", p, "token", t)()
 
 	q := `UPDATE entry
 		  SET food_id = ?, meal_name = ?, date = ?, servings = ?
@@ -334,9 +335,9 @@ func (db *Database) editEntryAuthByToken(id int, p EntryParams, t string) (*Entr
 	return db.getEntryWithFoodById(entryId)
 }
 
-// deleteEntryAuthByToken deletes an entry if it belongs to the session user.
-func (db *Database) deleteEntryAuthByToken(id int, token string) error {
-	defer Trace("deleteEntryAuthByToken(id, token)", "id", id, "token", token)()
+// DeleteEntryAuthByToken deletes an entry if it belongs to the session user.
+func (db *Database) DeleteEntryAuthByToken(id int, token string) error {
+	defer util.Trace("DeleteEntryAuthByToken(id, token)", "id", id, "token", token)()
 
 	q := `DELETE 
 	      FROM entry 

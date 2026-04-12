@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"log/slog"
@@ -9,19 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// log.go defines logging utilities and conventions for the application.
-func InitLogger(r *gin.Engine) *slog.Logger {
+// Logger is a struct that holds the Gin router and provides methods for initializing logging.
+type Logger struct{}
+
+// Middleware returns a Gin middleware function that logs HTTP requests and responses using slog.
+func (l *Logger) Middleware() gin.HandlerFunc {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 		// Level: slog.LevelDebug,
 	}))
 
 	slog.SetDefault(logger)
-	r.Use(SlogMiddleware())
 
-	return logger
-}
-
-func SlogMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path

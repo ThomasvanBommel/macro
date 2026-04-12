@@ -4,18 +4,26 @@ import (
 	"log/slog"
 	"os"
 
+	"macro/api"
+	"macro/db"
+	"macro/util"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	db := InitDatabase()
-	defer db.Close()
-
 	r := gin.New()
 	r.Use(gin.Recovery())
 
-	InitLogger(r)
-	InitAPI(r, db)
+	log := util.Logger{}
+	r.Use(log.Middleware())
+
+	db := db.NewDatabase()
+	defer db.Close()
+
+	api.Init(r, db)
+
+	// InitAPI(r, db)
 	InitEnv(r)
 
 	// If running in a trusted environment (e.g. GCP Cloud Run)

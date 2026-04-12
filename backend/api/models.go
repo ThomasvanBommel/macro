@@ -1,6 +1,11 @@
-package main
+package api
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"macro/db"
+
+	"github.com/gin-gonic/gin"
+)
 
 type APIResponse interface {
 	Status() int
@@ -24,8 +29,11 @@ type DataResponse struct {
 func (r *DataResponse) Status() int { return r.Code }
 func (r *DataResponse) Result() any { return r.Data }
 
+type APIHandler func(*gin.Context) APIResponse
+
 type API struct {
-	db *Database
+	db      *db.Database
+	Cleanup func() error
 
 	// 2xx Successful responses
 	OK             func(any) APIResponse
@@ -100,71 +108,4 @@ type EntryWithFoodResponse struct {
 	Date     string       `json:"date"`
 	Servings float64      `json:"servings"`
 	Created  string       `json:"created"`
-}
-
-// Database ----------------------------------------------------------------------------------------
-
-type User struct {
-	Name         string
-	PasswordHash string
-	Created      string
-}
-
-type Session struct {
-	UserName string `json:"username"`
-	Token    string `json:"token"`
-	Created  string `json:"created"`
-	Expires  string `json:"expires"`
-}
-
-type Entry struct {
-	ID       int
-	UserName string
-	FoodId   int
-	MealName string
-	Date     string
-	Servings int
-	Created  string
-}
-
-type Food struct {
-	ID           int
-	Name         string
-	Brand        string
-	Created      string
-	UserName     string
-	Calories     int
-	Carbs        int
-	Protein      int
-	Fat          int
-	ServingSize  string
-	ServingCount int
-}
-
-type EntryWithFood struct {
-	ID       int
-	UserName string
-	Food     Food
-	MealName string
-	Date     string
-	Servings int
-	Created  string
-}
-
-type CreateFoodParams struct {
-	Name         string
-	Brand        string
-	Calories     int
-	Carbs        int
-	Protein      int
-	Fat          int
-	ServingSize  string
-	ServingCount int
-}
-
-type EntryParams struct {
-	FoodId   int
-	MealName string
-	Date     string
-	Servings int
 }
