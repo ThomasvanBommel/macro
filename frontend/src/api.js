@@ -5,8 +5,13 @@ async function postJSON(url, body) {
         body: JSON.stringify(body)
     });
 
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : null;
+    if (!res.ok) {
+        const error = new Error(data || "Unknown error");
+        error.status = res.status;
+        throw error;
+    }
 
     return data;
 }

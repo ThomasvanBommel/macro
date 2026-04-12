@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"math"
 	"net/http"
 	"os"
@@ -10,21 +12,63 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	sqlite "modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
-// API handles HTTP routes and database-backed request operations.
-type API struct {
-	db *Database
+type APIHandler func(*gin.Context) APIResponse
+
+// Wrap converts an APIHandler to a gin.HandlerFunc, handling APIResponse and errors uniformly.
+func Wrap(fn APIHandler) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		r := fn(c)
+		if r == nil {
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		quiet := false
+		if res, ok := r.(*ErrorResponse); ok && res != nil {
+			quiet = res.Quiet
+			c.Error(res)
+		}
+
+		payload := r.Result()
+		if quiet || payload == nil {
+			c.Status(r.Status())
+			return
+		}
+
+		c.JSON(r.Status(), payload)
+	}
 }
 
 // InitAPI configures middleware and registers API routes.
 func InitAPI(r *gin.Engine, db *Database) *API {
 	defer Trace("InitAPI(r *gin.Engine, db *Database)")()
 
-	api := &API{db: db}
+	api := &API{
+		db: db,
+
+		OK:             func(d any) APIResponse { return &DataResponse{200, d} },
+		Message:        func(m string) APIResponse { return &DataResponse{200, gin.H{"message": m}} },
+		Created:        func(d any) APIResponse { return &DataResponse{201, d} },
+		Accepted:       func() APIResponse { return &DataResponse{202, nil} },
+		NoContent:      func() APIResponse { return &DataResponse{204, nil} },
+		PartialContent: func(d any) APIResponse { return &DataResponse{206, d} },
+
+		BadRequest:      func(e error) APIResponse { return &ErrorResponse{400, false, e} },
+		Unauthorized:    func(e error) APIResponse { return &ErrorResponse{401, true, e} },
+		Forbidden:       func(e error) APIResponse { return &ErrorResponse{403, true, e} },
+		NotFound:        func(e error) APIResponse { return &ErrorResponse{404, true, e} },
+		Conflict:        func(e error) APIResponse { return &ErrorResponse{409, true, e} },
+		TooManyRequests: func(e error) APIResponse { return &ErrorResponse{429, true, e} },
+
+		InternalServerError: func(e error) APIResponse { return &ErrorResponse{500, true, e} },
+		NotImplemented:      func(e error) APIResponse { return &ErrorResponse{501, true, e} },
+	}
 
 	applySessionMiddleware(r)
-
 	api.registerAPIRoutes(r)
 
 	return api
@@ -48,37 +92,67 @@ func (a *API) registerAPIRoutes(r *gin.Engine) {
 	defer Trace("registerAPIRoutes(r *gin.Engine)")()
 
 	api := r.Group("/api")
-	api.POST("/register", a.handleRegisterUser)
-	api.POST("/login", a.handleLoginUser)
-	api.POST("/logout", a.handleLogoutUser)
-	api.POST("/validate-session", a.handleSessionValidation)
-	api.POST("/food", a.handleCreateFood)
-	api.POST("/foods", a.handleListFoods)
-	api.POST("/entry", a.handleCreateEntry)
-	api.POST("/entries", a.handleListUserEntries)
-	api.POST("/diary", a.handleGetDiary)
-	api.POST("/food/search", a.handleFoodSearch)
+	api.POST("/register", Wrap(a.handleRegisterUser))
+	api.POST("/login", Wrap(a.handleLoginUser))
+	api.POST("/logout", Wrap(a.handleLogoutUser))
+	api.POST("/validate-session", Wrap(a.handleSessionValidation))
+	api.POST("/food", Wrap(a.handleCreateFood))
+	api.POST("/foods", Wrap(a.handleListFoods))
+	api.POST("/entry", Wrap(a.handleCreateEntry))
+	api.POST("/entries", Wrap(a.handleListUserEntries))
+	api.POST("/diary", Wrap(a.handleGetDiary))
+	api.POST("/food/search", Wrap(a.handleFoodSearch))
 
-	api.POST("/entry/edit", a.handleEditEntry)
-	api.POST("/entry/delete", a.handleDeleteEntry)
+	api.POST("/entry/edit", Wrap(a.handleEditEntry))
+	api.POST("/entry/delete", Wrap(a.handleDeleteEntry))
 
-	api.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, nil)
-	})
+	api.GET("/health", func(c *gin.Context) { c.JSON(http.StatusOK, nil) })
 }
 
-// bindInput binds and validates a JSON body; on failure it writes 400 and returns false.
-func bindInput(c *gin.Context, obj any) bool {
-	defer Trace("bindInput(c *gin.Context, obj any)")()
+// DBErrorMessages holds overridable response messages for known DB error conditions.
+// Zero-value fields fall back to their default.
+type DBErrorMessages struct{ Unique, NotFound, Busy, Default string }
 
-	if err := c.ShouldBindJSON(obj); err != nil {
-		c.Error(err)
-		c.Set("error", err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return false
+// DBError maps a database error to an APIResponse, with optional message overrides.
+func (a *API) DBError(err error, msgs ...DBErrorMessages) APIResponse {
+	m := DBErrorMessages{
+		"Already exists.",
+		"Not found.",
+		"Database is busy, please try again.",
+		"An unexpected database error occurred.",
 	}
 
-	return true
+	if len(msgs) > 0 {
+		o := msgs[0]
+		if o.Unique != "" {
+			m.Unique = o.Unique
+		}
+		if o.NotFound != "" {
+			m.NotFound = o.NotFound
+		}
+		if o.Busy != "" {
+			m.Busy = o.Busy
+		}
+		if o.Default != "" {
+			m.Default = o.Default
+		}
+	}
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return a.NotFound(errors.New(m.NotFound))
+	}
+
+	var sqliteErr *sqlite.Error
+	if errors.As(err, &sqliteErr) {
+		switch sqliteErr.Code() {
+		case sqlite3.SQLITE_CONSTRAINT_UNIQUE, sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY:
+			return a.Conflict(errors.New(m.Unique))
+		case sqlite3.SQLITE_BUSY:
+			return a.TooManyRequests(errors.New(m.Busy))
+		}
+	}
+
+	return a.InternalServerError(errors.New(m.Default))
 }
 
 // initSession initializes session state with the provided Session struct.
@@ -130,99 +204,67 @@ func (a *API) createSession(name string, c *gin.Context) error {
 }
 
 // handleSessionValidation verifies the current session token.
-func (a *API) handleSessionValidation(c *gin.Context) {
-	defer Trace("handleSessionValidation(c *gin.Context)")()
-
+func (a *API) handleSessionValidation(c *gin.Context) APIResponse {
 	t, exists := getSessionToken(c)
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+		return a.Unauthorized(nil)
 	}
 
 	s, err := a.db.getSessionByToken(t)
 	if err != nil {
-		c.Set("error", err.Error())
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+		return a.Unauthorized(nil)
 	}
 
 	initSession(s, c)
-
-	c.JSON(http.StatusOK, s)
+	return a.OK(s)
 }
 
 // handleRegisterUser registers a new user.
-func (a *API) handleRegisterUser(c *gin.Context) {
-	defer Trace("handleRegisterUser(c *gin.Context)")()
-
+func (a *API) handleRegisterUser(c *gin.Context) APIResponse {
 	var in UserCredentialInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return a.BadRequest(err)
 	}
 
-	err := a.db.createUser(in.Name, in.Password)
-	if err != nil {
-		c.Set("error", err.Error())
-
-		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
-			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register user"})
-		}
-
-		return
+	if err := a.db.createUser(in.Name, in.Password); err != nil {
+		return a.DBError(err, DBErrorMessages{Unique: "Username already exists."})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+	return a.Created(nil)
 }
 
 // handleLoginUser authenticates a user and creates a session.
-func (a *API) handleLoginUser(c *gin.Context) {
-	defer Trace("handleLoginUser(c *gin.Context)")()
-
+func (a *API) handleLoginUser(c *gin.Context) APIResponse {
 	var in UserCredentialInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return a.BadRequest(err)
 	}
 
 	u, err := a.db.getUserByNameAndPassword(in.Name, in.Password)
 	if err != nil {
-		c.Set("error", err.Error())
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
-		return
+		return a.Unauthorized(nil)
 	}
 
-	err = a.createSession(u.Name, c)
-	if err != nil {
-		c.Set("error", err.Error())
-		msg := "Failed to create session. Please try again."
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-		return
+	if err := a.createSession(u.Name, c); err != nil {
+		return a.InternalServerError(nil)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User logged in successfully"})
+	return a.OK(nil)
 }
 
 // handleLogoutUser invalidates the active session and clears local session state.
-func (a *API) handleLogoutUser(c *gin.Context) {
-	defer Trace("handleLogoutUser(c *gin.Context)")()
-
+func (a *API) handleLogoutUser(c *gin.Context) APIResponse {
 	t, exists := getSessionToken(c)
 	if !exists {
-		c.JSON(http.StatusOK, gin.H{"message": "No active session"})
-		return
+		return a.OK(nil)
 	}
 
-	err := a.db.deleteSession(t)
-	if err != nil {
-		c.Set("error", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete session"})
-		return
+	if err := a.db.deleteSession(t); err != nil {
+		return a.DBError(err)
 	}
 
 	clearSession(c)
-
-	c.JSON(http.StatusOK, gin.H{"message": "User logged out and session cleared successfully"})
+	return a.OK(nil)
 }
 
 // roundToTwoDecimalPlaces rounds a float to two decimal places.
@@ -300,150 +342,109 @@ func toCreateFoodParams(in *CreateFoodInput) CreateFoodParams {
 }
 
 // handleCreateEntry creates a food entry for the authenticated user.
-func (a *API) handleCreateEntry(c *gin.Context) {
-	defer Trace("handleCreateEntry(c *gin.Context)")()
-
+func (a *API) handleCreateEntry(c *gin.Context) APIResponse {
 	var in CreateEntryInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return a.BadRequest(err)
 	}
 
 	t, exists := getSessionToken(c)
 	if !exists {
-		c.Set("error", "No active session")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+		return a.Unauthorized(nil)
 	}
 
 	p := toEntryParams(&in)
 	if p.Servings < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Servings must be greater than 0"})
-		return
+		return a.BadRequest(errors.New("Servings must be greater than 0"))
 	}
 
 	e, err := a.db.createEntryByToken(p, t)
 	if err != nil {
-		c.Set("error", err.Error())
-
 		if strings.Contains(err.Error(), "NOT NULL constraint failed: entry.user_name") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-			return
+			return a.Unauthorized(err)
 		}
 
-		if strings.Contains(err.Error(), "no rows in result set") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid food ID"})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create entry"})
-		return
+		return a.DBError(err, DBErrorMessages{NotFound: "Invalid food ID."})
 	}
 
-	r := toEntryWithFoodResponse(e)
-	c.JSON(http.StatusOK, r)
+	return a.OK(toEntryWithFoodResponse(e))
 }
 
 // handleListUserEntries returns entries with food details for a user and date.
-func (a *API) handleListUserEntries(c *gin.Context) {
-	defer Trace("handleListUserEntries(c *gin.Context)")()
-
+func (a *API) handleListUserEntries(c *gin.Context) APIResponse {
 	var in ListUserEntriesInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return a.BadRequest(err)
 	}
 
 	res, err := a.db.listUserEntriesWithFoodByNameAndDate(in.Name, in.Date)
 	if err != nil {
-		c.Set("error", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user profile"})
-		return
+		return a.DBError(err)
 	}
 
 	r := make([]EntryWithFoodResponse, len(res))
 	for i := range res {
 		r[i] = toEntryWithFoodResponse(&res[i])
 	}
-
-	c.JSON(http.StatusOK, r)
+	return a.OK(r)
 }
 
 // handleCreateFood creates a food record for the authenticated user.
-func (a *API) handleCreateFood(c *gin.Context) {
-	defer Trace("handleCreateFood(c *gin.Context)")()
-
+func (a *API) handleCreateFood(c *gin.Context) APIResponse {
 	var in CreateFoodInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return a.BadRequest(err)
 	}
 
 	t, exists := getSessionToken(c)
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+		return a.Unauthorized(nil)
 	}
 
 	p := toCreateFoodParams(&in)
 	if p.ServingCount < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Serving count must be greater than 0"})
-		return
+		return a.BadRequest(errors.New("Serving count must be greater than 0"))
 	}
 
 	if p.Calories < 0 || p.Carbs < 0 || p.Protein < 0 || p.Fat < 0 {
-		c.JSON(http.StatusBadRequest,
-			gin.H{"error": "Calories, carbs, protein, and fat must be non-negative"})
-		return
+		return a.BadRequest(errors.New("Calories, carbs, protein, and fat must be non-negative"))
 	}
 
 	f, err := a.db.createFoodByToken(p, t)
 	if err != nil {
-		c.Set("error", err.Error())
-
 		if strings.Contains(err.Error(), "NOT NULL constraint failed: food.user_name") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-			return
+			return a.Unauthorized(nil)
 		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create food"})
-		return
+		return a.DBError(err)
 	}
 
-	c.JSON(http.StatusOK, toFoodResponse(f))
+	return a.OK(toFoodResponse(f))
 }
 
 // handleListFoods returns all foods.
-func (a *API) handleListFoods(c *gin.Context) {
-	defer Trace("handleListFoods(c *gin.Context)")()
-
+func (a *API) handleListFoods(c *gin.Context) APIResponse {
 	foods, err := a.db.listFoods()
 	if err != nil {
-		c.Set("error", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve foods"})
-		return
+		return a.DBError(err)
 	}
 
 	f := make([]FoodResponse, len(foods))
-
 	for i := range foods {
 		f[i] = toFoodResponse(&foods[i])
 	}
-
-	c.JSON(http.StatusOK, f)
+	return a.OK(f)
 }
 
 // handleGetDiary returns all entries for a user and date, grouped by meal with totals.
-func (a *API) handleGetDiary(c *gin.Context) {
-	defer Trace("handleGetDiary(c *gin.Context)")()
-
+func (a *API) handleGetDiary(c *gin.Context) APIResponse {
 	var in ListUserEntriesInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return a.BadRequest(err)
 	}
 
 	res, err := a.db.listUserEntriesWithFoodByNameAndDate(in.Name, in.Date)
 	if err != nil {
-		c.Set("error", err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user profile"})
-		return
+		return a.DBError(err)
 	}
 
 	type Totals struct {
@@ -466,6 +467,13 @@ func (a *API) handleGetDiary(c *gin.Context) {
 		Snacks    Diary  `json:"snacks"`
 	}
 
+	addTotals := func(totals *Totals, entry EntryWithFoodResponse) {
+		totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
+		totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
+		totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
+		totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
+	}
+
 	response := Response{
 		Totals:    Totals{},
 		Breakfast: Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
@@ -476,167 +484,108 @@ func (a *API) handleGetDiary(c *gin.Context) {
 
 	for i := range res {
 		entry := toEntryWithFoodResponse(&res[i])
-		response.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
-		response.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
-		response.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
-		response.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
+		addTotals(&response.Totals, entry)
 
+		var meal *Diary
 		switch strings.ToLower(entry.MealName) {
 		case "breakfast":
-			response.Breakfast.Entries = append(response.Breakfast.Entries, entry)
-			response.Breakfast.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
-			response.Breakfast.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
-			response.Breakfast.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
-			response.Breakfast.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
+			meal = &response.Breakfast
 		case "lunch":
-			response.Lunch.Entries = append(response.Lunch.Entries, entry)
-			response.Lunch.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
-			response.Lunch.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
-			response.Lunch.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
-			response.Lunch.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
+			meal = &response.Lunch
 		case "dinner":
-			response.Dinner.Entries = append(response.Dinner.Entries, entry)
-			response.Dinner.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
-			response.Dinner.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
-			response.Dinner.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
-			response.Dinner.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
+			meal = &response.Dinner
 		case "snacks":
-			response.Snacks.Entries = append(response.Snacks.Entries, entry)
-			response.Snacks.Totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
-			response.Snacks.Totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
-			response.Snacks.Totals.Protein += entry.Food.Protein * entry.Servings / entry.Food.ServingCount
-			response.Snacks.Totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
+			meal = &response.Snacks
+		}
+
+		if meal != nil {
+			meal.Entries = append(meal.Entries, entry)
+			addTotals(&meal.Totals, entry)
 		}
 	}
 
-	c.JSON(http.StatusOK, response)
+	return a.OK(response)
 }
 
 // handleFoodSearch returns foods matching a search query.
-func (a *API) handleFoodSearch(c *gin.Context) {
+func (a *API) handleFoodSearch(c *gin.Context) APIResponse {
 	var in struct {
 		Query string `json:"query"`
 	}
-
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return a.BadRequest(err)
 	}
 
 	t, exists := getSessionToken(c)
 
 	var foods []Food
 	var err error
-
 	if exists {
 		foods, err = a.db.searchFoodsByNameSortedUserFromTokenFirst(in.Query, t)
 	} else {
 		foods, err = a.db.searchFoodsByName(in.Query)
 	}
 
-	// foods, err := a.db.searchFoodsByName(in.Query)
 	if err != nil {
-		c.Set("error", err.Error())
-
-		if strings.Contains(err.Error(), "no rows in result set") {
-			c.JSON(http.StatusOK, []FoodResponse{})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search foods"})
-		return
+		return a.DBError(err)
 	}
 
 	f := make([]FoodResponse, len(foods))
-
 	for i := range foods {
 		f[i] = toFoodResponse(&foods[i])
 	}
 
-	c.JSON(http.StatusOK, f)
+	return a.OK(f)
 }
 
 // handleEditEntry edits an existing entry for the authenticated user.
-func (a *API) handleEditEntry(c *gin.Context) {
+func (api *API) handleEditEntry(c *gin.Context) APIResponse {
 	t, exsits := getSessionToken(c)
 	if !exsits {
-		c.Set("error", "No active session")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+		return api.Unauthorized(nil)
 	}
 
-	type EditEntryInput struct {
+	var in struct {
 		ID int `json:"id" binding:"required"`
 		CreateEntryInput
 	}
 
-	var in EditEntryInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return api.BadRequest(err)
 	}
 
 	p := toEntryParams(&in.CreateEntryInput)
 	if p.Servings < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Servings must be greater than 0"})
-		return
+		return api.BadRequest(errors.New("Servings must be greater than 0"))
 	}
 
-	e, err := a.db.editEntryAuthByToken(in.ID, p, t)
+	e, err := api.db.editEntryAuthByToken(in.ID, p, t)
 	if err != nil {
-		c.Set("error", err.Error())
-
-		if strings.Contains(err.Error(), "Unauthorized") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-			return
-		}
-
-		if strings.Contains(err.Error(), "no rows in result set") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entry ID or food ID"})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to edit entry"})
-		return
+		return api.DBError(err)
 	}
 
 	r := toEntryWithFoodResponse(e)
-	c.JSON(http.StatusOK, r)
+	return api.OK(r)
 }
 
 // handleDeleteEntry deletes an existing entry for the authenticated user.
-func (a *API) handleDeleteEntry(c *gin.Context) {
+func (api *API) handleDeleteEntry(c *gin.Context) APIResponse {
 	t, exsits := getSessionToken(c)
 	if !exsits {
-		c.Set("error", "No active session")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+		return api.Unauthorized(nil)
 	}
 
-	type DeleteEntryInput struct {
+	var in struct {
 		ID int `json:"id" binding:"required"`
 	}
 
-	var in DeleteEntryInput
-	if !bindInput(c, &in) {
-		return
+	if err := c.ShouldBindJSON(&in); err != nil {
+		return api.BadRequest(err)
 	}
 
-	err := a.db.deleteEntryAuthByToken(in.ID, t)
-	if err != nil {
-		c.Set("error", err.Error())
-
-		if strings.Contains(err.Error(), "Unauthorized") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-			return
-		}
-
-		if strings.Contains(err.Error(), "no rows in result set") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid entry ID"})
-			return
-		}
-
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete entry"})
-		return
+	if err := api.db.deleteEntryAuthByToken(in.ID, t); err != nil {
+		return api.DBError(err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Entry deleted successfully"})
+	return api.NoContent()
 }

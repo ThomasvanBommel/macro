@@ -2,6 +2,52 @@ package main
 
 import "encoding/json"
 
+type APIResponse interface {
+	Status() int
+	Result() any
+}
+
+type ErrorResponse struct {
+	Code  int
+	Quiet bool
+	error
+}
+
+func (r *ErrorResponse) Status() int { return r.Code }
+func (r *ErrorResponse) Result() any { return r.error }
+
+type DataResponse struct {
+	Code int
+	Data any
+}
+
+func (r *DataResponse) Status() int { return r.Code }
+func (r *DataResponse) Result() any { return r.Data }
+
+type API struct {
+	db *Database
+
+	// 2xx Successful responses
+	OK             func(any) APIResponse
+	Message        func(string) APIResponse
+	Created        func(any) APIResponse
+	Accepted       func() APIResponse
+	NoContent      func() APIResponse
+	PartialContent func(any) APIResponse
+
+	// 4xx Client error responses
+	BadRequest      func(error) APIResponse
+	Unauthorized    func(error) APIResponse
+	Forbidden       func(error) APIResponse
+	NotFound        func(error) APIResponse
+	Conflict        func(error) APIResponse
+	TooManyRequests func(error) APIResponse
+
+	// 5xx Server error responses
+	InternalServerError func(error) APIResponse
+	NotImplemented      func(error) APIResponse
+}
+
 // API ---------------------------------------------------------------------------------------------
 
 type UserCredentialInput struct {

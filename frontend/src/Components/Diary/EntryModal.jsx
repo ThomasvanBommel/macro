@@ -125,12 +125,8 @@ export default function EntryModal({
 
         setLoading(true);
         handleDeleteEntry(entryID)
-            .then(data => {
-                if (data.error)
-                    throw new Error(data.error);
-
-                onSuccess();
-            }).catch(console.error) // TODO: error handling
+            .then(onSuccess)
+            .catch(console.log) // TODO: error handling
             .finally(() => setLoading(false));
     }
 
