@@ -68,7 +68,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
-    needs: mono-build
+    needs: build
     if: github.ref == 'refs/heads/main'
     outputs:
       image_digest: ${{ steps.build_and_push.outputs.digest }}
