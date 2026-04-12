@@ -1,11 +1,13 @@
 //go:build !prod
 
-package main
+package env
 
 import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitEnv(_ *gin.Engine) {
+var Secure = false
+
+func Init(_ *gin.Engine) {
 	// Do nothing
 }

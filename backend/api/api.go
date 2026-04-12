@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"macro/db"
+	"macro/env"
 	"macro/util"
 	"math"
 	"net/http"
@@ -48,7 +49,15 @@ func Init(r *gin.Engine, db *db.Database) *API {
 	if len(s) == 0 {
 		s = util.GenerateRandomBytes(128)
 	}
-	r.Use(sessions.Sessions("macro_session", cookie.NewStore(s)))
+
+	store := cookie.NewStore(s)
+	store.Options(sessions.Options{
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   env.Secure,
+	})
+
+	r.Use(sessions.Sessions("macro_session", store))
 
 	// Initialize API with DB connection and response helpers
 	api := &API{

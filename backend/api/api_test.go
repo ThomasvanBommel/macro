@@ -53,7 +53,8 @@ func newContext(t *testing.T, body string) (*httptest.ResponseRecorder, *gin.Con
 	return w, c
 }
 
-func executeHandler(t *testing.T, body string, session *db.Session, handler APIHandler) (*httptest.ResponseRecorder, *gin.Context) {
+func executeHandler(t *testing.T, body string, session *db.Session, handler APIHandler) (
+	*httptest.ResponseRecorder, *gin.Context) {
 	t.Helper()
 
 	w, c := newContext(t, body)

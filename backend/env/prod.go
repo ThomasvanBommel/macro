@@ -1,6 +1,6 @@
 //go:build prod
 
-package main
+package env
 
 import (
 	"embed"
@@ -13,7 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitEnv(r *gin.Engine) {
+var Secure = true
+
+func Init(r *gin.Engine) {
 	defer util.Trace("InitEnv(db *sql.DB, r *gin.Engine)")()
 
 	registerStaticAssetRoute(r)

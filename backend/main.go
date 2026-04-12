@@ -6,6 +6,7 @@ import (
 
 	"macro/api"
 	"macro/db"
+	"macro/env"
 	"macro/util"
 
 	"github.com/gin-gonic/gin"
@@ -22,9 +23,7 @@ func main() {
 	defer db.Close()
 
 	api.Init(r, db)
-
-	// InitAPI(r, db)
-	InitEnv(r)
+	env.Init(r)
 
 	// If running in a trusted environment (e.g. GCP Cloud Run)
 	if os.Getenv("K_SERVICE") != "" {

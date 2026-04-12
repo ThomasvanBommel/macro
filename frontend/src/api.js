@@ -1,3 +1,7 @@
+// async function post(url) {
+//     const res = await fetch(url, { method: "POST" });
+// }
+
 async function postJSON(url, body) {
     const res = await fetch(url, {
         method: "POST",
@@ -26,15 +30,6 @@ export async function handleLoginUser(name, password) {
     return await postJSON("/api/login", { name, password });
 }
 
-/** Session payload returned by session validation. */
-/**
- * @typedef {Object} Session
- * @property {string} username
- * @property {string} token
- * @property {string} created
- * @property {string} expires
- */
-
 /** Validates and returns the current session. */
 export async function handleFetchSession() {
     return await postJSON("/api/validate-session");
@@ -43,8 +38,6 @@ export async function handleFetchSession() {
 /** Logs a user out and clears the local session cookie. */
 export async function handleLogoutUser() {
     await postJSON("/api/logout");
-
-    document.cookie = "macro_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 }
 
 /** Fetches entries for a user on a specific date. */

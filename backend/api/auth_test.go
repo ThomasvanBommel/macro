@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"macro/db"
 	"net/http"
 	"testing"
@@ -120,6 +121,23 @@ func TestHandleSessionValidation(t *testing.T) {
 		w, _ := executeHandler(t, "", s, api.handleSessionValidation)
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
+		}
+
+		var res struct {
+			Username string `json:"username" binding:"required"`
+			Expires  string `json:"expires" binding:"required"`
+		}
+
+		if err := json.Unmarshal(w.Body.Bytes(), &res); err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
+
+		if res.Username != "testuser123" {
+			t.Errorf("Expected username %q in response, got %q", "testuser123", res.Username)
+		}
+
+		if res.Expires != s.Expires {
+			t.Errorf("Expected expires %q in response, got %q", s.Expires, res.Expires)
 		}
 	})
 }

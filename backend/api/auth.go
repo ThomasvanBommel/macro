@@ -23,8 +23,8 @@ func clearSession(c *gin.Context) {
 	defer util.Trace("clearSessionToken(c *gin.Context)")()
 
 	session := sessions.Default(c)
-	session.Set("token", nil)
-	session.Set("username", nil)
+	session.Clear()
+	session.Options(sessions.Options{MaxAge: -1})
 	session.Save()
 }
 
@@ -47,7 +47,6 @@ func (api *API) createSession(name string, c *gin.Context) error {
 
 	s, err := api.db.CreateSession(name)
 	if err != nil {
-		c.Set("error", err.Error())
 		return err
 	}
 
@@ -69,7 +68,14 @@ func (api *API) handleSessionValidation(c *gin.Context) APIResponse {
 	}
 
 	initSession(s, c)
-	return api.OK(s)
+
+	return api.OK(&struct {
+		Username string `json:"username"`
+		Expires  string `json:"expires"`
+	}{
+		Username: s.UserName,
+		Expires:  s.Expires,
+	})
 }
 
 // handleRegisterUser registers a new user.
