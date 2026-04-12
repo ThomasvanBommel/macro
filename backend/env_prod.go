@@ -6,6 +6,7 @@ import (
 	"embed"
 	"io/fs"
 	"log/slog"
+	"macro/util"
 	"net/http"
 	"strings"
 
@@ -13,7 +14,7 @@ import (
 )
 
 func InitEnv(r *gin.Engine) {
-	defer Trace("InitEnv(db *sql.DB, r *gin.Engine)")()
+	defer util.Trace("InitEnv(db *sql.DB, r *gin.Engine)")()
 
 	registerStaticAssetRoute(r)
 	registerNoRoute(r)
@@ -25,7 +26,7 @@ var frontendBuildFiles embed.FS
 // registerNoRoute sets up a catch-all route for the Gin engine that handles requests to undefined
 // routes.
 func registerNoRoute(r *gin.Engine) {
-	defer Trace("registerNoRoute(r *gin.Engine)")()
+	defer util.Trace("registerNoRoute(r *gin.Engine)")()
 
 	r.NoRoute(func(c *gin.Context) {
 		if strings.HasPrefix(c.Request.URL.Path, "/api") {
@@ -46,10 +47,10 @@ func registerNoRoute(r *gin.Engine) {
 
 // registerStaticAssetRoute sets up a route for serving static assets from the embedded filesystem.
 func registerStaticAssetRoute(r *gin.Engine) {
-	defer Trace("registerStaticAssetRoute(r *gin.Engine)")()
+	defer util.Trace("registerStaticAssetRoute(r *gin.Engine)")()
 
 	f, err := fs.Sub(frontendBuildFiles, "frontend/build/assets")
-	FatalOnError(err, "Failed to create sub filesystem for frontend assets")
+	util.FatalOnError(err, "Failed to create sub filesystem for frontend assets")
 
 	r.StaticFS("/assets", http.FS(f))
 }
