@@ -1,37 +1,26 @@
 # Macro
 
-Macro is a full-stack nutrition tracker built with React + Go.
+Macro is a full-stack nutrition tracker built with React and Go.
 
 Live app: https://macro.cekeh.com
 
-Deployment: automatic (production deploys are triggered by repository updates; no manual deploy command is required in this repo).
+## Why This Project Exists
 
-Status: Active work in progress. Core functionality is usable end-to-end; polish and hardening are ongoing.
+This is a portfolio project focused on practical product delivery, not a toy demo.
 
-## What This Shows
+It demonstrates:
+- End-to-end full-stack ownership
+- Session-based authentication and protected UI flows
+- API + relational data modeling for a real user workflow
+- CI/CD automation and containerized local development
 
-- Full-stack ownership from schema design to deployable runtime
-- Session-based authentication and protected application flows
-- Practical API and data modeling for a diary-style product
-- Containerized local development and production packaging
+## Current Feature Set
 
-## Current Features
-
-- Register, login, logout
-- Cookie-backed sessions with session validation endpoint
-- Browse foods and create custom foods
-- Create diary entries by meal and date
-- View date-specific entries and daily totals
-- Protected profile route and session timer in UI
-
-## Stack and Why
-
-- React 19 + React Router 7: fast iteration, clean component model, straightforward route-level auth UX
-- Vite 8: very fast local feedback loop and simple production build pipeline
-- Go 1.26 + Gin: small, explicit backend with low overhead and predictable request handling
-- gin-contrib/sessions (cookie store): simple server-controlled session model without token complexity
-- SQLite + Goose migrations: lightweight persistence with schema versioning and easy portability
-- Docker + Compose + Make: reproducible local development workflow with minimal setup friction
+- Register, login, logout, and session validation
+- Create and search foods
+- Create, edit, and delete diary entries
+- View diary entries by date and meal
+- Daily macro totals and macro percentage split
 
 ## Architecture
 
@@ -39,79 +28,72 @@ Status: Active work in progress. Core functionality is usable end-to-end; polish
 React (Vite) -> /api -> Go (Gin) -> SQLite
 ```
 
-All API routes are under `/api`.
+Key endpoints:
+- POST /api/register
+- POST /api/login
+- POST /api/logout
+- POST /api/validate-session
+- POST /api/food
+- POST /api/foods
+- POST /api/food/search
+- POST /api/entry
+- POST /api/entry/edit
+- POST /api/entry/delete
+- POST /api/diary
+- GET /api/health
 
-Primary endpoints:
+## Tech Stack
 
-- POST /register
-- POST /login
-- POST /logout
-- POST /validate-session
-- POST /foods
-- POST /food
-- POST /entries
-- POST /entry
-- GET /health
+- Frontend: React 19, React Router 7, Vite 8
+- Backend: Go 1.26, Gin
+- Data: SQLite, Goose migrations
+- Dev workflow: Docker, Docker Compose, Make
+- Auth/session: cookie-backed server sessions
 
-## Local Workflow
+## Local Development
 
 Prerequisites: Docker, Docker Compose, Make
 
 ```bash
-# list targets and helper containers
+# inspect available targets
 make
 
-# run backend tests in a disposable container
+# run checks/build/tests in containers
 make test
 
-# start local development stack
-# backend:  http://localhost:8080
-# frontend: http://localhost:5173
+# run backend + frontend for development
 make dev
 
-# stop and remove containers
+# stop and clean containers
 make down
 ```
 
+Default local URLs:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8080
+
 Notes:
+- SQLite data is persisted in backend/data
+- docker-compose.yml sets a dev-only SESSION_SECRET for local use
 
-- `make dev` runs `make test` first, then starts `backend` and `frontend` via Compose.
-- `SESSION_SECRET` defaults to a dev-only value in `docker-compose.yml`.
-- SQLite data is persisted in `backend/data`.
+## CI/CD
 
-Optional helper shells:
+GitHub Actions runs on each push:
+- Frontend dependency audit and build
+- Backend tests and binary build
+- Artifact packaging
 
-- `make golang` for a Go shell with the repo mounted.
-- `make npm` for a Node shell in the frontend container.
-- `make sqlite` for direct SQLite access to `backend/data/macro.db`.
-- `make goose` for migration operations.
+On pushes to main:
+- Build and push Docker image
+- Deploy a new revision to Cloud Run
 
-## Deployment
+## Roadmap
 
-Production is auto-deployed. This repository no longer includes a manual deploy command or a dedicated production Compose flow.
+High-priority next steps:
+- Frontend test baseline (API helpers + core UI flows)
+- Database layer refactor + targeted DB tests
+- Profile UX polish and food editing
 
-What is in-repo today:
+## Reviewer Notes
 
-- `docker-compose.yml` is focused on local development services (`backend`, `frontend`, `goose`).
-- `Dockerfile` includes trimmed build targets for local/dev workflows.
-- Runtime behavior supports trusted proxy handling in managed environments (for example when `K_SERVICE` is set).
-
-## Repo Layout
-
-```text
-backend/app      Go API and server
-backend/data     SQLite database files
-backend/migrations  Goose SQL migrations
-frontend/src     React application
-```
-
-## Known Gaps (In Progress)
-
-- More complete automated test coverage
-- UX polish and notification handling improvements
-- Editing/deleting existing food and entry records
-- Additional deployment hardening and operational cleanup
-
-## Reviewer Context
-
-This project is intentionally presented as a working, evolving product rather than a finished demo. The goal is to show ability to ship a real vertical slice, then iterate pragmatically.
+This project is intentionally iterative. The goal is to show the ability to ship a complete vertical slice, then improve reliability, test coverage, and maintainability over time.

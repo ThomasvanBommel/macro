@@ -1,47 +1,41 @@
 # TODO
 
-## Current Sprint (Hiring Signal First)
+## Current Sprint (Highest Hiring Signal)
 
-### 1) Quality Baseline
-- [x] add backend tests for auth/session flow
-- [x] add backend tests for entry creation/read flow
-- [ ] add frontend tests for API helpers and at least 1-2 core UI flows
+### 1) Frontend Test Baseline (Top Priority)
+- [ ] add Vitest + React Testing Library setup
+- [ ] add tests for API helpers in frontend/src/api.js
+- [ ] add login success/failure flow tests
+- [ ] add diary create/edit/delete flow tests
+- [ ] run frontend tests in CI
 
-### 2) User-Facing Reliability
-- [x] replace alert() usage with a reusable notification system
-- [x] centralize API error mapping to user-friendly messages
+### 2) Reliability and Product Polish
+- [ ] handle diary fetch errors in frontend/src/Components/Diary/Diary.jsx
+- [ ] improve session refresh strategy (avoid aggressive session checks)
+- [ ] add backend tests for unauthorized/invalid edit and delete entry cases
 
-### 3) Core Product Completeness
-- [ ] add ability to remove diary entries
-- [ ] add ability to edit diary entries
-
-### 4) Operational Readiness
-- [x] add structured/verbose API logging
-- [x] generate fallback session secret when one is not provided
+### 3) Database Maintainability
+- [ ] split backend/db/db.go into focused files by domain
+- [ ] add DB-layer tests for ownership checks and food search ordering
 
 ## Next Sprint
 
-### Profile UX and Product Depth
-- [ ] profile code cleanup
-- [ ] profile styling pass
-- [ ] ability to edit foods
-- [ ] show macro percentages
+### Product Depth
+- [ ] add ability to edit foods (backend + frontend + tests)
+- [ ] profile page cleanup and UX pass
 
-### Backend Cleanup
-- [ ] database layer cleanup/refactor pass
+### CI/CD Quality Bar
+- [ ] add lint steps to CI for frontend and backend
+- [ ] harden CI dependency setup to avoid future breakage
+- [ ] add post-deploy smoke checks (health + one protected endpoint)
 
-## Backlog
+## Documentation (Interview Leverage)
 
-### Platform / Admin
+- [ ] add Architecture Decision Notes to README
+- [ ] add one simple architecture/data-flow diagram to README
+- [ ] add "how I would scale this" section (auth, DB, observability)
+
+## Backlog (Lower Hiring Signal)
+
+- [ ] github-like year-at-a-glance diary view
 - [ ] create administration area
-
-### Delivery
-- [x] automate deployment pipeline
-
-## Documentation
-
-- [x] README includes /app/data persistence note
-- [ ] add a short Architecture Decision Notes section in README
-
-
-- github-like year at a glance view

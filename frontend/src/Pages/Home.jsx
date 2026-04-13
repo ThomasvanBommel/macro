@@ -2,81 +2,82 @@
 // Home.jsx
 export default function Home() {
     return (
-        <div>
-            <header>
-                <hgroup>
-                    <p>Portfolio build • Full-stack nutrition tracker</p>
-                </hgroup>
+        <div className="home-page">
+            <article className="hero">
+                <p className="eyebrow">Nutrition tracker</p>
+                <h2>Track meals and macros with minimal friction.</h2>
                 <p>
-                    Macro demonstrates practical end-to-end delivery: schema and API design,
-                    session-backed auth flows, and a working React UI for daily macro tracking.
+                    Macro helps you log what you eat, review your day by meal,
+                    and keep an eye on calories, protein, carbs, and fat.
+                </p>
+            </article>
+
+            <section className="home-grid">
+                <article>
+                    <h3>What you can do</h3>
+                    <ul>
+                        <li>Create foods and reuse them in entries</li>
+                        <li>Log entries by date and meal</li>
+                        <li>See daily totals and macro split</li>
+                    </ul>
+                </article>
+
+                <article>
+                    <h3>Quick start</h3>
+                    <ol>
+                        <li>Register or log in</li>
+                        <li>Open your profile</li>
+                        <li>Add your first entry</li>
+                    </ol>
+                </article>
+            </section>
+
+            <article>
+                <h3>Project</h3>
+                <p>
+                    This app is built as a practical full-stack project with React, Go, and SQLite.
                 </p>
                 <p>
                     Source code: <a href="https://github.com/ThomasvanBommel/macro" target="_blank" rel="noopener noreferrer">GitHub</a>
                 </p>
-            </header>
+            </article>
 
-            <section>
-                <article>
-                    <h3>🧱 Stack Snapshot</h3>
-                    <ul>
-                        <li>React 19 + Vite 8</li>
-                        <li>Go 1.26 + Gin</li>
-                        <li>SQLite + Goose migrations</li>
-                        <li>Docker + Compose + Make</li>
-                        <li>Cookie-backed sessions</li>
-                    </ul>
-                    <p>
-                        Architecture: <code>React (Vite) -&gt; /api -&gt; Go (Gin) -&gt; SQLite</code>
-                    </p>
-                </article>
-            </section>
+            <style>
+                {`
+                    .home-page {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 1rem;
+                    }
 
-            <section>
-                <article>
-                    <h3>Why this exists</h3>
-                    <p>
-                        This project is built as a realistic vertical slice: shipping useful
-                        functionality first, then iterating on quality, UX, and operational
-                        hardening.
-                    </p>
-                </article>
-            </section>
+                    .home-page .hero {
+                        border-left: 4px solid var(--pico-primary);
+                        padding-left: 1rem;
+                    }
 
-            <section className="grid">
-                <article>
-                    <h3>✅ Done</h3>
-                    <ul>
-                        <li>Auth flow and cookie-backed sessions</li>
-                        <li>Food search and custom food creation</li>
-                        <li>Date-based entries with daily macro totals</li>
-                    </ul>
-                </article>
+                    .home-page .hero h2 {
+                        margin: 0.25rem 0 0.75rem;
+                    }
 
-                <article>
-                    <h3>🚧 In Progress</h3>
-                    <ul>
-                        <li>Frontend tests for API helpers and key flows</li>
-                        <li>Centralized user-friendly API error mapping</li>
-                        <li>Profile UX and data presentation improvements</li>
-                    </ul>
-                </article>
+                    .home-page .eyebrow {
+                        margin: 0;
+                        text-transform: uppercase;
+                        letter-spacing: 0.06em;
+                        font-size: 0.8rem;
+                        opacity: 0.7;
+                    }
 
-                <article>
-                    <h3>🧭 Next Up</h3>
-                    <ul>
-                        <li>Edit and remove diary entries</li>
-                        <li>Edit food records and show macro percentages</li>
-                        <li>Deployment pipeline automation</li>
-                    </ul>
-                </article>
-            </section>
+                    .home-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                        gap: 1rem;
+                    }
 
-            <details>
-                <summary>Reviewer context</summary>
-                This is intentionally a working, evolving product rather than a static demo.
-                The goal is to show ownership across product, backend, frontend, and delivery.
-            </details>
+                    .home-page article :is(ul, ol) {
+                        margin-bottom: 0;
+                    }
+                `}
+            </style>
         </div>
     );
 }
