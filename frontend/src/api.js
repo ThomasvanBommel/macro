@@ -1,7 +1,3 @@
-// async function post(url) {
-//     const res = await fetch(url, { method: "POST" });
-// }
-
 async function postJSON(url, body) {
     const res = await fetch(url, {
         method: "POST",

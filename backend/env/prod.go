@@ -22,7 +22,7 @@ func Init(r *gin.Engine) {
 	registerNoRoute(r)
 }
 
-//go:embed frontend/build
+//go:embed build
 var frontendBuildFiles embed.FS
 
 // registerNoRoute sets up a catch-all route for the Gin engine that handles requests to undefined
@@ -36,7 +36,7 @@ func registerNoRoute(r *gin.Engine) {
 			return
 		}
 
-		f, err := frontendBuildFiles.ReadFile("frontend/build/index.html")
+		f, err := frontendBuildFiles.ReadFile("build/index.html")
 		if err != nil {
 			slog.Error("Failed to load index.html", "error", err)
 			c.String(http.StatusInternalServerError, "Failed to load index.html")
@@ -51,7 +51,7 @@ func registerNoRoute(r *gin.Engine) {
 func registerStaticAssetRoute(r *gin.Engine) {
 	defer util.Trace("registerStaticAssetRoute(r *gin.Engine)")()
 
-	f, err := fs.Sub(frontendBuildFiles, "frontend/build/assets")
+	f, err := fs.Sub(frontendBuildFiles, "build/assets")
 	util.FatalOnError(err, "Failed to create sub filesystem for frontend assets")
 
 	r.StaticFS("/assets", http.FS(f))

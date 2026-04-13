@@ -5,15 +5,15 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: 'build',
+    outDir: '../backend/env/build',
     emptyOutDir: true,
   },
-  server: process.env.DEVMODE === 'true' ? {
+  server: {
     proxy: {
       '/api': {
         target: 'http://backend:8080',
         changeOrigin: true,
       }
     }
-  }: {}
+  }
 })

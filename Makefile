@@ -1,4 +1,4 @@
-.PHONY: help test dev down golang npm sqlite goose
+.PHONY: help test dev down sh sqlite goose
 
 help:
 	@echo "Usage: make [target]"
@@ -10,8 +10,7 @@ help:
 	@echo "    down           Stop and remove all containers"
 	@echo ""
 	@echo "  Helpers:"
-	@echo "    golang         Start a Golang shell with the backend code mounted"
-	@echo "    npm            Start a Node.js shell with the frontend code mounted"
+	@echo "    sh             Start a shell in the backend container"
 	@echo "    sqlite         Start a SQLite shell with the database file mounted"
 	@echo "    goose          Start a shell with Goose installed for database migrations"
 	@echo ""
@@ -20,9 +19,19 @@ help:
 ## Docker Compose
 
 test:
-	docker compose run --rm backend sh -c "cd backend && go test -v ./..."
+	@echo "\nAudit, build, and eventually test the frontend..."
+	docker compose run --rm --build frontend sh -c " \
+		npm i && \
+		npm audit --audit-level=high && \
+		npm run build"
 
-dev: test
+	@echo "\nBackend testing..."
+	docker compose run --rm --build backend sh -c " \
+		npm run build --prefix frontend && \
+		cd backend && \
+		go test -tags='no_postgres no_clickhouse no_mssql no_mysql prod' -v ./..."
+
+dev:
 	docker compose up --build backend frontend
 
 down:
@@ -31,11 +40,8 @@ down:
 
 ## Helpers
 
-golang:
-	docker run -it --rm -v .:/app -w /app golang:1.26-alpine sh
-
-npm:
-	docker compose run -it --rm frontend sh
+sh:
+	docker compose run -it --rm backend sh
 
 sqlite:
 	docker run -it --rm -v ./backend/data:/app -w /app alpine/sqlite:latest macro.db

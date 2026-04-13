@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: .
-      target: backend
+      target: base
     volumes:
       - .:/repo
       - ./backend/data:/data
@@ -15,35 +15,35 @@ services:
       - GOCACHE=/root/.cache/go-build
     ports:
       - "8080:8080"
+    command: >
+      sh -c "npm i --prefix frontend && \
+             npm run build --prefix frontend && \
+             air"
 
   frontend:
     build:
       context: .
-      target: frontend
+      target: base
     volumes:
-      - ./frontend/src:/frontend/src
-      - ./frontend/public:/frontend/public
-      - ./frontend/index.html:/frontend/index.html
-      - ./frontend/vite.config.js:/frontend/vite.config.js
-      - ./frontend/package.json:/frontend/package.json
-      - ./frontend/package-lock.json:/frontend/package-lock.json
-    environment:
-      - DEVMODE=true
+      - .:/repo
+    working_dir: /repo/frontend
     ports:
       - "5173:5173"
-    command: npm run dev -- --host
-  
+    command: >
+      sh -c "npm i && \
+             npm run dev -- --host"
+
   goose:
     build:
       context: .
       target: goose
-    working_dir: /backend
+    working_dir: /repo
     volumes:
-      - ./backend:/backend
+      - .:/repo
     environment:
       - GOOSE_DRIVER=sqlite3
-      - GOOSE_DBSTRING=/backend/data/macro.db
-      - GOOSE_MIGRATION_DIR=/backend/migrations
+      - GOOSE_DBSTRING=/repo/backend/data/macro.db
+      - GOOSE_MIGRATION_DIR=/repo/backend/db/migrations
 
 volumes:
   go-cache:

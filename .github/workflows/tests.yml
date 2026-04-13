@@ -28,6 +28,9 @@ jobs:
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: npm ci --prefix frontend
 
+      - name: Audit npm dependencies
+        run: npm audit --prefix frontend --audit-level=high
+
       - name: Build frontend
         run: npm run build --prefix frontend
 

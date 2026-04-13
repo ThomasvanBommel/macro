@@ -1,17 +1,10 @@
-# frontend
-FROM node:24-alpine AS frontend
-WORKDIR /frontend
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ .
-RUN npm run build
-
-# backend
-FROM golang:1.26-alpine AS backend
+# base image
+FROM golang:1.26-alpine AS go-builder
+FROM node:24-alpine AS base
+COPY --from=go-builder /usr/local/go /usr/local/go
+ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}" PORT=8080 CGO_ENABLED=0 GOOS=linux
 RUN go install github.com/air-verse/air@latest
 WORKDIR /repo
-ENV PORT=8080 CGO_ENABLED=0 GOOS=linux
-CMD ["air"]
 
 # goose (migration tool)
 FROM golang:1.26-alpine AS goose
