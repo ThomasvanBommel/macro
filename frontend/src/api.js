@@ -1,4 +1,4 @@
-async function postJSON(url, body) {
+export async function postJSON(url, body) {
     const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
