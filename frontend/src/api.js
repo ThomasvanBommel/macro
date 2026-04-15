@@ -8,7 +8,7 @@ export async function postJSON(url, body) {
     const text = await res.text();
     const data = text ? JSON.parse(text) : null;
     if (!res.ok) {
-        const error = new Error(data || "Unknown error");
+        const error = new Error(data?.error || "Unknown error");
         error.status = res.status;
         throw error;
     }

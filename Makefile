@@ -16,18 +16,25 @@ help:
 
 ## Docker Compose
 
+test-backend:
+	@echo "\nBackend testing..."
+	docker compose run --rm backend sh -c " \
+		npm run build --prefix frontend && \
+		cd backend && \
+		go test -tags='no_postgres no_clickhouse no_mssql no_mysql prod' -v ./..."
+
+test-frontend:
+	@echo "\nFrontend testing..."
+	docker compose run --rm frontend sh -c "CI=true npm test"
+
 test:
-	@echo "\nAudit, build, and eventually test the frontend..."
+	@echo "\nRebuild base, audit and build npm..."
 	docker compose run --rm --build frontend sh -c " \
 		npm i && \
 		npm audit --audit-level=high && \
 		npm run build"
-
-	@echo "\nBackend testing..."
-	docker compose run --rm --build backend sh -c " \
-		npm run build --prefix frontend && \
-		cd backend && \
-		go test -tags='no_postgres no_clickhouse no_mssql no_mysql prod' -v ./..."
+	
+	$(MAKE) -j2 test-backend test-frontend
 
 dev:
 	docker compose up --build backend frontend
