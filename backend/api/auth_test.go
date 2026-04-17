@@ -184,6 +184,16 @@ func TestHandleLoginUser(t *testing.T) {
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
 		}
+
+		var err JSONError
+		if err := json.Unmarshal(w.Body.Bytes(), &err); err != nil {
+			t.Fatalf("Failed to unmarshal response: %v", err)
+		}
+
+		expectedMessage := "Invalid username or password."
+		if err.Error != expectedMessage {
+			t.Errorf("Expected error message %q, got %q", expectedMessage, err.Error)
+		}
 	})
 
 	t.Run("valid-credentials", func(t *testing.T) {

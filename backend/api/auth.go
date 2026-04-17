@@ -101,7 +101,7 @@ func (api *API) handleLoginUser(c *gin.Context) APIResponse {
 
 	u, err := api.db.GetUserByNameAndPassword(in.Name, in.Password)
 	if err != nil {
-		return api.Unauthorized(nil)
+		return api.Unauthorized(nil, "Invalid username or password.")
 	}
 
 	if err := api.createSession(u.Name, c); err != nil {
