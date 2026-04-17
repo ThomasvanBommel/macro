@@ -1,17 +1,17 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect } from "react";
 
-import { SessionContext } from '../Context';
+import { useSession } from '../Context';
 
 /** Displays a countdown to expiration and triggers onExpire when time runs out. */
 export default function SessionTimer() {
-    const session = useContext(SessionContext);
-    if (!session.isValid()) return null;
+    const { isValid, expires } = useSession();
+    if (!isValid) return null;
 
     const [timeLeft, setTimeLeft] = useState("");
 
     useEffect(() => {
         const interval = setInterval(() => {
-            const diff = new Date(session.expires) - new Date();
+            const diff = new Date(expires) - new Date();
             const min = Math.floor(diff/60000);
             const sec = Math.floor((diff%60000)/1000);
             
@@ -19,7 +19,7 @@ export default function SessionTimer() {
         }, 1000);
 
         return () => clearInterval(interval);
-    }, [session]);
+    }, [expires]);
 
     return <>{ timeLeft }</>;
 }

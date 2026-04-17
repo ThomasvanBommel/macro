@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MdAdd, MdRefresh, MdStar } from "react-icons/md";
 
 import {
@@ -6,7 +6,7 @@ import {
     handleCreateEntry, 
     handleEditEntry, 
     handleDeleteEntry } from "../../api";
-import { SessionContext } from '../../Context';
+import { useSession } from '../../Context';
 import Modal from './Modal';
 
 const MEAL_OPTIONS = [
@@ -34,9 +34,8 @@ export default function EntryModal({
     const [searchResults, setSearchResults] = useState([]);
     const [loadingFood, setLoadingFood] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
 
-    const session = useContext(SessionContext);
+    const { username, notifications } = useSession();
 
     // form reset
     useEffect(() => {
@@ -47,7 +46,6 @@ export default function EntryModal({
         setServings(initialServings ?? 1);
         setSearchString(initialFood?.name ?? "");
         setSearchResults(initialFood ? [initialFood] : []);
-        setError("");
     }, [date, isOpen, initialMeal, initialFood, initialServings]);
 
     const clear = e => {
@@ -63,7 +61,6 @@ export default function EntryModal({
         e?.preventDefault();
 
         setLoadingFood(true);
-        setError("");
 
         const currentVersion = ++version.current;
         const t = setTimeout(() => {
@@ -74,7 +71,14 @@ export default function EntryModal({
                 })
                 .catch(err => {
                     if (currentVersion !== version.current) return;
-                    setError(err.error ?? "Failed to fetch search results.");
+
+                    console.error(err);
+                    notifications.add({
+                        heading: "Error searching foods",
+                        details: err.message || "Please try again.",
+                        type: "error",
+                        ttl: 5000
+                    });
                 })
                 .finally(() => currentVersion === version.current && setLoadingFood(false));
         }, 350);
@@ -109,12 +113,16 @@ export default function EntryModal({
             : handleCreateEntry(food.id, meal, date, servings);
 
         action
-            .then(data => {
-                if (data.error)
-                    throw new Error(data.error);
-
-                onSuccess();
-            }).catch(console.error) // TODO: error handling
+            .then(onSuccess)
+            .catch(err => {
+                console.error(err);
+                notifications.add({
+                    heading: `Failed to ${entryID ? "edit" : "create"} entry`,
+                    details: err.message || "Please try again.",
+                    type: "error",
+                    ttl: 5000
+                });
+            })
             .finally(() => setLoading(false));
     }
 
@@ -126,7 +134,15 @@ export default function EntryModal({
         setLoading(true);
         handleDeleteEntry(entryID)
             .then(onSuccess)
-            .catch(console.log) // TODO: error handling
+            .catch(err => {
+                console.error(err);
+                notifications.add({
+                    heading: "Failed to delete entry",
+                    details: err.message || "Please try again.",
+                    type: "error",
+                    ttl: 5000
+                });
+            })
             .finally(() => setLoading(false));
     }
 
@@ -253,7 +269,7 @@ export default function EntryModal({
                                         </div>
                                         <div>
                                             <div>
-                                                { f.username === session?.username && 
+                                                { f.username === username && 
                                                     <span className="star" 
                                                         title="You created this item">
                                                         <MdStar title="You created this item!" />

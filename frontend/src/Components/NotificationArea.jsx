@@ -1,11 +1,11 @@
-import { useState, useEffect, useContext, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PiWarningFill } from "react-icons/pi";
 
-import { SessionContext } from '../Context';
+import { useSession } from '../Context';
 
 /** Displays notifications from the NotificationContext. */
 export default function NotificationArea() {
-    const { notifications: { list, remove } } = useContext(SessionContext);
+    const { notifications: { list, remove } } = useSession();
 
     return (
         <div>

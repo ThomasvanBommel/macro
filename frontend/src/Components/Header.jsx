@@ -1,12 +1,11 @@
 import { NavLink, Link } from 'react-router';
-import { useContext } from 'react';
 
-import { SessionContext } from '../Context';
+import { useSession } from '../Context';
 import { SessionTimer } from '../Components';
 
 // Header component, shown on all pages. Displays different links based on session state.
 export default function Header() {
-    const session = useContext(SessionContext);
+    const { isValid, end } = useSession();
 
     const timerStyle = {
         width: "100%",
@@ -18,21 +17,18 @@ export default function Header() {
         whiteSpace: "nowrap"
     };
 
-    const disableLinkStyle = {
-        pointerEvents: "none",
-        opacity: 0.5,
-    };
-
     return (
         <header style={{ display: 'flex', alignItems: 'center' }}>
-            <h1 style={{ flex: "1 0", margin: 0 }}>macro</h1>
-            <nav style={{ display: 'flex', gap: '1rem', 
-                ...(session.changingState ? disableLinkStyle : {}) }}>
-                <NavLink to="/">Home</NavLink>
-                { session.isValid() ? 
+            <h1 style={{ flex: "1 0", margin: 0 }}>
+                <NavLink to="/" style={{ textDecoration: "none", color: "inherit" }}>
+                    macro
+                </NavLink>
+            </h1>
+            <nav style={{ display: 'flex', gap: '1rem' }}>
+                { isValid() ? 
                     <>
                     <NavLink to="/profile">Profile</NavLink>
-                    <Link to="/login" onClick={ session.destroy } style={{ position: "relative" }} >
+                    <Link to="/login" onClick={ end } style={{ position: "relative" }} >
                         Logout
                         <small style={ timerStyle }>
                             <SessionTimer />
