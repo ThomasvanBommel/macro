@@ -1,9 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Outlet, BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { Outlet, BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router';
 import { useState, useEffect, useContext } from 'react';
 
-import { SessionContext, useSession, NotificationContext, useNotifications } from './Context';
+import { SessionContext, useSession } from './Context';
 import { Header, LoginForm, RegisterForm, NotificationArea } from './Components';
 import { Home, Profile } from './Pages';
 
@@ -32,8 +32,12 @@ function UnAuthorizedOnly() {
 
 /** Manages session state and renders auth-gated routes. */
 function App() {
-    const [loading, setLoading] = useState(true);
     const session = useSession();
+    const navigate = useNavigate();
+
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => { document.title = "macro"; }, []);
 
     useEffect(() => {
         if (!session.isValid())
@@ -47,10 +51,23 @@ function App() {
         return () => clearInterval(i);
     }, [session]);
 
-    if (loading) return <article aria-busy="true" aria-label="Loading..." />;
+    const handleRegisterError = err => {
+        session.notifications.add({
+            heading: "Failed to register",
+            details: err.message,
+            type: "error",
+            ttl: 0
+        });
+    };
+
+    const handleRegisterSuccess = res => {
+        navigate("/login", { replace: true });
+    };
+
+    if (loading || session.changingState)
+        return <article aria-busy="true" aria-label="Loading..." />;
 
     return (
-        <BrowserRouter>
         <SessionContext value={ session }>
             <Header />
             <hr />
@@ -61,7 +78,11 @@ function App() {
 
                 <Route element={<UnAuthorizedOnly />}>
                     <Route path="login" element={<LoginForm />} />
-                    <Route path="register" element={<RegisterForm />} />
+                    <Route path="register" element={
+                        <RegisterForm
+                            onError={ handleRegisterError }
+                            onSuccess={ handleRegisterSuccess } />
+                    } />
                 </Route>
 
                 <Route element={<AuthorizedOnly />}>
@@ -70,21 +91,14 @@ function App() {
             </Routes>
 
         </SessionContext>
-        </BrowserRouter>
     )
 }
 
 function Root() {
-    const notifications = useNotifications();
-
-    useEffect(() => {
-        document.title = "macro";
-    }, []);
-
     return (
-        <NotificationContext value={ notifications }>
+        <BrowserRouter>
             <App />
-        </NotificationContext>
+        </BrowserRouter>
     );
 }
 

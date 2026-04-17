@@ -1,12 +1,12 @@
 import { useState, createContext } from 'react';
 
 export function useNotifications() {
-    const [notifications, setNotifications] = useState([]);
+    const [list, setList] = useState([]);
 
     const add = ({ heading, details, type, ttl=5000 }) => {
         const id = crypto.randomUUID();
 
-        setNotifications(prev => {
+        setList(prev => {
             const n = {
                 id, heading, details, type, ttl,
                 expires: new Date(Date.now() + ttl)
@@ -22,10 +22,10 @@ export function useNotifications() {
     };
 
     const remove = (id) => {
-        setNotifications(notifications => notifications.filter(n => n.id !== id));
+        setList(list => list.filter(n => n.id !== id));
     };
 
-    return { notifications, add, remove };
+    return { list, add, remove };
 }
 
 const NotificationContext = createContext(null);

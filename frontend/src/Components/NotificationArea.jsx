@@ -1,20 +1,25 @@
 import { useState, useEffect, useContext, useRef } from 'react';
+import { PiWarningFill } from "react-icons/pi";
 
-import { NotificationContext } from '../Context';
+import { SessionContext } from '../Context';
 
 /** Displays notifications from the NotificationContext. */
 export default function NotificationArea() {
-    const { notifications, remove } = useContext(NotificationContext);
+    const { notifications: { list, remove } } = useContext(SessionContext);
 
     return (
         <div>
-        { notifications.map(n => {
+        { list.map(n => {
             return (
-                <article className="warning-box" 
-                         style={{ position: "relative" }}
-                         onClick={ () => remove(n.id) }>
+                <article 
+                    key={ n.id }
+                    className="warning-box notification"
+                    style={{ position: "relative" }}
+                    onClick={ () => remove(n.id) }>
                     <h5>
-                        <span style={{ marginRight: "0.5rem" }}>⚠️</span>
+                        <span style={{ marginRight: "0.5rem" }}>
+                            <PiWarningFill color="yellow" />
+                        </span>
                         { n.heading }
                     </h5>
                     <div style={{ }}>
@@ -62,6 +67,8 @@ function Countdown({ expires }) {
         bref.current = requestAnimationFrame(animate);
         return () => cancelAnimationFrame(bref.current);
     }, []);
+
+    if (timeLeft <= 0) return null;
 
     return (
         <span style={{ fontVariantNumeric: "tabular-nums" }}>

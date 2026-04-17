@@ -1,11 +1,11 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { handleLoginUser, handleLogoutUser, handleFetchSession } from '../api';
-import NotificationContext from './Notification';
+import NotificationContext, { useNotifications } from './Notification';
 
 export function useSession() {
     const [session, setSession] = useState(null);
     const [changingState, setChangingState] = useState(false);
-    const notifications = useContext(NotificationContext);
+    const notifications = useNotifications();
 
     const create = (username, password) => {
         if (isValid()) return;
@@ -59,7 +59,7 @@ export function useSession() {
 
     useEffect(refresh, []);
 
-    return { ...session, create, refresh, isValid, destroy, changingState };
+    return { ...session, create, refresh, isValid, destroy, changingState, notifications };
 }
 
 const SessionContext = createContext(null);

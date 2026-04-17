@@ -1,8 +1,18 @@
+import { href } from 'react-router';
 import { defineConfig } from 'vitest/config'
 
 // https://vitest.dev/config/
 export default defineConfig({
   test: {
-    setupFiles: './src/vitest.setup.js',
+    environment: 'happy-dom',
+    environmentOptions: {
+        happyDom: {
+            settings: {
+                location: {
+                    href: "http://localhost"
+                }
+            }
+        }
+    }
   },
 });

@@ -27,14 +27,8 @@ func Wrap(fn APIHandler) gin.HandlerFunc {
 			return
 		}
 
-		quiet := false
-		if res, ok := r.(*ErrorResponse); ok && res != nil {
-			quiet = res.Quiet
-			c.Error(res)
-		}
-
-		payload := r.Result()
-		if quiet || payload == nil {
+		payload := r.Payload()
+		if payload == nil {
 			c.Status(r.Status())
 			return
 		}
@@ -59,6 +53,20 @@ func Init(r *gin.Engine, db *db.Database) *API {
 
 	r.Use(sessions.Sessions("macro_session", store))
 
+	err := func(code int) func(error, ...string) APIResponse {
+		return func(e error, msg ...string) APIResponse {
+			err := e
+
+			if err == nil && len(msg) > 0 {
+				err = errors.New(msg[0])
+			} else if err == nil {
+				err = errors.New("An unexpected error occurred.")
+			}
+
+			return &ErrorResponse{code, err, msg}
+		}
+	}
+
 	// Initialize API with DB connection and response helpers
 	api := &API{
 		db: db,
@@ -70,15 +78,15 @@ func Init(r *gin.Engine, db *db.Database) *API {
 		NoContent:      func() APIResponse { return &DataResponse{204, nil} },
 		PartialContent: func(d any) APIResponse { return &DataResponse{206, d} },
 
-		BadRequest:      func(e error) APIResponse { return &ErrorResponse{400, false, e} },
-		Unauthorized:    func(e error) APIResponse { return &ErrorResponse{401, true, e} },
-		Forbidden:       func(e error) APIResponse { return &ErrorResponse{403, true, e} },
-		NotFound:        func(e error) APIResponse { return &ErrorResponse{404, true, e} },
-		Conflict:        func(e error) APIResponse { return &ErrorResponse{409, true, e} },
-		TooManyRequests: func(e error) APIResponse { return &ErrorResponse{429, true, e} },
+		BadRequest:      err(400),
+		Unauthorized:    err(401),
+		Forbidden:       err(403),
+		NotFound:        err(404),
+		Conflict:        err(409),
+		TooManyRequests: err(429),
 
-		InternalServerError: func(e error) APIResponse { return &ErrorResponse{500, true, e} },
-		NotImplemented:      func(e error) APIResponse { return &ErrorResponse{501, true, e} },
+		InternalServerError: err(500),
+		NotImplemented:      err(501),
 	}
 
 	// Register API routes
@@ -123,6 +131,7 @@ func (a *API) DBError(err error, msgs ...DBErrorMessages) APIResponse {
 
 	if len(msgs) > 0 {
 		o := msgs[0]
+
 		if o.Unique != "" {
 			m.Unique = o.Unique
 		}

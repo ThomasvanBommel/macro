@@ -1,10 +1,19 @@
-.PHONY: help test dev down sh sqlite goose
+.PHONY: help test-audit test-backend test-frontend test dev down sh sqlite goose
+
+# backend test tags
+BTT ?= 
 
 help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "    test           Run tests in a temporary container"
+	@echo "    help           Show this help message"
+	@echo ""
+	@echo "    test-audit     Run npm audit and build frontend"
+	@echo "    test-backend   Run backend tests in dev mode"
+	@echo "    test-frontend  Run frontend tests"
+	@echo ""
+	@echo "    test           Run all tests (audit, backend dev, backend prod, frontend)"
 	@echo "    dev            Build and run backend and frontend in development mode"
 	@echo "    down           Stop and remove all containers"
 	@echo ""
@@ -16,25 +25,25 @@ help:
 
 ## Docker Compose
 
+test-audit:
+	@echo "\nAudit and build npm..."
+	docker compose run --rm frontend sh -c " \
+		npm i && \
+		npm audit --audit-level=high && \
+		npm run build"
+
 test-backend:
 	@echo "\nBackend testing..."
-	docker compose run --rm backend sh -c " \
-		npm run build --prefix frontend && \
-		cd backend && \
-		go test -tags='no_postgres no_clickhouse no_mssql no_mysql prod' -v ./..."
+	docker compose run -w /repo/backend --rm backend sh -c " \
+		go test -tags='no_postgres no_clickhouse no_mssql no_mysql $(BTT)' -v ./..."
 
 test-frontend:
 	@echo "\nFrontend testing..."
 	docker compose run --rm frontend sh -c "CI=true npm test"
 
 test:
-	@echo "\nRebuild base, audit and build npm..."
-	docker compose run --rm --build frontend sh -c " \
-		npm i && \
-		npm audit --audit-level=high && \
-		npm run build"
-	
-	$(MAKE) -j2 test-backend test-frontend
+	$(MAKE) -j2 test-backend test-audit
+	$(MAKE) BTT=prod -j2 test-backend test-frontend
 
 dev:
 	docker compose up --build backend frontend

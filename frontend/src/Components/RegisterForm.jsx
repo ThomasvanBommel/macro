@@ -1,76 +1,89 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 
-import { handleRegisterUser, handleLoginUser } from '../api'
-import { NotificationContext, SessionContext } from '../Context';
+import { handleRegisterUser } from '../api'
 
 // Renders a registration form and handles submission.
-export default function RegisterForm() {
+export default function RegisterForm({
+    onSuccess,
+    onError
+}) {
     const [loading, setLoading] = useState(false);
 
-    const notifications = useContext(NotificationContext);
-    const session = useContext(SessionContext);
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
 
     const handleSubmit = e => {
         e.preventDefault();
 
-        const form = new FormData(e.currentTarget);
-        const name = form.get('name');
-        const password = form.get('password');
-
         setLoading(true);
-        handleRegisterUser(name, password)
-            .then(() => handleLoginUser(name, password))
-            .then(session.refresh)
-            .catch(error => notifications.add({ 
-                heading: "Registration failed",
-                details: error.message,
-                type: "error"
-            }))
+        handleRegisterUser(username, password)
+            .then(res => {
+                setUsername("");
+                setPassword("");
+                setConfirmPassword("");
+
+                onSuccess?.(res);
+            })
+            .catch(onError)
             .finally(() => setLoading(false));
     }
 
-    const handlePasswordChange = e => {
-        const target = e.currentTarget;
-        const p1 = target.form.password;
-        const p2 = target.form.confirm;
+    const formChange = ({ currentTarget: { elements: { password, confirm } } }) => {
+        const valid = password.value && password.value === confirm.value;
 
-        [p1, p2].forEach(e => {
-            e.setAttribute("aria-invalid", p1.value !== p2.value);
-            e.setCustomValidity(p1.value === p2.value ? "" : "Passwords do not match");
+        [password, confirm].forEach(e => {
+            if (!password.value && !confirm.value)
+                return e.removeAttribute("aria-invalid");
+
+            e.setAttribute("aria-invalid", !valid);
+            e.setCustomValidity(valid ? "" : "Passwords do not match");
         });
-
-        target.form.submit.disabled = p1.value !== p2.value;
     }
 
-    if (session.changingState)
-        return null;
-
     return (
-        <form onSubmit={handleSubmit} style={{ maxWidth: "40rem", margin: "0 auto" }}>
+        <form 
+            onSubmit={ handleSubmit } 
+            onChange={ formChange }
+            style={{ maxWidth: "40rem", margin: "0 auto" }}>
             <label>
-                Username:
-                <input type="text" name="name" required />
+                Username
+                <input
+                    type="text"
+                    name="name"
+                    value={ username }
+                    onChange={ e => setUsername(e.currentTarget.value) } 
+                    required
+                    autoFocus />
             </label>
             <label>
-                Password:
-                <input type="password" 
-                       name="password" 
-                       onChange={handlePasswordChange} 
-                       autoComplete="new-password"
-                       required />
+                Password
+                <input
+                    type="password"
+                    name="password"
+                    value={ password }
+                    onChange={ e => setPassword(e.currentTarget.value) }
+                    autoComplete="new-password"
+                    aria-invalid={ null }
+                    required />
             </label>
             <label>
-                Confirm :
-                <input type="password" 
-                       name="confirm" 
-                       onChange={handlePasswordChange} 
-                       autoComplete="new-password"
-                       required />
+                Confirm Password
+                <input
+                    type="password"
+                    name="confirm"
+                    value={ confirmPassword }
+                    onChange={ e => setConfirmPassword(e.currentTarget.value) }
+                    autoComplete="new-password"
+                    aria-invalid={ null }
+                    required />
             </label>
-            {  loading ? 
-                <div role="button" aria-busy="true" disabled>Registering...</div> : 
-                <input type="submit" name="submit" value="Register" disabled={loading} />
-            }
+            <button
+                type="submit" 
+                disabled={ loading || !password || password !== confirmPassword || !username } 
+                aria-busy={ loading }>
+                {  loading ? "Registering..." : "Register" }
+            </button>
         </form>
     );
 }

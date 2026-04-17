@@ -9,25 +9,33 @@ import (
 
 type APIResponse interface {
 	Status() int
-	Result() any
+	Payload() any
+}
+
+type JSONError struct {
+	Error string `json:"error"`
 }
 
 type ErrorResponse struct {
-	Code  int
-	Quiet bool
+	Code int
 	error
+	OverrideMessage []string
 }
 
 func (r *ErrorResponse) Status() int { return r.Code }
-func (r *ErrorResponse) Result() any { return r.error }
+func (r *ErrorResponse) Payload() any {
+	return JSONError{
+		Error: r.error.Error(),
+	}
+}
 
 type DataResponse struct {
 	Code int
 	Data any
 }
 
-func (r *DataResponse) Status() int { return r.Code }
-func (r *DataResponse) Result() any { return r.Data }
+func (r *DataResponse) Status() int  { return r.Code }
+func (r *DataResponse) Payload() any { return r.Data }
 
 type APIHandler func(*gin.Context) APIResponse
 
@@ -44,16 +52,16 @@ type API struct {
 	PartialContent func(any) APIResponse
 
 	// 4xx Client error responses
-	BadRequest      func(error) APIResponse
-	Unauthorized    func(error) APIResponse
-	Forbidden       func(error) APIResponse
-	NotFound        func(error) APIResponse
-	Conflict        func(error) APIResponse
-	TooManyRequests func(error) APIResponse
+	BadRequest      func(error, ...string) APIResponse
+	Unauthorized    func(error, ...string) APIResponse
+	Forbidden       func(error, ...string) APIResponse
+	NotFound        func(error, ...string) APIResponse
+	Conflict        func(error, ...string) APIResponse
+	TooManyRequests func(error, ...string) APIResponse
 
 	// 5xx Server error responses
-	InternalServerError func(error) APIResponse
-	NotImplemented      func(error) APIResponse
+	InternalServerError func(error, ...string) APIResponse
+	NotImplemented      func(error, ...string) APIResponse
 }
 
 // API ---------------------------------------------------------------------------------------------

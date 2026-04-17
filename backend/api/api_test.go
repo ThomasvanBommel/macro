@@ -125,12 +125,16 @@ func TestDBError(t *testing.T) {
 			t.Errorf("Expected status %d, got %d", http.StatusNotFound, res.Status())
 		}
 
-		err, ok := res.Result().(error)
+		err, ok := res.(*ErrorResponse)
 		if !ok {
-			t.Fatalf("Expected error result, got %T", res.Result())
+			t.Fatalf("Expected ErrorResponse result, got %T", res)
 		}
 		if err.Error() != "Not found." {
 			t.Errorf("Expected message %q, got %q", "Not found.", err.Error())
+		}
+
+		if res.Payload() != (JSONError{Error: "Not found."}) {
+			t.Errorf("Expected payload %v, got %v", JSONError{Error: "Not found."}, res.Payload())
 		}
 	})
 
@@ -149,12 +153,16 @@ func TestDBError(t *testing.T) {
 			t.Errorf("Expected status %d, got %d", http.StatusConflict, res.Status())
 		}
 
-		mappedErr, ok := res.Result().(error)
+		err, ok := res.(*ErrorResponse)
 		if !ok {
-			t.Fatalf("Expected error result, got %T", res.Result())
+			t.Fatalf("Expected ErrorResponse result, got %T", res)
 		}
-		if mappedErr.Error() != "Username already exists." {
-			t.Errorf("Expected message %q, got %q", "Username already exists.", mappedErr.Error())
+		if err.Error() != "Username already exists." {
+			t.Errorf("Expected message %q, got %q", "Username already exists.", err.Error())
+		}
+
+		if res.Payload() != (JSONError{Error: "Username already exists."}) {
+			t.Errorf("Expected payload %v, got %v", JSONError{Error: "Username already exists."}, res.Payload())
 		}
 	})
 
@@ -167,12 +175,16 @@ func TestDBError(t *testing.T) {
 			t.Errorf("Expected status %d, got %d", http.StatusInternalServerError, res.Status())
 		}
 
-		err, ok := res.Result().(error)
+		err, ok := res.(*ErrorResponse)
 		if !ok {
-			t.Fatalf("Expected error result, got %T", res.Result())
+			t.Fatalf("Expected ErrorResponse result, got %T", res)
 		}
 		if err.Error() != "An unexpected database error occurred." {
 			t.Errorf("Expected message %q, got %q", "An unexpected database error occurred.", err.Error())
+		}
+
+		if res.Payload() != (JSONError{Error: "An unexpected database error occurred."}) {
+			t.Errorf("Expected payload %v, got %v", JSONError{Error: "An unexpected database error occurred."}, res.Payload())
 		}
 	})
 }
