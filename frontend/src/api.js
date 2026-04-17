@@ -1,3 +1,4 @@
+// postJSON is a helper function to send POST requests with JSON bodies and handle responses.
 export async function postJSON(url, body) {
     const res = await fetch(url, {
         method: "POST",

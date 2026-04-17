@@ -1,4 +1,3 @@
-import { href } from 'react-router';
 import { defineConfig } from 'vitest/config'
 
 // https://vitest.dev/config/

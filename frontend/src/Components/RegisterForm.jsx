@@ -23,7 +23,7 @@ export default function RegisterForm({
                 setPassword("");
                 setConfirmPassword("");
 
-                onSuccess?.(res);
+                onSuccess(res);
             })
             .catch(onError)
             .finally(() => setLoading(false));

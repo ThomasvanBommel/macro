@@ -51,7 +51,7 @@ function App() {
         return () => clearInterval(i);
     }, [session]);
 
-    const handleRegisterError = err => {
+    const handleAuthError = err => {
         session.notifications.add({
             heading: "Failed to register",
             details: err.message,
@@ -62,6 +62,10 @@ function App() {
 
     const handleRegisterSuccess = res => {
         navigate("/login", { replace: true });
+    };
+
+    const handleLoginSuccess = res => {
+        session.refresh();
     };
 
     if (loading || session.changingState)
@@ -77,10 +81,14 @@ function App() {
                 <Route index element={ <Home /> } />
 
                 <Route element={<UnAuthorizedOnly />}>
-                    <Route path="login" element={<LoginForm />} />
+                    <Route path="login" element={
+                        <LoginForm
+                            onError={ handleAuthError }
+                            onSuccess={ handleLoginSuccess } />
+                    } />
                     <Route path="register" element={
                         <RegisterForm
-                            onError={ handleRegisterError }
+                            onError={ handleAuthError }
                             onSuccess={ handleRegisterSuccess } />
                     } />
                 </Route>

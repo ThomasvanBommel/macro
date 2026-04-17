@@ -11,14 +11,6 @@ export default function Profile() {
         return <article aria-busy="true"></article>;
 
     return (
-        <>  
-            <Diary username={ session?.username } />
-
-            {/* <div style={{ display: "grid", placeItems: "center" }}>
-                <DateSelector date={ date } setDate={ setDate } />
-            </div> */}
-
-            {/* <EntryList username={ session?.username } date={ date } editable={ true } /> */}
-        </>
+        <Diary username={ session?.username } />
     )
 }
