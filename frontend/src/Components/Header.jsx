@@ -17,15 +17,25 @@ export default function Header() {
         whiteSpace: "nowrap"
     };
 
-    return (
-        <header style={{ display: 'flex', alignItems: 'center' }}>
-            <h1 style={{ flex: "1 0", margin: 0 }}>
-                <NavLink to="/" style={{ textDecoration: "none", color: "inherit" }}>
-                    macro
-                </NavLink>
-            </h1>
-            <nav style={{ display: 'flex', gap: '1rem' }}>
-                { isValid() ? 
+    return <>
+        <header id="main-header">
+            <h1><NavLink to="/">macro</NavLink></h1>
+            <nav>
+                {
+                    isValid() ? <>
+                    <NavLink to="/profile">Profile</NavLink>
+                    <Link onClick={ end }>
+                        Logout
+                        <small id="session-timer"><SessionTimer /></small>
+                    </Link>
+                    </> : <>
+                    <NavLink to="/login">Login</NavLink>
+                    <NavLink to="/register">Register</NavLink>
+                    </>
+                }
+
+
+                {/* { isValid() ? 
                     <>
                     <NavLink to="/profile">Profile</NavLink>
                     <Link to="/login" onClick={ end } style={{ position: "relative" }} >
@@ -39,8 +49,55 @@ export default function Header() {
                     <>
                         <NavLink to="/login">Login</NavLink>
                         <NavLink to="/register">Register</NavLink>
-                    </>}
+                    </>} */}
             </nav>
         </header>
-    );
+
+<style>{`
+#main-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--pico-typography-spacing-vertical);
+    border-bottom: 1px solid var(--pico-muted-border-color);
+
+    & > h1 {
+        flex: 1 0;
+        margin: 0;
+
+        & > a {
+            text-decoration: none;
+            color: inherit;
+        }
+    }
+
+    & > nav {
+        display: flex;
+        gap: 1px;
+
+        & > a {
+            position: relative;
+            padding: 0 0.5rem 0 0.5rem;
+            margin-top: 0.75rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            outline: 1px solid var(--pico-muted-border-color);
+            border-bottom: none;
+        }
+
+        & > a.active {
+            background-color: var(--pico-primary-background);
+            color: var(--pico-primary-inverse);
+        }
+
+        #session-timer {
+            width: 100%;
+            text-align: center;
+            position: absolute;
+            left: 0;
+            top: 1.4rem;
+            opacity: 0.5;
+        }
+    }
+}
+`}</style>
+    </>;
 }
