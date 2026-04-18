@@ -75,5 +75,18 @@ func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 		}
 	}
 
+	rnd := func(totals *Totals) {
+		totals.Calories = float64(int(totals.Calories*100)) / 100
+		totals.Carbs = float64(int(totals.Carbs*100)) / 100
+		totals.Protein = float64(int(totals.Protein*100)) / 100
+		totals.Fat = float64(int(totals.Fat*100)) / 100
+	}
+
+	rnd(&response.Totals)
+	rnd(&response.Breakfast.Totals)
+	rnd(&response.Lunch.Totals)
+	rnd(&response.Dinner.Totals)
+	rnd(&response.Snacks.Totals)
+
 	return api.OK(response)
 }

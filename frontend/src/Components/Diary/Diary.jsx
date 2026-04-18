@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { MdAdd, MdArrowBackIos, MdArrowForwardIos } from "react-icons/md";
 
-import { handleGetDiary, handleCreateEntry } from "../../api";
+import { handleGetDiary } from "../../api";
 import EntryModal from './EntryModal';
 import FoodModal from './FoodModal';
 
@@ -162,63 +162,88 @@ function DailyTotals({ totals }) {
         return n > 0 ? n + "%" : "";
     };
 
-    return (
-        <article>
-            <center role="group" style={{ margin: 0 }}>
-                <div style={{ color: "var(--protein-color)" }}>
+    return <>
+        <article className="daily-totals">
+            <center className="totals color-children">
+                <div>
                     <strong>{ t.protein.toFixed(1) } g</strong>
                     <div>Protein</div>
                 </div>
-                <div style={{ color: "var(--carb-color)" }}>
+                <div>
                     <strong>{ t.carbs.toFixed(1) } g</strong>
                     <div>Carb</div>
                 </div>
-                <div style={{ color: "var(--fat-color)" }}>
+                <div>
                     <strong>{ t.fat.toFixed(1) } g</strong>
                     <div>Fat</div>
                 </div>
-                <div style={{ color: "var(--kcal-color)" }}>
+                <div>
                     <strong>{ t.calories.toFixed(1) } g</strong>
                     <div>Kcal</div>
                 </div>
             </center>
 
             { t.protein + t.carbs + t.fat <= 0 ? null : <>
-                <center role="group" style={{ 
-                    borderRadius: "0.5rem", 
-                    overflow: "hidden", 
-                    margin: "0.5rem 0 0 0" }}>
-                    <div style={{ 
-                        height: "1rem",
-                        flex: t.protein*100,
-                        background: "var(--protein-color)" }}></div>
-                    <div style={{ 
-                        height: "1rem",
-                        flex: t.carbs*100,
-                        background: "var(--carb-color)" }}></div>
-                    <div style={{ 
-                        height: "1rem",
-                        flex: t.fat*100,
-                        background: "var(--fat-color)" }}></div>
+                <center className="bar bg-children size-children">
+                    <div title={ `${ pct("protein") } Protein` }></div>
+                    <div title={ `${ pct("carbs") } Carbs` }></div>
+                    <div title={ `${ pct("fat") } Fat` }></div>
                 </center>
 
-                <center role="group" style={{ gap: "0.5rem", marginBottom: "0.5rem" }}>
-                    <div style={{ 
-                        height: "1rem",
-                        flex: t.protein*100,
-                        color: "var(--protein-color)" }}>{ pct("protein") }</div>
-                    <div style={{ 
-                        height: "1rem",
-                        flex: t.carbs*100,
-                        color: "var(--carb-color)" }}>{ pct("carbs") }</div>
-                    <div style={{ 
-                        height: "1rem",
-                        flex: t.fat*100,
-                        color: "var(--fat-color)" }}>{ pct("fat") }</div>
+                <center className="label color-children size-children">
+                    <div title={ `${ pct("protein") } Protein` }>{ pct("protein") }</div>
+                    <div title={ `${ pct("carbs") } Carbs` }>{ pct("carbs") }</div>
+                    <div title={ `${ pct("fat") } Fat` }>{ pct("fat") }</div>
                 </center>
             </>}
         </article>
-    );
+
+<style>{`
+    .daily-totals {
+        & > .totals {
+            display: flex;
+            margin-bottom: 1rem;
+
+            & > div { flex: 1; }
+            & > div > div { line-height: 0.5rem; }
+        }
+
+        & > .bar {
+            height: 1rem;
+            display:flex;
+            margin-top: 0.5rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+
+            & > div { height: 100%; }
+        }
+
+        & > .label {
+            height: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.25rem;
+            line-height: 1rem;
+
+            & > div { height: 100%; }
+        }
+
+        .color-children > *:nth-child(1) { color: var(--protein-color); }
+        .color-children > *:nth-child(2) { color: var(--carb-color); }
+        .color-children > *:nth-child(3) { color: var(--fat-color); }
+        .color-children > *:nth-child(4) { color: var(--kcal-color); }
+
+        .bg-children > *:nth-child(1) { background: var(--protein-color); }
+        .bg-children > *:nth-child(2) { background: var(--carb-color); }
+        .bg-children > *:nth-child(3) { background: var(--fat-color); }
+        .bg-children > *:nth-child(4) { background: var(--kcal-color); }
+
+        .size-children > *:nth-child(1) { flex: ${ t.protein * 100 }; }
+        .size-children > *:nth-child(2) { flex: ${ t.carbs * 100 }; }
+        .size-children > *:nth-child(3) { flex: ${ t.fat * 100 }; }
+    }
+`}</style>
+    </>;
 }
 
 // Component to display a meal section with its entries and totals, with a button to add a new entry
