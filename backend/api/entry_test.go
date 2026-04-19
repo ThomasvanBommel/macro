@@ -187,6 +187,15 @@ func TestHandleDeleteEntry(t *testing.T) {
 		}
 	})
 
+	t.Run("invalid-entry", func(t *testing.T) {
+		body := `{"id": 99999}`
+		w, _ := executeHandler(t, body, s, api.handleDeleteEntry)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Expected status %d, got %d", http.StatusNotFound, w.Code)
+		}
+	})
+
 	t.Run("valid", func(t *testing.T) {
 		body := `{"id": ` + strconv.Itoa(e.ID) + `}`
 		w, _ := executeHandler(t, body, s, api.handleDeleteEntry)

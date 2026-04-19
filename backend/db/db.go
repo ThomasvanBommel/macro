@@ -341,7 +341,13 @@ func (db *Database) DeleteEntryAuthByToken(id int, token string) error {
 
 	q := `DELETE 
 	      FROM entry 
-		  WHERE id = ? AND user_name = (SELECT user_name FROM session WHERE token = ?);`
-	_, err := db.Exec(q, id, token)
-	return err
+		  WHERE id = ? AND user_name = (SELECT user_name FROM session WHERE token = ?)
+		  RETURNING id;`
+
+	var entryId int
+	err := db.QueryRow(q, id, token).Scan(&entryId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

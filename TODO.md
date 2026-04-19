@@ -12,7 +12,7 @@
 ### 2) Reliability and Product Polish
 - [x] handle diary fetch errors in frontend/src/Components/Diary/Diary.jsx
 - [x] improve session refresh strategy (avoid aggressive session checks)
-- [ ] add backend tests for unauthorized/invalid edit and delete entry cases
+- [x] add backend tests for unauthorized/invalid edit and delete entry cases
 
 ### 3) Database Maintainability
 - [ ] split backend/db/db.go into focused files by domain
