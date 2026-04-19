@@ -10,8 +10,8 @@
 - [x] run frontend tests in CI
 
 ### 2) Reliability and Product Polish
-- [ ] handle diary fetch errors in frontend/src/Components/Diary/Diary.jsx
-- [ ] improve session refresh strategy (avoid aggressive session checks)
+- [x] handle diary fetch errors in frontend/src/Components/Diary/Diary.jsx
+- [x] improve session refresh strategy (avoid aggressive session checks)
 - [ ] add backend tests for unauthorized/invalid edit and delete entry cases
 
 ### 3) Database Maintainability

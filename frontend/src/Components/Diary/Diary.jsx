@@ -6,6 +6,8 @@ import { handleGetDiary } from "../../api";
 import EntryModal from './EntryModal';
 import FoodModal from './FoodModal';
 
+import { useSession } from '../../Context/';
+
 const valid = d => d instanceof Date && !isNaN(d.getTime());
 const today = (new Date()).toLocaleString("sv-SE").slice(0, 10);
 const dtos = d => valid(d) ? d.toISOString().slice(0, 10) : today;
@@ -20,6 +22,8 @@ export default function Diary({ username, defaultDate }) {
     const [data, setData] = useState(null);
     const [date, setDate] = useState(defaultDate ?? today);
     const [loading, setLoading] = useState(true);
+
+    const { notifications } = useSession();
 
     const [AddEntryModalOpen, setAddEntryModalOpen] = useState(false);
     const [AddEntryInitialMeal, setAddEntryInitialMeal] = useState("breakfast");
@@ -59,8 +63,16 @@ export default function Diary({ username, defaultDate }) {
 
         handleGetDiary(username, date)
             .then(setData)
+            .catch(err => {
+                console.error(err);
+                notifications.add({
+                    heading: "Error fetching diary",
+                    details: err.message || "Please try again.",
+                    type: "error",
+                    ttl: 0
+                })
+            })
             .finally(() => setLoading(false));
-            // TODO: handle errors
     }, [username, date, refresh]);
 
     const mealSectionProps = meal => {
