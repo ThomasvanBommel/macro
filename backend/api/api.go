@@ -27,6 +27,10 @@ func Wrap(fn APIHandler) gin.HandlerFunc {
 			return
 		}
 
+		if err, ok := r.(error); ok && err != nil {
+			c.Error(err)
+		}
+
 		payload := r.Payload()
 		if payload == nil {
 			c.Status(r.Status())
@@ -46,16 +50,20 @@ func Init(r *gin.Engine, db *db.Database) *API {
 
 	store := cookie.NewStore(s)
 	store.Options(sessions.Options{
-		MaxAge:   3600,
+		MaxAge:   SESSION_TIMEOUT_SEC,
 		HttpOnly: true,
 		Secure:   env.Secure,
 	})
 
 	r.Use(sessions.Sessions("macro_session", store))
 
-	err := func(code int) func(error, ...string) APIResponse {
+	err := func(code int, ovr ...string) func(error, ...string) APIResponse {
 		return func(e error, msg ...string) APIResponse {
 			err := e
+
+			if len(msg) == 0 && len(ovr) > 0 {
+				msg = ovr
+			}
 
 			if err == nil && len(msg) > 0 {
 				err = errors.New(msg[0])
@@ -85,8 +93,8 @@ func Init(r *gin.Engine, db *db.Database) *API {
 		Conflict:        err(409),
 		TooManyRequests: err(429),
 
-		InternalServerError: err(500),
-		NotImplemented:      err(501),
+		InternalServerError: err(500, "Internal server error."),
+		NotImplemented:      err(501, "Not implemented."),
 	}
 
 	// Register API routes

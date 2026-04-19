@@ -4,7 +4,7 @@ import { useSession } from '../Context';
 
 /** Displays a countdown to expiration and triggers onExpire when time runs out. */
 export default function SessionTimer() {
-    const { isValid, expires } = useSession();
+    const { isValid, expires, ttl } = useSession();
     if (!isValid) return null;
 
     const [timeLeft, setTimeLeft] = useState("");
@@ -21,5 +21,5 @@ export default function SessionTimer() {
         return () => clearInterval(interval);
     }, [expires]);
 
-    return <>{ timeLeft }</>;
+    return ttl() < 0 ? null : <>{ timeLeft }</>;
 }

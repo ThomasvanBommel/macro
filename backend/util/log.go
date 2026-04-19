@@ -41,9 +41,7 @@ func (l *Logger) Middleware() gin.HandlerFunc {
 			session.Save()
 		}
 
-		error, _ := c.Get("error")
-
-		slog.Info("HTTP request",
+		args := []any{
 			"method", method,
 			"path", path,
 			"status", status,
@@ -53,8 +51,16 @@ func (l *Logger) Middleware() gin.HandlerFunc {
 			"session_id", id,
 			"session_token", token,
 			"username", session.Get("username"),
-			"error", error,
-		)
+		}
+
+		lvl := slog.LevelInfo
+		if len(c.Errors) > 0 {
+			lvl = slog.LevelError
+			args = append(args, "error_count", len(c.Errors))
+			args = append(args, "errors", c.Errors.ByType(gin.ErrorTypePrivate).String())
+		}
+
+		slog.Log(c, lvl, "HTTP request", args...)
 	}
 }
 

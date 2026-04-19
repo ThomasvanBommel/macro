@@ -76,7 +76,7 @@ func mustCreateUser(t *testing.T, api *API, name string) {
 
 func mustCreateSession(t *testing.T, api *API, name string) *db.Session {
 	t.Helper()
-	s, err := api.db.CreateSession(name)
+	s, err := api.db.CreateSession(name, SESSION_TIMEOUT_SEC)
 	if err != nil {
 		t.Fatalf("CreateSession(%q) failed: %v", name, err)
 	}

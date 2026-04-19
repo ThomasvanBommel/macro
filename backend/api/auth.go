@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var SESSION_TIMEOUT_SEC = 3600
+
 // initSession initializes session state with the provided Session struct.
 func initSession(s *db.Session, c *gin.Context) {
 	defer util.Trace("initSession(s *Session, c *gin.Context)", "session", s)()
@@ -45,7 +47,7 @@ func getSessionToken(c *gin.Context) (string, bool) {
 func (api *API) createSession(name string, c *gin.Context) error {
 	defer util.Trace("createSession(name string, c *gin.Context)", "name", name)()
 
-	s, err := api.db.CreateSession(name)
+	s, err := api.db.CreateSession(name, SESSION_TIMEOUT_SEC)
 	if err != nil {
 		return err
 	}
@@ -101,11 +103,11 @@ func (api *API) handleLoginUser(c *gin.Context) APIResponse {
 
 	u, err := api.db.GetUserByNameAndPassword(in.Name, in.Password)
 	if err != nil {
-		return api.Unauthorized(nil, "Invalid username or password.")
+		return api.Unauthorized(err, "Invalid username or password.")
 	}
 
 	if err := api.createSession(u.Name, c); err != nil {
-		return api.InternalServerError(nil)
+		return api.InternalServerError(err)
 	}
 
 	return api.OK(nil)

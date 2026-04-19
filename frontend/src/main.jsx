@@ -1,6 +1,6 @@
 import { Outlet, BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router';
 import { createRoot } from 'react-dom/client';
-import { StrictMode, useEffect} from 'react';
+import { StrictMode, useEffect, useCallback} from 'react';
 
 import { SessionProvider, useSession } from './Context';
 import { Header, LoginForm, RegisterForm, NotificationArea } from './Components';
@@ -8,6 +8,16 @@ import { Home, Profile } from './Pages';
 
 import '@picocss/pico';
 import './main.css';
+
+const UnauthorizedOnly = () => {
+    const { isValid } = useSession();
+    return isValid() ? <Navigate to="/profile" replace /> : <Outlet />;
+};
+
+const AuthorizedOnly = () => {
+    const { isValid } = useSession();
+    return isValid() ? <Outlet /> : <Navigate to="/login" replace />;
+};
 
 // The main application component that sets up routing and session management.
 function App() {
@@ -31,9 +41,6 @@ function App() {
     const handleLoginSuccess = res => {
         init();
     };
-
-    const UnauthorizedOnly = () => isValid() ? <Navigate to="/profile" replace /> : <Outlet />;
-    const AuthorizedOnly = () => isValid() ? <Outlet /> : <Navigate to="/login" replace />;
 
     return <>
         <Header />

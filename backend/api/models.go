@@ -24,8 +24,13 @@ type ErrorResponse struct {
 
 func (r *ErrorResponse) Status() int { return r.Code }
 func (r *ErrorResponse) Payload() any {
+	msg := r.OverrideMessage
+	if len(msg) == 0 {
+		msg = []string{r.error.Error()}
+	}
+
 	return JSONError{
-		Error: r.error.Error(),
+		Error: msg[0],
 	}
 }
 

@@ -67,18 +67,18 @@ func (db *Database) CreateUser(name string, password string) error {
 	return err
 }
 
-// CreateSession creates a 1-hour session and returns its record.
-func (db *Database) CreateSession(name string) (*Session, error) {
+// CreateSession creates a session for the user and returns the session record.
+func (db *Database) CreateSession(name string, timeout_sec int) (*Session, error) {
 	defer util.Trace("CreateSession(userName)", "userName", name)()
 
 	t := util.GenerateRandomHexString(32)
 
 	q := `INSERT INTO session (user_name, token, expires)
-		  VALUES (?, ?, datetime('now', '+1 hour'))
+		  VALUES (?, ?, datetime('now', '+' || ? || ' seconds'))
 		  RETURNING user_name, token, created, expires;`
 
 	var s Session
-	err := db.QueryRow(q, name, t).Scan(&s.UserName, &s.Token, &s.Created, &s.Expires)
+	err := db.QueryRow(q, name, t, timeout_sec).Scan(&s.UserName, &s.Token, &s.Created, &s.Expires)
 	if err != nil {
 		return nil, err
 	}
