@@ -113,6 +113,9 @@ describe("RegisterForm", () => {
         ));
         expect(onSuccess).not.toHaveBeenCalled();
         expect(input.submit.getAttribute("aria-busy")).toBe("false");
+        expect(input.name.value).toBe("error");
+        expect(input.password.value).toBe("password123");
+        expect(input.confirm.value).toBe("password123");
     });
 
     test("successful registration", async () => {

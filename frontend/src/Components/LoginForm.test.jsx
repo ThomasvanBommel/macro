@@ -85,6 +85,8 @@ describe("LoginForm", () => {
         expect(onSuccess).not.toHaveBeenCalled();
         expect(input.submit.disabled).toBeFalsy();
         expect(input.submit.getAttribute("aria-busy")).toBe("false");
+        expect(input.name.value).toBe("error");
+        expect(input.password.value).toBe("password123");
     });
 
     test("handles success", async () => {
