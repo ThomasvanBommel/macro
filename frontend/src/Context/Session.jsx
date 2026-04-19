@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { handleFetchSession, handleLogoutUser } from '../api';
 
 const SessionContext = createContext();
@@ -8,20 +8,42 @@ export function SessionProvider({ children }) {
     const [expires, setExpires] = useState(null);
     const [notifications, setNotifications] = useState([]);
 
+    const version = useRef(0);
+
     // On component mount, initialize the session by fetching the existing session data.
-    useEffect(() => init(true), []);
+    useEffect(() => {
+        init(true);
+    }, []);
 
     // Initializes the session by fetching the current session data from the server.
     const init = (ignoreError=false) => {
+        const v = ++version.current;
         handleFetchSession()
             .then(res => {
+                if (version.current !== v) return;
                 setUsername(res.username);
                 setExpires(res.expires);
+
+                setTimeout(() => {
+                    if (version.current !== v) return;
+                    
+                    setUsername(null);
+                    setExpires(null);
+
+                    add({ 
+                        heading: "Session expired",
+                        details: "Please log in again.",
+                        type: "info",
+                    });
+                }, new Date(res.expires) - new Date() - 1000);
             })
             .catch(err => {
+                if (version.current !== v) return;
                 if (ignoreError) return;
+
                 setUsername(null);
                 setExpires(null);
+
                 add({ 
                     heading: "Error fetching session",
                     details: err.message || "Please log in again.",

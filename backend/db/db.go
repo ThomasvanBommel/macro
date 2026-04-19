@@ -67,18 +67,18 @@ func (db *Database) CreateUser(name string, password string) error {
 	return err
 }
 
-// CreateSession creates a 1-hour session and returns its record.
-func (db *Database) CreateSession(name string) (*Session, error) {
+// CreateSession creates a session for the user and returns the session record.
+func (db *Database) CreateSession(name string, timeout_sec int) (*Session, error) {
 	defer util.Trace("CreateSession(userName)", "userName", name)()
 
 	t := util.GenerateRandomHexString(32)
 
 	q := `INSERT INTO session (user_name, token, expires)
-		  VALUES (?, ?, datetime('now', '+1 hour'))
+		  VALUES (?, ?, datetime('now', '+' || ? || ' seconds'))
 		  RETURNING user_name, token, created, expires;`
 
 	var s Session
-	err := db.QueryRow(q, name, t).Scan(&s.UserName, &s.Token, &s.Created, &s.Expires)
+	err := db.QueryRow(q, name, t, timeout_sec).Scan(&s.UserName, &s.Token, &s.Created, &s.Expires)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +341,13 @@ func (db *Database) DeleteEntryAuthByToken(id int, token string) error {
 
 	q := `DELETE 
 	      FROM entry 
-		  WHERE id = ? AND user_name = (SELECT user_name FROM session WHERE token = ?);`
-	_, err := db.Exec(q, id, token)
-	return err
+		  WHERE id = ? AND user_name = (SELECT user_name FROM session WHERE token = ?)
+		  RETURNING id;`
+
+	var entryId int
+	err := db.QueryRow(q, id, token).Scan(&entryId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

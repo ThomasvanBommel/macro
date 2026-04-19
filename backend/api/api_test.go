@@ -76,7 +76,7 @@ func mustCreateUser(t *testing.T, api *API, name string) {
 
 func mustCreateSession(t *testing.T, api *API, name string) *db.Session {
 	t.Helper()
-	s, err := api.db.CreateSession(name)
+	s, err := api.db.CreateSession(name, SESSION_TIMEOUT_SEC)
 	if err != nil {
 		t.Fatalf("CreateSession(%q) failed: %v", name, err)
 	}
@@ -183,8 +183,8 @@ func TestDBError(t *testing.T) {
 			t.Errorf("Expected message %q, got %q", "An unexpected database error occurred.", err.Error())
 		}
 
-		if res.Payload() != (JSONError{Error: "An unexpected database error occurred."}) {
-			t.Errorf("Expected payload %v, got %v", JSONError{Error: "An unexpected database error occurred."}, res.Payload())
+		if res.Payload() != (JSONError{Error: "Internal server error."}) {
+			t.Errorf("Expected payload %v, got %v", JSONError{Error: "Internal server error."}, res.Payload())
 		}
 	})
 }

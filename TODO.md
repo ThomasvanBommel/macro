@@ -3,16 +3,16 @@
 ## Current Sprint (Highest Hiring Signal)
 
 ### 1) Frontend Test Baseline (Top Priority)
-- [ ] add Vitest + React Testing Library setup
-- [ ] add tests for API helpers in frontend/src/api.js
-- [ ] add login success/failure flow tests
+- [x] add Vitest + React Testing Library setup
+- [x] add tests for API helpers in frontend/src/api.js
+- [x] add login success/failure flow tests
 - [ ] add diary create/edit/delete flow tests
-- [ ] run frontend tests in CI
+- [x] run frontend tests in CI
 
 ### 2) Reliability and Product Polish
-- [ ] handle diary fetch errors in frontend/src/Components/Diary/Diary.jsx
-- [ ] improve session refresh strategy (avoid aggressive session checks)
-- [ ] add backend tests for unauthorized/invalid edit and delete entry cases
+- [x] handle diary fetch errors in frontend/src/Components/Diary/Diary.jsx
+- [x] improve session refresh strategy (avoid aggressive session checks)
+- [x] add backend tests for unauthorized/invalid edit and delete entry cases
 
 ### 3) Database Maintainability
 - [ ] split backend/db/db.go into focused files by domain
