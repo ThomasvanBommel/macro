@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var SESSION_TIMEOUT_SEC = 3600
+const SESSION_TIMEOUT_SEC = 3600
 
 // initSession initializes session state with the provided Session struct.
 func initSession(s *db.Session, c *gin.Context) {

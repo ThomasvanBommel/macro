@@ -9,7 +9,17 @@ import (
 	"github.com/gin-contrib/sessions"
 )
 
-// TestInitSession tests the initSession function to ensure it properly sets session data.
+func getSessionTimeout() int {
+	return SESSION_TIMEOUT_SEC
+}
+
+func TestGetSessionTimeout(t *testing.T) {
+	timeout := getSessionTimeout()
+	if timeout != 3600 {
+		t.Errorf("Expected session timeout %d, got %d", 3600, timeout)
+	}
+}
+
 func TestInitSession(t *testing.T) {
 	_, c := newContext(t, "")
 
@@ -25,7 +35,6 @@ func TestInitSession(t *testing.T) {
 	}
 }
 
-// TestClearSession tests the clearSession function to ensure it properly clears session data.
 func TestClearSession(t *testing.T) {
 	_, c := newContext(t, "")
 
@@ -45,7 +54,6 @@ func TestClearSession(t *testing.T) {
 	}
 }
 
-// TestGetSessionToken tests the getSessionToken function for valid and invalid session states.
 func TestGetSessionToken(t *testing.T) {
 	_, c := newContext(t, "")
 
@@ -71,7 +79,6 @@ func TestGetSessionToken(t *testing.T) {
 	}
 }
 
-// TestCreateSession tests the createSession function to ensure it creates a session and sets the correct cookie values.
 func TestCreateSession(t *testing.T) {
 	api := newAPI(t)
 	defer api.db.Close()
