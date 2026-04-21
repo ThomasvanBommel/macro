@@ -91,6 +91,7 @@ func Init(r *gin.Engine, db *db.Database) *API {
 		Forbidden:       err(403),
 		NotFound:        err(404),
 		Conflict:        err(409),
+		Unprocessable:   err(422),
 		TooManyRequests: err(429),
 
 		InternalServerError: err(500, "Internal server error."),
@@ -126,7 +127,7 @@ func Init(r *gin.Engine, db *db.Database) *API {
 
 // DBErrorMessages holds overridable response messages for known DB error conditions.
 // Zero-value fields fall back to their default.
-type DBErrorMessages struct{ Unique, NotFound, Busy, Default string }
+type DBErrorMessages struct{ Unique, NotFound, Busy, ForeignKey, Default string }
 
 // DBError maps a database error to an APIResponse, with optional message overrides.
 func (a *API) DBError(err error, msgs ...DBErrorMessages) APIResponse {
@@ -134,6 +135,7 @@ func (a *API) DBError(err error, msgs ...DBErrorMessages) APIResponse {
 		"Already exists.",
 		"Not found.",
 		"Database is busy, please try again.",
+		"Invalid foreign key.",
 		"An unexpected database error occurred.",
 	}
 
@@ -148,6 +150,9 @@ func (a *API) DBError(err error, msgs ...DBErrorMessages) APIResponse {
 		}
 		if o.Busy != "" {
 			m.Busy = o.Busy
+		}
+		if o.ForeignKey != "" {
+			m.ForeignKey = o.ForeignKey
 		}
 		if o.Default != "" {
 			m.Default = o.Default
@@ -165,6 +170,8 @@ func (a *API) DBError(err error, msgs ...DBErrorMessages) APIResponse {
 			return a.Conflict(errors.New(m.Unique))
 		case sqlite3.SQLITE_BUSY:
 			return a.TooManyRequests(errors.New(m.Busy))
+		case sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY:
+			return a.Unprocessable(errors.New(m.ForeignKey))
 		}
 	}
 

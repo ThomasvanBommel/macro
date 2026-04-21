@@ -62,6 +62,7 @@ type API struct {
 	Forbidden       func(error, ...string) APIResponse
 	NotFound        func(error, ...string) APIResponse
 	Conflict        func(error, ...string) APIResponse
+	Unprocessable   func(error, ...string) APIResponse
 	TooManyRequests func(error, ...string) APIResponse
 
 	// 5xx Server error responses

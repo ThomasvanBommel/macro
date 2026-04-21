@@ -6,6 +6,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Totals struct {
+	Calories float64 `json:"calories"`
+	Carbs    float64 `json:"carbs"`
+	Protein  float64 `json:"protein"`
+	Fat      float64 `json:"fat"`
+}
+
+type Diary struct {
+	Totals  Totals                  `json:"totals"`
+	Entries []EntryWithFoodResponse `json:"entries"`
+}
+
+type DiaryResponse struct {
+	Totals    Totals `json:"totals"`
+	Breakfast Diary  `json:"breakfast"`
+	Lunch     Diary  `json:"lunch"`
+	Dinner    Diary  `json:"dinner"`
+	Snack     Diary  `json:"snack"`
+}
+
 // handleGetDiary returns all entries for a user and date, grouped by meal with totals.
 func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 	var in ListUserEntriesInput
@@ -18,26 +38,6 @@ func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 		return api.DBError(err)
 	}
 
-	type Totals struct {
-		Calories float64 `json:"calories"`
-		Carbs    float64 `json:"carbs"`
-		Protein  float64 `json:"protein"`
-		Fat      float64 `json:"fat"`
-	}
-
-	type Diary struct {
-		Totals  Totals                  `json:"totals"`
-		Entries []EntryWithFoodResponse `json:"entries"`
-	}
-
-	type Response struct {
-		Totals    Totals `json:"totals"`
-		Breakfast Diary  `json:"breakfast"`
-		Lunch     Diary  `json:"lunch"`
-		Dinner    Diary  `json:"dinner"`
-		Snack     Diary  `json:"snack"`
-	}
-
 	addTotals := func(totals *Totals, entry EntryWithFoodResponse) {
 		totals.Calories += entry.Food.Calories * entry.Servings / entry.Food.ServingCount
 		totals.Carbs += entry.Food.Carbs * entry.Servings / entry.Food.ServingCount
@@ -45,7 +45,7 @@ func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 		totals.Fat += entry.Food.Fat * entry.Servings / entry.Food.ServingCount
 	}
 
-	response := Response{
+	response := DiaryResponse{
 		Totals:    Totals{},
 		Breakfast: Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
 		Lunch:     Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},

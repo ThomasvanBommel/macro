@@ -9,6 +9,22 @@ import (
 	"github.com/gin-contrib/sessions"
 )
 
+func mustCreateUser(t *testing.T, api *API, name string) {
+	t.Helper()
+	if err := api.db.CreateUser(name, "password123"); err != nil {
+		t.Fatalf("CreateUser(%q) failed: %v", name, err)
+	}
+}
+
+func mustCreateSession(t *testing.T, api *API, name string) *db.Session {
+	t.Helper()
+	s, err := api.db.CreateSession(name, SESSION_TIMEOUT_SEC)
+	if err != nil {
+		t.Fatalf("CreateSession(%q) failed: %v", name, err)
+	}
+	return s
+}
+
 func getSessionTimeout() int {
 	return SESSION_TIMEOUT_SEC
 }

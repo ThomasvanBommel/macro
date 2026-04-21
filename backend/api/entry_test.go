@@ -8,6 +8,36 @@ import (
 	"testing"
 )
 
+func mustCreateEntryByParam(t *testing.T, api *API, token string, params db.EntryParams) *db.EntryWithFood {
+	t.Helper()
+	e, err := api.db.CreateEntryByToken(params, token)
+	if err != nil {
+		t.Fatalf("CreateEntryByToken(%v) failed: %v", params, err)
+	}
+	return e
+}
+
+func mustCreateEntryByVar(t *testing.T, api *API, token string, foodID int, mealName string,
+	date string, servings int) *db.EntryWithFood {
+	t.Helper()
+	return mustCreateEntryByParam(t, api, token, db.EntryParams{
+		FoodId:   foodID,
+		MealName: mealName,
+		Date:     date,
+		Servings: servings,
+	})
+}
+
+func mustCreateEntry(t *testing.T, api *API, token string, foodID int, mealName string) *db.EntryWithFood {
+	t.Helper()
+	return mustCreateEntryByParam(t, api, token, db.EntryParams{
+		FoodId:   foodID,
+		MealName: mealName,
+		Date:     "1901-01-01",
+		Servings: 1,
+	})
+}
+
 func TestHandleCreateEntry(t *testing.T) {
 	api := newAPI(t)
 	defer api.db.Close()
@@ -24,7 +54,7 @@ func TestHandleCreateEntry(t *testing.T) {
 	})
 
 	t.Run("invalid-servings", func(t *testing.T) {
-		body := `{"food_id": 1, "meal_name": "Lunch", "date": "1901-01-01", "servings": 0}`
+		body := `{"food_id": 1, "meal_name": "lunch", "date": "1901-01-01", "servings": 0}`
 		w, _ := executeHandler(t, body, s, api.handleCreateEntry)
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
@@ -32,7 +62,7 @@ func TestHandleCreateEntry(t *testing.T) {
 	})
 
 	t.Run("invalid-session", func(t *testing.T) {
-		body := `{"food_id": 1, "meal_name": "Lunch", "date": "1901-01-01", "servings": 1}`
+		body := `{"food_id": 1, "meal_name": "lunch", "date": "1901-01-01", "servings": 1}`
 		w, _ := executeHandler(t, body, &db.Session{UserName: "testuser", Token: "invalidtoken"}, api.handleCreateEntry)
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
@@ -40,15 +70,24 @@ func TestHandleCreateEntry(t *testing.T) {
 	})
 
 	t.Run("invalid-food-id", func(t *testing.T) {
-		body := `{"food_id": 99999, "meal_name": "Lunch", "date": "1901-01-01", "servings": 1}`
+		body := `{"food_id": 99999, "meal_name": "lunch", "date": "1901-01-01", "servings": 1}`
 		w, _ := executeHandler(t, body, s, api.handleCreateEntry)
-		if w.Code != http.StatusNotFound {
-			t.Errorf("Expected status %d, got %d", http.StatusNotFound, w.Code)
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("Expected status %d, got %d", http.StatusUnprocessableEntity, w.Code)
+		}
+	})
+
+	// invalid meal name
+	t.Run("invalid-meal-name", func(t *testing.T) {
+		body := `{"food_id": ` + strconv.Itoa(f.ID) + `, "meal_name": "brunch", "date": "1901-01-01", "servings": 1}`
+		w, _ := executeHandler(t, body, s, api.handleCreateEntry)
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("Expected status %d, got %d", http.StatusUnprocessableEntity, w.Code)
 		}
 	})
 
 	t.Run("valid", func(t *testing.T) {
-		body := `{"food_id": ` + strconv.Itoa(f.ID) + `, "meal_name": "Lunch", "date": "1901-01-01", "servings": "1"}`
+		body := `{"food_id": ` + strconv.Itoa(f.ID) + `, "meal_name": "lunch", "date": "1901-01-01", "servings": "1"}`
 		w, _ := executeHandler(t, body, s, api.handleCreateEntry)
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
@@ -95,7 +134,7 @@ func TestHandleListUserEntries(t *testing.T) {
 
 	t.Run("valid-user-with-entries", func(t *testing.T) {
 		for i := 0; i < 3; i++ {
-			_, err := api.db.CreateEntryByToken(db.EntryParams{FoodId: f.ID, MealName: "Breakfast", Date: "1901-01-01", Servings: 1}, s.Token)
+			_, err := api.db.CreateEntryByToken(db.EntryParams{FoodId: f.ID, MealName: "breakfast", Date: "1901-01-01", Servings: 1}, s.Token)
 			if err != nil {
 				t.Fatalf("CreateEntryByToken failed: %v", err)
 			}
@@ -122,10 +161,10 @@ func TestHandleEditEntry(t *testing.T) {
 	s := mustCreateSession(t, api, "testuser")
 	f1 := mustCreateFood(t, api, s.Token, "Food One")
 	f2 := mustCreateFood(t, api, s.Token, "Food Two")
-	e := mustCreateEntry(t, api, s.Token, f1.ID, "Breakfast")
+	e := mustCreateEntry(t, api, s.Token, f1.ID, "breakfast")
 
 	t.Run("unauthorized", func(t *testing.T) {
-		body := `{"id": ` + strconv.Itoa(e.ID) + `, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "Lunch", "date": "1901-01-01", "servings": "1"}`
+		body := `{"id": ` + strconv.Itoa(e.ID) + `, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "lunch", "date": "1901-01-01", "servings": "1"}`
 		w, _ := executeHandler(t, body, nil, api.handleEditEntry)
 		if w.Code != http.StatusUnauthorized {
 			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
@@ -133,7 +172,7 @@ func TestHandleEditEntry(t *testing.T) {
 	})
 
 	t.Run("invalid-servings", func(t *testing.T) {
-		body := `{"id": ` + strconv.Itoa(e.ID) + `, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "Lunch", "date": "1901-01-01", "servings": "0"}`
+		body := `{"id": ` + strconv.Itoa(e.ID) + `, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "lunch", "date": "1901-01-01", "servings": "0"}`
 		w, _ := executeHandler(t, body, s, api.handleEditEntry)
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("Expected status %d, got %d", http.StatusBadRequest, w.Code)
@@ -141,7 +180,7 @@ func TestHandleEditEntry(t *testing.T) {
 	})
 
 	t.Run("missing-entry", func(t *testing.T) {
-		body := `{"id": 99999, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "Lunch", "date": "1901-01-01", "servings": "1"}`
+		body := `{"id": 99999, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "lunch", "date": "1901-01-01", "servings": "1"}`
 		w, _ := executeHandler(t, body, s, api.handleEditEntry)
 		if w.Code != http.StatusNotFound {
 			t.Errorf("Expected status %d, got %d", http.StatusNotFound, w.Code)
@@ -149,7 +188,7 @@ func TestHandleEditEntry(t *testing.T) {
 	})
 
 	t.Run("valid", func(t *testing.T) {
-		body := `{"id": ` + strconv.Itoa(e.ID) + `, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "Lunch", "date": "1901-01-02", "servings": "2"}`
+		body := `{"id": ` + strconv.Itoa(e.ID) + `, "food_id": ` + strconv.Itoa(f2.ID) + `, "meal_name": "lunch", "date": "1901-01-02", "servings": "2"}`
 		w, _ := executeHandler(t, body, s, api.handleEditEntry)
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected status %d, got %d", http.StatusOK, w.Code)
@@ -162,8 +201,8 @@ func TestHandleEditEntry(t *testing.T) {
 		if entry.Food.ID != f2.ID {
 			t.Errorf("Expected food ID %d, got %d", f2.ID, entry.Food.ID)
 		}
-		if entry.MealName != "Lunch" {
-			t.Errorf("Expected meal name %q, got %q", "Lunch", entry.MealName)
+		if entry.MealName != "lunch" {
+			t.Errorf("Expected meal name %q, got %q", "lunch", entry.MealName)
 		}
 		if entry.Date != "1901-01-02T00:00:00Z" {
 			t.Errorf("Expected date %q, got %q", "1901-01-02T00:00:00Z", entry.Date)
@@ -177,7 +216,7 @@ func TestHandleDeleteEntry(t *testing.T) {
 	mustCreateUser(t, api, "testuser")
 	s := mustCreateSession(t, api, "testuser")
 	f := mustCreateFood(t, api, s.Token, "Food One")
-	e := mustCreateEntry(t, api, s.Token, f.ID, "Breakfast")
+	e := mustCreateEntry(t, api, s.Token, f.ID, "breakfast")
 
 	t.Run("unauthorized", func(t *testing.T) {
 		body := `{"id": ` + strconv.Itoa(e.ID) + `}`

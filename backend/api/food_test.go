@@ -8,6 +8,43 @@ import (
 	"testing"
 )
 
+func mustCreateFoodByParam(t *testing.T, api *API, token string, params db.FoodParams) *db.Food {
+	t.Helper()
+	f, err := api.db.CreateFoodByToken(params, token)
+	if err != nil {
+		t.Fatalf("CreateFoodByToken(%v) failed: %v", params, err)
+	}
+	return f
+}
+
+func mustCreateFood(t *testing.T, api *API, token string, name string) *db.Food {
+	t.Helper()
+	return mustCreateFoodByParam(t, api, token, db.FoodParams{
+		Name:         name,
+		Brand:        "Test Brand",
+		Calories:     100,
+		Carbs:        10,
+		Protein:      5,
+		Fat:          2,
+		ServingSize:  "g",
+		ServingCount: 1,
+	})
+}
+
+func mustCreateFoodN(t *testing.T, api *API, token string, n int) *db.Food {
+	t.Helper()
+	return mustCreateFoodByParam(t, api, token, db.FoodParams{
+		Name:         "Test Food " + strconv.Itoa(n),
+		Brand:        "Test Brand",
+		Calories:     n,
+		Carbs:        n,
+		Protein:      n,
+		Fat:          n,
+		ServingSize:  "g",
+		ServingCount: n,
+	})
+}
+
 func TestHandleCreateFood(t *testing.T) {
 	api := newAPI(t)
 	defer api.db.Close()

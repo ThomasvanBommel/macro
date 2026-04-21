@@ -35,7 +35,7 @@ test-audit:
 test-backend:
 	@echo "\nBackend testing..."
 	docker compose run -w /repo/backend --rm backend sh -c " \
-		go test -tags='no_postgres no_clickhouse no_mssql no_mysql $(BTT)' -v ./..."
+		go test -tags='no_postgres no_clickhouse no_mssql no_mysql $(BTT)' ./..."
 
 test-frontend:
 	@echo "\nFrontend testing..."

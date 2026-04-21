@@ -50,11 +50,13 @@ func (api *API) handleCreateEntry(c *gin.Context) APIResponse {
 
 	e, err := api.db.CreateEntryByToken(p, t)
 	if err != nil {
+		c.Error(err)
+
 		if strings.Contains(err.Error(), "NOT NULL constraint failed: entry.user_name") {
 			return api.Unauthorized(err)
 		}
 
-		return api.DBError(err, DBErrorMessages{NotFound: "Invalid food ID."})
+		return api.DBError(err, DBErrorMessages{ForeignKey: "Invalid meal_name or food_id"})
 	}
 
 	return api.OK(toEntryWithFoodResponse(e))

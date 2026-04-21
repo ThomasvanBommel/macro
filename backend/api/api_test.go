@@ -36,6 +36,21 @@ func newAPI(t *testing.T) *API {
 	util.FatalOnError(err, "Failed to set goose dialect")
 	util.FatalOnError(goose.Up(database, "migrations"), "Failed to apply migrations")
 
+	// Enable foreign keys and set PRAGMAs for performance
+	_, err = database.Exec(`
+		PRAGMA foreign_keys = ON;
+		PRAGMA journal_mode = WAL;
+		PRAGMA synchronous = OFF;
+		PRAGMA cache_size = -10000;
+	`)
+	util.FatalOnError(err, "Failed to set PRAGMAs")
+
+	// Double check foreign keys are enabled
+	var fkEnabled int
+	err = database.QueryRow(`PRAGMA foreign_keys;`).Scan(&fkEnabled)
+	util.FatalOnError(err, "Failed to check foreign_keys PRAGMA")
+	util.FatalIf(fkEnabled != 1, "Foreign keys not enabled in SQLite")
+
 	return Init(gin.New(), &db.Database{DB: database})
 }
 
@@ -65,54 +80,6 @@ func executeHandler(t *testing.T, body string, session *db.Session, handler APIH
 	Wrap(handler)(c)
 	c.Writer.WriteHeaderNow()
 	return w, c
-}
-
-func mustCreateUser(t *testing.T, api *API, name string) {
-	t.Helper()
-	if err := api.db.CreateUser(name, "password123"); err != nil {
-		t.Fatalf("CreateUser(%q) failed: %v", name, err)
-	}
-}
-
-func mustCreateSession(t *testing.T, api *API, name string) *db.Session {
-	t.Helper()
-	s, err := api.db.CreateSession(name, SESSION_TIMEOUT_SEC)
-	if err != nil {
-		t.Fatalf("CreateSession(%q) failed: %v", name, err)
-	}
-	return s
-}
-
-func mustCreateFood(t *testing.T, api *API, token string, name string) *db.Food {
-	t.Helper()
-	f, err := api.db.CreateFoodByToken(db.FoodParams{
-		Name:         name,
-		Brand:        "Test Brand",
-		Calories:     100,
-		Carbs:        10,
-		Protein:      5,
-		Fat:          2,
-		ServingSize:  "g",
-		ServingCount: 1,
-	}, token)
-	if err != nil {
-		t.Fatalf("CreateFoodByToken(%q) failed: %v", name, err)
-	}
-	return f
-}
-
-func mustCreateEntry(t *testing.T, api *API, token string, foodID int, mealName string) *db.EntryWithFood {
-	t.Helper()
-	e, err := api.db.CreateEntryByToken(db.EntryParams{
-		FoodId:   foodID,
-		MealName: mealName,
-		Date:     "1901-01-01",
-		Servings: 1,
-	}, token)
-	if err != nil {
-		t.Fatalf("CreateEntryByToken(%d) failed: %v", foodID, err)
-	}
-	return e
 }
 
 func TestDBError(t *testing.T) {
