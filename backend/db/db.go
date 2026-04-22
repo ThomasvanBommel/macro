@@ -28,6 +28,21 @@ func NewDatabase() *Database {
 	util.FatalOnError(err, "Failed to set goose dialect")
 	util.FatalOnError(goose.Up(db, "migrations"), "Failed to apply migrations")
 
+	// Enable foreign keys and set PRAGMAs for performance
+	_, err = db.Exec(`
+		PRAGMA foreign_keys = ON;
+		PRAGMA journal_mode = WAL;
+		PRAGMA synchronous = OFF;
+		PRAGMA cache_size = -10000;
+	`)
+	util.FatalOnError(err, "Failed to set PRAGMAs")
+
+	// Double check foreign keys are enabled
+	var fkEnabled int
+	err = db.QueryRow(`PRAGMA foreign_keys;`).Scan(&fkEnabled)
+	util.FatalOnError(err, "Failed to check foreign_keys PRAGMA")
+	util.FatalIf(fkEnabled != 1, "Foreign keys not enabled in SQLite")
+
 	// TODO: start session cleanup ticker
 
 	return &Database{db}
@@ -39,14 +54,6 @@ func openDatabase(path string) *sql.DB {
 
 	db, err := sql.Open("sqlite", path)
 	util.FatalOnError(err, "Failed to open database")
-
-	// Set PRAGMAs for performance. WAL allows concurrent reads/writes, the others speed up writes.
-	_, err = db.Exec(`
-		PRAGMA journal_mode = WAL;
-		PRAGMA synchronous = OFF;
-		PRAGMA cache_size = -10000;
-	`)
-	util.FatalOnError(err, "Failed to set PRAGMAs")
 
 	db.SetMaxOpenConns(1)
 	return db
