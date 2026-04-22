@@ -35,7 +35,7 @@ func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 		Breakfast Diary  `json:"breakfast"`
 		Lunch     Diary  `json:"lunch"`
 		Dinner    Diary  `json:"dinner"`
-		Snacks    Diary  `json:"snacks"`
+		Snack     Diary  `json:"snack"`
 	}
 
 	addTotals := func(totals *Totals, entry EntryWithFoodResponse) {
@@ -50,7 +50,7 @@ func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 		Breakfast: Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
 		Lunch:     Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
 		Dinner:    Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
-		Snacks:    Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
+		Snack:     Diary{Totals: Totals{}, Entries: []EntryWithFoodResponse{}},
 	}
 
 	for i := range res {
@@ -65,8 +65,8 @@ func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 			meal = &response.Lunch
 		case "dinner":
 			meal = &response.Dinner
-		case "snacks":
-			meal = &response.Snacks
+		case "snack":
+			meal = &response.Snack
 		}
 
 		if meal != nil {
@@ -86,7 +86,7 @@ func (api *API) handleGetDiary(c *gin.Context) APIResponse {
 	rnd(&response.Breakfast.Totals)
 	rnd(&response.Lunch.Totals)
 	rnd(&response.Dinner.Totals)
-	rnd(&response.Snacks.Totals)
+	rnd(&response.Snack.Totals)
 
 	return api.OK(response)
 }

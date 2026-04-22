@@ -102,6 +102,7 @@ func (api *API) handleEditEntry(c *gin.Context) APIResponse {
 
 	e, err := api.db.EditEntryAuthByToken(in.ID, p, t)
 	if err != nil {
+		c.Error(err)
 		return api.DBError(err)
 	}
 

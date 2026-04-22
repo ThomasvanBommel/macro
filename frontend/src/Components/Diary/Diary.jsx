@@ -84,7 +84,7 @@ export default function Diary({ username, defaultDate }) {
                 setAddEntryModalOpen(true);
             }, 
             editEntry: ({ id, food, servings }) => {
-                setAddEntryInitialMeal(meal);
+                setAddEntryInitialMeal(key);
                 setAddEntryInitialFood(food);
                 setAddEntryInitialServings(servings);
                 setAddEntryEntryID(id);
@@ -103,7 +103,7 @@ export default function Diary({ username, defaultDate }) {
             { !data?.breakfast ? null : <MealSection {...mealSectionProps("Breakfast")} /> }
             { !data?.lunch     ? null : <MealSection {...mealSectionProps("Lunch")} /> }
             { !data?.dinner    ? null : <MealSection {...mealSectionProps("Dinner")} /> }
-            { !data?.snacks    ? null : <MealSection {...mealSectionProps("Snacks")} /> }
+            { !data?.snack     ? null : <MealSection {...mealSectionProps("Snack")} /> }
             </> }
             { createPortal(
                 <EntryModal 
