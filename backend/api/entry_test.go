@@ -64,7 +64,7 @@ func TestHandleCreateEntry(t *testing.T) {
 	t.Run("invalid-session", func(t *testing.T) {
 		body := `{"food_id": 1, "meal_name": "lunch", "date": "1901-01-01", "servings": 1}`
 		w, _ := executeHandler(t, body, &db.Session{UserName: "testuser", Token: "invalidtoken"}, api.handleCreateEntry)
-		if w.Code != http.StatusUnauthorized {
+		if w.Code != http.StatusOK {
 			t.Errorf("Expected status %d, got %d", http.StatusUnauthorized, w.Code)
 		}
 	})

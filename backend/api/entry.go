@@ -50,8 +50,6 @@ func (api *API) handleCreateEntry(c *gin.Context) APIResponse {
 
 	e, err := api.db.CreateEntryByToken(p, t)
 	if err != nil {
-		c.Error(err)
-
 		if strings.Contains(err.Error(), "NOT NULL constraint failed: entry.user_name") {
 			return api.Unauthorized(err)
 		}
@@ -104,7 +102,6 @@ func (api *API) handleEditEntry(c *gin.Context) APIResponse {
 
 	e, err := api.db.EditEntryAuthByToken(in.ID, p, t)
 	if err != nil {
-		c.Error(err)
 		return api.DBError(err)
 	}
 
