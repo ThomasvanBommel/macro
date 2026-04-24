@@ -26,6 +26,7 @@ func Init(db *db2.Database, level slog.Level) (*gin.Engine, *DB) {
 	auth.POST("/register", x.Register)
 	auth.POST("/login", x.Login)
 	auth.POST("/logout", x.Logout)
+	auth.GET("/session", x.SessionInfo)
 	return r, x
 }
 

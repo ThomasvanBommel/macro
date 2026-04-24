@@ -1,6 +1,9 @@
 package api2
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
@@ -41,9 +44,40 @@ func (db *DB) Login(c *gin.Context) {
 	session := sessions.Default(c)
 	session.Set("username", input.Username)
 	session.Set("token", token)
+	session.Set("expiry", expiry)
 	session.Save()
 
 	OK(c, gin.H{"username": input.Username, "expires": expiry})
+}
+
+func (db *DB) SessionInfo(c *gin.Context) {
+	session := sessions.Default(c)
+	username := session.Get("username")
+	expiry := session.Get("expiry")
+
+	if username == nil || expiry == nil {
+		Unauthorized(c, "No active session")
+		return
+	}
+
+	ex, ok := expiry.(string)
+	if !ok {
+		InternalError(c, fmt.Errorf("Failed to cast session expiry to string: %v", expiry))
+		return
+	}
+
+	t, err := time.Parse(time.RFC3339, ex)
+	if err != nil {
+		InternalError(c, fmt.Errorf("Invalid session expiry date format: %v", ex))
+		return
+	}
+
+	if t.Before(time.Now().UTC()) {
+		Unauthorized(c, "Session has expired")
+		return
+	}
+
+	OK(c, gin.H{"username": username, "expires": expiry})
 }
 
 func (db *DB) Logout(c *gin.Context) {

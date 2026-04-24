@@ -11,7 +11,7 @@ func ErrorResponse(c *gin.Context, err error) {
 	msg := "An unexpected error occurred"
 
 	if e, ok := err.(*errs.Error); ok {
-		c.Error(e.Unwrap())
+		c.Error(e)
 		code = e.Code()
 		msg = e.Error()
 	} else {
@@ -25,3 +25,7 @@ func DataResponse(c *gin.Context, code int, data any) { c.JSON(code, data) }
 
 func OK(c *gin.Context, data any)      { DataResponse(c, 200, data) }
 func Created(c *gin.Context, data any) { DataResponse(c, 201, data) }
+
+func Unauthorized(c *gin.Context, msg string) { ErrorResponse(c, errs.New(401, msg, nil)) }
+
+func InternalError(c *gin.Context, err error) { ErrorResponse(c, errs.Internal(err)) }

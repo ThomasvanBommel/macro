@@ -82,6 +82,41 @@ func TestLogin(t *testing.T) {
 	}
 }
 
+func TestSessionInfo(t *testing.T) {
+	r, db := newEngine()
+	defer db.Close()
+
+	mustCreateUser(t, db, "usr", "123")
+
+	// No active session
+	w, req := newRequest("GET", "/api/auth/session", "")
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code, "Expected 401 for no active session")
+
+	// Log in to create a session
+	w, req = newRequest("POST", "/api/auth/login", `{"username": "usr", "password": "123"}`)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code, "Login failed")
+
+	cookie := w.Header().Get("Set-Cookie")
+	require.NotEmpty(t, cookie, "Set-Cookie header missing after login")
+
+	// Get session info with valid cookie
+	w, req = newRequest("GET", "/api/auth/session", "")
+	req.Header.Set("Cookie", cookie)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code, "Failed to get session info")
+
+	var out struct {
+		Username string `json:"username"`
+		Expires  string `json:"expires"`
+	}
+
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out), "Unable to parse json")
+	assert.Equal(t, "usr", out.Username, "Unexpected username in session info")
+	assert.NotEmpty(t, out.Expires, "Expires field should not be empty")
+}
+
 func TestLogout(t *testing.T) {
 	r, db := newEngine()
 	defer db.Close()
