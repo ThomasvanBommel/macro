@@ -52,7 +52,7 @@ func Init(r *gin.Engine, db *db.Database) *API {
 	store.Options(sessions.Options{
 		MaxAge:   SESSION_TIMEOUT_SEC,
 		HttpOnly: true,
-		Secure:   env.Secure,
+		Secure:   env.SECURE,
 	})
 
 	r.Use(sessions.Sessions("macro_session", store))

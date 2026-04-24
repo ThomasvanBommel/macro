@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"macro/db"
+	"macro/env"
 	"macro/util"
 	"net/http"
 	"net/http/httptest"
@@ -31,7 +32,7 @@ func newAPI(t *testing.T) *API {
 	database, err := sql.Open("sqlite", ":memory:?cache=shared")
 	util.FatalOnError(err, "Failed to open DB in memory")
 
-	goose.SetBaseFS(db.MigrationFiles)
+	goose.SetBaseFS(env.MigrationFiles)
 	err = goose.SetDialect("sqlite3")
 	util.FatalOnError(err, "Failed to set goose dialect")
 	util.FatalOnError(goose.Up(database, "migrations"), "Failed to apply migrations")

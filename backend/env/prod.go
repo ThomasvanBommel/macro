@@ -13,20 +13,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var Secure = true
+const SECURE = true
+const SESSION_TIMEOUT_SEC = 3600
+
+//go:embed build
+var frontendBuildFiles embed.FS
+
+//go:embed migrations/*.sql
+var MigrationFiles embed.FS
 
 func Init(r *gin.Engine) {
-	defer util.Trace("InitEnv(db *sql.DB, r *gin.Engine)")()
+	defer util.Trace("Init(r *gin.Engine)")()
 
 	registerStaticAssetRoute(r)
 	registerNoRoute(r)
 }
 
-//go:embed build
-var frontendBuildFiles embed.FS
-
-// registerNoRoute sets up a catch-all route for the Gin engine that handles requests to undefined
-// routes.
+// registerNoRoute sets up a catch-all route for the Gin engine
 func registerNoRoute(r *gin.Engine) {
 	defer util.Trace("registerNoRoute(r *gin.Engine)")()
 

@@ -15,9 +15,7 @@ import (
 func main() {
 	r := gin.New()
 	r.Use(gin.Recovery())
-
-	log := util.Logger{}
-	r.Use(log.Middleware())
+	r.Use(util.LoggingMiddleware(slog.LevelInfo))
 
 	db := db.NewDatabase()
 	defer db.Close()

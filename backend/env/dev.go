@@ -3,10 +3,16 @@
 package env
 
 import (
+	"embed"
+
 	"github.com/gin-gonic/gin"
 )
 
-var Secure = false
+const SECURE = false
+const SESSION_TIMEOUT_SEC = 600
+
+//go:embed migrations/*.sql
+var MigrationFiles embed.FS
 
 func Init(_ *gin.Engine) {
 	// Do nothing

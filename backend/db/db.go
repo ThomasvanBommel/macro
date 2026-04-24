@@ -2,7 +2,7 @@ package db
 
 import (
 	"database/sql"
-	"embed"
+	"macro/env"
 	"macro/util"
 
 	"github.com/pressly/goose/v3"
@@ -15,15 +15,12 @@ type Database struct {
 	*sql.DB
 }
 
-//go:embed migrations/*.sql
-var MigrationFiles embed.FS
-
 // NewDatabase opens the primary DB connection and applies migrations.
 func NewDatabase() *Database {
 	db := openDatabase("/data/macro.db")
 
 	// Apply migrations
-	goose.SetBaseFS(MigrationFiles)
+	goose.SetBaseFS(env.MigrationFiles)
 	err := goose.SetDialect("sqlite3")
 	util.FatalOnError(err, "Failed to set goose dialect")
 	util.FatalOnError(goose.Up(db, "migrations"), "Failed to apply migrations")
