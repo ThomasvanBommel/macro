@@ -1,6 +1,7 @@
 package api2
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -63,6 +64,18 @@ func TestLogin(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := newRecorder(r, "POST", "/api/auth/login", tt.body)
 			assert.Equal(t, tt.wantStatus, w.Code, "Unexpected status code")
+
+			if tt.wantStatus == http.StatusOK {
+				var out struct {
+					Username string `json:"username"`
+					Expires  string `json:"expires"`
+				}
+
+				require.NoError(t, json.Unmarshal(w.Body.Bytes(), &out), "Unable to parse json")
+				assert.Equal(t, "usr", out.Username, "Unexpected username in response")
+				assert.NotEmpty(t, out.Expires, "Expires field should not be empty")
+				assert.NotEmpty(t, w.Header().Get("Set-Cookie"), "Set-Cookie missing")
+			}
 		})
 	}
 }
