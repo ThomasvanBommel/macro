@@ -33,6 +33,12 @@ func randUser(length int, seed int) string {
 	return string(username)
 }
 
+func mustCreateUser(t *testing.T, db *Database, username, password string) {
+	t.Helper()
+	err := db.CreateUser(username, password)
+	require.NoError(t, err, "failed to create user %q: %v", username, err)
+}
+
 func TestValidateUsername(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -128,6 +134,37 @@ func TestCreateUser(t *testing.T) {
 			e, ok := err.(*errs.Error)
 			require.True(t, ok, "expected *errs.Error, got %T", err)
 			assert.Equal(t, tt.httpCode, e.Code(), "input: %q / %q", tt.username, tt.password)
+		}
+	}
+}
+
+func TestCreateSession(t *testing.T) {
+	db := newDatabase()
+	defer db.Close()
+
+	mustCreateUser(t, db, "valid_user", "valid_password")
+
+	tests := []struct {
+		username string
+		password string
+		wantErr  bool
+		httpCode int
+	}{
+		{"valid_user", "valid_password", false, 0},
+		{"nonexistent_user", "password", true, http.StatusNotFound},
+		{"valid_user", "wrong_password", true, http.StatusUnauthorized},
+	}
+
+	for _, tt := range tests {
+		err, token, expiry := db.CreateSession(tt.username, tt.password)
+		assert.Equal(t, tt.wantErr, err != nil, "input: %q / %q", tt.username, tt.password)
+		if err != nil {
+			e, ok := err.(*errs.Error)
+			require.True(t, ok, "expected *errs.Error, got %T", err)
+			assert.Equal(t, tt.httpCode, e.Code(), "input: %q / %q", tt.username, tt.password)
+		} else {
+			assert.NotEmpty(t, token, "empty token: %q / %q", tt.username, tt.password)
+			assert.NotEmpty(t, expiry, "empty expiry: %q / %q", tt.username, tt.password)
 		}
 	}
 }

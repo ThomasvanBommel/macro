@@ -23,4 +23,5 @@ func ErrorResponse(c *gin.Context, err error) {
 
 func DataResponse(c *gin.Context, code int, data any) { c.JSON(code, data) }
 
+func OK(c *gin.Context, data any)      { DataResponse(c, 200, data) }
 func Created(c *gin.Context, data any) { DataResponse(c, 201, data) }

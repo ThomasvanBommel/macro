@@ -1,6 +1,9 @@
 package api2
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+)
 
 type AuthInput struct {
 	Username string `json:"username" binding:"required"`
@@ -20,4 +23,25 @@ func (db *DB) Register(c *gin.Context) {
 	}
 
 	Created(c, nil)
+}
+
+func (db *DB) Login(c *gin.Context) {
+	var input AuthInput
+	if err := BindJSON(c, &input); err != nil {
+		ErrorResponse(c, err)
+		return
+	}
+
+	err, token, expiry := db.CreateSession(input.Username, input.Password)
+	if err != nil {
+		ErrorResponse(c, err)
+		return
+	}
+
+	session := sessions.Default(c)
+	session.Set("username", input.Username)
+	session.Set("token", token)
+	session.Save()
+
+	OK(c, gin.H{"username": input.Username, "expires": expiry})
 }
