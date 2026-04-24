@@ -138,3 +138,22 @@ func (db *Database) CreateSession(username, password string) (error, string, str
 
 	return nil, token, expiry
 }
+
+// GetSessionInfo retrieves the username and expiry time for the session with the given token
+// It returns an error, username, and expiry time
+func (db *Database) GetSessionInfo(token string) (error, string, string) {
+	var username, expiry string
+	q := `SELECT user_name, expires
+	      FROM session
+		  WHERE token = ?
+		  AND expires > datetime('now')`
+	if err := db.QueryRow(q, token).Scan(&username, &expiry); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errs.New(http.StatusUnauthorized, "No active session", err), "", ""
+		}
+
+		return errs.Internal(err), "", ""
+	}
+
+	return nil, username, expiry
+}

@@ -53,7 +53,7 @@ func (db *Database) cleanUpSessions() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
-	res, err := db.ExecContext(ctx, `DELETE FROM sessions WHERE expires < CURRENT_TIMESTAMP`)
+	res, err := db.ExecContext(ctx, `DELETE FROM session WHERE expires < CURRENT_TIMESTAMP`)
 	if err != nil {
 		slog.Error("Failed to clear expired sessions", "error", err.Error())
 		return
