@@ -1,9 +1,12 @@
 package db2
 
 import (
+	"context"
 	"database/sql"
+	"log/slog"
 	"macro/env"
 	"macro/util"
+	"time"
 
 	"github.com/pressly/goose/v3"
 	_ "modernc.org/sqlite"
@@ -30,5 +33,32 @@ func Init(path string) *Database {
 	`)
 	util.FatalOnError(err, "Failed to set PRAGMA options")
 
-	return &Database{db}
+	database := &Database{db}
+
+	// cleanup sessions every 12h and on startup
+	go func() {
+		ticker := time.NewTicker(12 * time.Hour)
+		defer ticker.Stop()
+
+		database.cleanUpSessions()
+		for range ticker.C {
+			database.cleanUpSessions()
+		}
+	}()
+
+	return database
+}
+
+func (db *Database) cleanUpSessions() {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	res, err := db.ExecContext(ctx, `DELETE FROM sessions WHERE expires < CURRENT_TIMESTAMP`)
+	if err != nil {
+		slog.Error("Failed to clear expired sessions", "error", err.Error())
+		return
+	}
+
+	rows, _ := res.RowsAffected()
+	slog.Info("Cleared expired sessions", "rows", rows)
 }

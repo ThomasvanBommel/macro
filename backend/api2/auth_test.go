@@ -34,7 +34,8 @@ func TestRegister(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := newRecorder(r, "POST", "/api/auth/register", tt.body)
+			w, req := newRequest("POST", "/api/auth/register", tt.body)
+			r.ServeHTTP(w, req)
 			assert.Equal(t, tt.wantStatus, w.Code, "Unexpected status code")
 		})
 	}
@@ -62,7 +63,8 @@ func TestLogin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := newRecorder(r, "POST", "/api/auth/login", tt.body)
+			w, req := newRequest("POST", "/api/auth/login", tt.body)
+			r.ServeHTTP(w, req)
 			assert.Equal(t, tt.wantStatus, w.Code, "Unexpected status code")
 
 			if tt.wantStatus == http.StatusOK {
@@ -78,4 +80,26 @@ func TestLogin(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLogout(t *testing.T) {
+	r, db := newEngine()
+	defer db.Close()
+
+	mustCreateUser(t, db, "usr", "123")
+
+	// First, log in to set the session cookie
+	w, req := newRequest("POST", "/api/auth/login", `{"username": "usr", "password": "123"}`)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code, "Login failed")
+
+	cookie := w.Header().Get("Set-Cookie")
+	require.NotEmpty(t, cookie, "Set-Cookie header missing after login")
+
+	// Now log out using the same cookie
+	w, req = newRequest("POST", "/api/auth/logout", "")
+	req.Header.Set("Cookie", cookie)
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code, "Logout failed")
+	assert.Contains(t, w.Header().Get("Set-Cookie"), "Max-Age=0", "Cookie should be cleared")
 }

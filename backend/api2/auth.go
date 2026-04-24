@@ -45,3 +45,12 @@ func (db *DB) Login(c *gin.Context) {
 
 	OK(c, gin.H{"username": input.Username, "expires": expiry})
 }
+
+func (db *DB) Logout(c *gin.Context) {
+	session := sessions.Default(c)
+	session.Options(sessions.Options{MaxAge: -1})
+	session.Clear()
+	session.Save()
+
+	OK(c, nil)
+}

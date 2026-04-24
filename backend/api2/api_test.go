@@ -28,14 +28,12 @@ func newContext(body string) (*httptest.ResponseRecorder, *gin.Context) {
 	return w, c
 }
 
-func newRecorder(r *gin.Engine, method, path, body string) *httptest.ResponseRecorder {
+func newRequest(method, path, body string) (*httptest.ResponseRecorder, *http.Request) {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest(method, path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 
-	r.ServeHTTP(w, req)
-
-	return w
+	return w, req
 }
 
 func TestInit(t *testing.T) {
@@ -45,7 +43,8 @@ func TestInit(t *testing.T) {
 	assert.NotNil(t, r)
 	assert.NotNil(t, db)
 
-	w := newRecorder(r, "GET", "/api/health", "")
+	w, req := newRequest("GET", "/api/health", "")
+	r.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 }
 
