@@ -156,7 +156,7 @@ func TestCreateSession(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		err, token, expiry := db.CreateSession(tt.username, tt.password)
+		token, expiry, err := db.CreateSession(tt.username, tt.password)
 		assert.Equal(t, tt.wantErr, err != nil, "input: %q / %q", tt.username, tt.password)
 		if err != nil {
 			e, ok := err.(*errs.Error)
@@ -175,18 +175,18 @@ func TestSessionInfo(t *testing.T) {
 
 	mustCreateUser(t, db, "valid_user", "valid_password")
 
-	err, token, expiry := db.CreateSession("valid_user", "valid_password")
+	token, expiry, err := db.CreateSession("valid_user", "valid_password")
 	require.NoError(t, err, "failed to create session: %v", err)
 
 	// invalid token
-	err, _, _ = db.GetSessionInfo("invalid_token")
+	_, _, err = db.GetSessionInfo("invalid_token")
 	var e *errs.Error
 	if assert.ErrorAs(t, err, &e, "Expected errs.Error") {
 		assert.Equal(t, http.StatusUnauthorized, e.Code(), "Expected 401 code")
 	}
 
 	// valid token
-	err, user, exp := db.GetSessionInfo(token)
+	user, exp, err := db.GetSessionInfo(token)
 	assert.NoError(t, err, "unexpected error for valid session: %v", err)
 	assert.Equal(t, "valid_user", user, "unexpected username in session info")
 	assert.Equal(t, expiry, exp, "unexpected expiry in session info")

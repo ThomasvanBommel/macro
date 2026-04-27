@@ -3,13 +3,16 @@ package db2
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
 	"macro/env"
 	"macro/util"
 	"time"
 
 	"github.com/pressly/goose/v3"
+	"modernc.org/sqlite"
 	_ "modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 type Database struct {
@@ -61,4 +64,21 @@ func (db *Database) cleanUpSessions() {
 
 	rows, _ := res.RowsAffected()
 	slog.Info("Cleared expired sessions", "rows", rows)
+}
+
+func IsUniqueConstraintError(err error) bool {
+	if e, ok := errors.AsType[*sqlite.Error](err); ok {
+		return e.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE ||
+			e.Code() == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY
+	}
+
+	return false
+}
+
+func IsForeignKeyError(err error) bool {
+	if e, ok := errors.AsType[*sqlite.Error](err); ok {
+		return e.Code() == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY
+	}
+
+	return false
 }

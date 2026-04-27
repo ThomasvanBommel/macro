@@ -27,6 +27,10 @@ func Init(db *db2.Database, level slog.Level) (*gin.Engine, *DB) {
 	auth.POST("/login", x.Login)
 	auth.POST("/logout", x.Logout)
 	auth.GET("/session", x.SessionInfo)
+
+	food := api.Group("/food")
+	food.POST("/new", x.NewFood)
+
 	return r, x
 }
 
