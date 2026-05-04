@@ -32,7 +32,7 @@ func (db *DB) Login(c *gin.Context) {
 		return
 	}
 
-	err, token, expiry := db.CreateSession(input.Username, input.Password)
+	token, expiry, err := db.CreateSession(input.Username, input.Password)
 	if err != nil {
 		ErrorResponse(c, err)
 		return
@@ -52,11 +52,11 @@ func (db *DB) SessionInfo(c *gin.Context) {
 	token := session.Get("token")
 
 	if token == nil {
-		Unauthorized(c, "No active session")
+		NotAuthorized(c, "No active session")
 		return
 	}
 
-	err, username, expiry := db.GetSessionInfo(token.(string))
+	username, expiry, err := db.GetSessionInfo(token.(string))
 	if err != nil {
 		ErrorResponse(c, err)
 		return

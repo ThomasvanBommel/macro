@@ -29,7 +29,7 @@ func TestCreateFoodByToken(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		in := &FoodIn{
+		in := &FoodParams{
 			Name:         tt.foodName,
 			Brand:        "the bestest ever brand",
 			Calories:     666,

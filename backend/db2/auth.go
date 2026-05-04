@@ -16,7 +16,7 @@ import (
 const MAX_USERNAME_LENGTH = 25
 const MAX_PASSWORD_LENGTH = 500
 
-var USERNAME_REGEX = regexp.MustCompile("^[\\w-.]+$")
+var USERNAME_REGEX = regexp.MustCompile(`^[\w-.]+$`)
 
 func ValidateUsername(username string) error {
 	if len(username) == 0 {

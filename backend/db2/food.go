@@ -6,50 +6,28 @@ import (
 	"macro/errs"
 )
 
-type FoodIn struct {
-	Name         string
-	Brand        string
-	ServingSize  string
-	Calories     int
-	Carbs        int
-	Protein      int
-	Fat          int
-	ServingCount int
-}
-
-type FoodOut struct {
-	ID       int
-	UserName string
-	Created  string
-}
-
-func (f *FoodIn) Args() []any {
-	return []any{
-		f.Name,
-		f.Brand,
-		f.Calories,
-		f.Carbs,
-		f.Protein,
-		f.Fat,
-		f.ServingCount,
-		f.ServingSize,
-	}
-}
-
 // CreateFoodByToken creates a new food entry in the database.
-func (db *Database) CreateFoodByToken(token string, in *FoodIn) (out *FoodOut, err error) {
-	q := `INSERT INTO food (user_name, name, brand, calories, carbs, protein, fat, 
-			serving_count, serving_size)
-	      VALUES ((
-		  	SELECT user_name FROM session WHERE token = ? AND expires > CURRENT_TIMESTAMP
-		  ), ?, ?, ?, ?, ?, ?, ?, ?)
-		  RETURNING id, user_name, created`
+func (db *Database) CreateFoodByToken(token string, in *FoodParams) (*Food, error) {
+	food := &Food{
+		Name:         in.Name,
+		Brand:        in.Brand,
+		Calories:     in.Calories,
+		Carbs:        in.Carbs,
+		Protein:      in.Protein,
+		Fat:          in.Fat,
+		ServingCount: in.ServingCount,
+		ServingSize:  in.ServingSize,
+	}
 
-	var id int
-	var username, created string
-	args := append([]any{token}, in.Args()...)
-
-	if err := db.QueryRow(q, args...).Scan(&id, &username, &created); err != nil {
+	p := args(in, token)
+	if err := db.QueryRow(`
+		INSERT INTO food
+		  	(name, brand, calories, carbs, protein, fat, serving_count, serving_size, user_name)
+	    VALUES
+			(?, ?, ?, ?, ?, ?, ?, ?,
+			(SELECT user_name FROM session WHERE token = ? AND expires > CURRENT_TIMESTAMP))
+		RETURNING id, user_name, created;
+	`, p...).Scan(&food.ID, &food.UserName, &food.Created); err != nil {
 		if IsForeignKeyError(err) || errors.Is(err, sql.ErrNoRows) {
 			return nil, errs.NotAuthorized(err, "No active session").With("args", args)
 		}
@@ -57,5 +35,5 @@ func (db *Database) CreateFoodByToken(token string, in *FoodIn) (out *FoodOut, e
 		return nil, errs.Unexpected(err, "").With("args", args)
 	}
 
-	return &FoodOut{id, username, created}, nil
+	return food, nil
 }

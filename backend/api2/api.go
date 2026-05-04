@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"macro/db2"
 	"macro/errs"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +35,7 @@ func Init(db *db2.Database, level slog.Level) (*gin.Engine, *DB) {
 
 func BindJSON(c *gin.Context, input any) error {
 	if err := c.ShouldBindJSON(input); err != nil {
-		return errs.New(http.StatusUnprocessableEntity, err.Error(), err)
+		return errs.BadInput(err, err.Error())
 	}
 	return nil
 }

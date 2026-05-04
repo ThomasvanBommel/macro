@@ -25,7 +25,7 @@ func (db *DB) NewFood(c *gin.Context) {
 	}
 
 	if input.Name == "" {
-		Unprocessable(c, "Name cannot be empty")
+		BadInput(c, "Food.Name cannot be empty")
 		return
 	}
 
