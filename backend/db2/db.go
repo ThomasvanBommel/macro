@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"macro/env"
 	"macro/util"
-	"reflect"
 	"time"
 
 	"github.com/pressly/goose/v3"
@@ -82,35 +81,4 @@ func IsForeignKeyError(err error) bool {
 	}
 
 	return false
-}
-
-func args(in any, x ...any) []any {
-	v := reflect.ValueOf(in)
-	if v.Kind() == reflect.Pointer {
-		v = v.Elem()
-	}
-
-	out := make([]any, 0, v.NumField()+len(x))
-	for _, field := range v.Fields() {
-		if field.CanInterface() {
-			out = append(out, field.Interface())
-		}
-	}
-
-	out = append(out, x...)
-
-	return out
-}
-
-func ptrs(in any) []any {
-	v := reflect.ValueOf(in)
-
-	out := make([]any, 0, v.NumField())
-	for _, field := range v.Fields() {
-		if field.CanAddr() {
-			out = append(out, field.Addr().Interface())
-		}
-	}
-
-	return out
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"macro/errs"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -116,15 +115,15 @@ func TestCreateUser(t *testing.T) {
 		username string
 		password string
 		wantErr  bool
-		httpCode int
+		errCode  errs.ErrCode
 	}{
 		{"valid_user", "valid_password", false, 0},
-		{"valid_user", "another_password", true, http.StatusConflict},
-		{"", "password", true, http.StatusUnprocessableEntity},
+		{"valid_user", "another_password", true, errs.ErrConflict},
+		{"", "password", true, errs.ErrBadInput},
 		{randUser(MAX_USERNAME_LENGTH, 3), "password", false, 0},
-		{randUser(MAX_USERNAME_LENGTH+1, 4), "password", true, http.StatusUnprocessableEntity},
+		{randUser(MAX_USERNAME_LENGTH+1, 4), "password", true, errs.ErrBadInput},
 		{"user_with_long_password", string(make([]byte, MAX_PASSWORD_LENGTH)), false, 0},
-		{"user_with_longer_password", string(make([]byte, MAX_PASSWORD_LENGTH+1)), true, http.StatusUnprocessableEntity},
+		{"user_with_longer_password", string(make([]byte, MAX_PASSWORD_LENGTH+1)), true, errs.ErrBadInput},
 	}
 
 	for _, tt := range tests {
@@ -133,7 +132,7 @@ func TestCreateUser(t *testing.T) {
 		if err != nil {
 			e, ok := err.(*errs.Error)
 			require.True(t, ok, "expected *errs.Error, got %T", err)
-			assert.Equal(t, tt.httpCode, e.Code(), "input: %q / %q", tt.username, tt.password)
+			assert.Equal(t, tt.errCode, e.Code(), "input: %q / %q", tt.username, tt.password)
 		}
 	}
 }
@@ -148,11 +147,11 @@ func TestCreateSession(t *testing.T) {
 		username string
 		password string
 		wantErr  bool
-		httpCode int
+		errCode  errs.ErrCode
 	}{
 		{"valid_user", "valid_password", false, 0},
-		{"nonexistent_user", "password", true, http.StatusNotFound},
-		{"valid_user", "wrong_password", true, http.StatusUnauthorized},
+		{"nonexistent_user", "password", true, errs.ErrBadCredentials},
+		{"valid_user", "wrong_password", true, errs.ErrBadCredentials},
 	}
 
 	for _, tt := range tests {
@@ -161,7 +160,7 @@ func TestCreateSession(t *testing.T) {
 		if err != nil {
 			e, ok := err.(*errs.Error)
 			require.True(t, ok, "expected *errs.Error, got %T", err)
-			assert.Equal(t, tt.httpCode, e.Code(), "input: %q / %q", tt.username, tt.password)
+			assert.Equal(t, tt.errCode, e.Code(), "input: %q / %q", tt.username, tt.password)
 		} else {
 			assert.NotEmpty(t, token, "empty token: %q / %q", tt.username, tt.password)
 			assert.NotEmpty(t, expiry, "empty expiry: %q / %q", tt.username, tt.password)
@@ -182,7 +181,7 @@ func TestSessionInfo(t *testing.T) {
 	_, _, err = db.GetSessionInfo("invalid_token")
 	var e *errs.Error
 	if assert.ErrorAs(t, err, &e, "Expected errs.Error") {
-		assert.Equal(t, http.StatusUnauthorized, e.Code(), "Expected 401 code")
+		assert.Equal(t, errs.ErrNotAuthorized, e.Code(), "Expected 401 code")
 	}
 
 	// valid token

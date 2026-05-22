@@ -2,56 +2,60 @@ package db2
 
 import (
 	"macro/errs"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateFoodByToken(t *testing.T) {
+func TestCreateFood(t *testing.T) {
 	db := newDatabase()
 	defer db.Close()
 
-	mustCreateUser(t, db, "valid_user", "valid_password")
-	token, _, err := db.CreateSession("valid_user", "valid_password")
-	require.NoError(t, err, "failed to create session: %v", err)
+	mustCreateUser(t, db, "bob", "supersecure")
 
-	tests := []struct {
-		name     string
-		token    string
-		foodName string
-		wantErr  bool
-		httpCode int
-	}{
-		{"valid input", token, "Pizza", false, 0},
-		{"invalid token", "invalid_token", "Burger", true, http.StatusUnauthorized},
+	new := func() *NewFood {
+		return &NewFood{
+			Name:         "apple",
+			Brand:        "apple",
+			UserName:     "bob",
+			Calories:     1337.5,
+			Carbs:        69.7,
+			Protein:      5.1,
+			Fat:          5.44,
+			ServingCount: 5,
+			ServingSize:  "ml",
+		}
 	}
 
-	for _, tt := range tests {
-		in := &FoodParams{
-			Name:         tt.foodName,
-			Brand:        "the bestest ever brand",
-			Calories:     666,
-			Carbs:        42,
-			Protein:      42,
-			Fat:          42,
-			ServingCount: 1,
-			ServingSize:  "dollop",
-		}
-		out, err := db.CreateFoodByToken(tt.token, in)
+	expectError := func(in *NewFood, exp errs.ErrCode) {
+		t.Helper()
+		_, err := db.CreateFood(in)
 
-		if tt.wantErr {
-			assert.Error(t, err, "expected error")
+		var e errs.Error
+		require.ErrorAs(t, err, &e)
+		assert.Equal(t, exp, e.Code())
+	}
 
-			var e *errs.Error
-			require.ErrorAs(t, err, &e, "Expected errs.Error")
-			assert.Equal(t, tt.httpCode, e.Code(), "want %d, got %d\n%v", tt.httpCode, e.Code(), err)
-		} else {
-			assert.NoError(t, err, "unexpected error")
+	// name too short
+	f := new()
+	f.Name = "a"
+	expectError(f, errs.ErrBadInput)
 
-			assert.Greater(t, out.ID, -1, "invalid food ID: %d", out.ID)
-			assert.Equal(t, "valid_user", out.UserName, "unexpected username: %q", out.UserName)
+	// name too long
+	f = new()
+	f.Name = "abcdefghijklmnopqrstuvwxyz01234"
+	expectError(f, errs.ErrBadInput)
+
+	tests := []struct {
+		name string
+		in   *NewFood
+		modify func(*NewFood)
+	}{
+		{
+			name: "name-too-short",
+			in: new(),
+			modify: func(in *Newfood) { in.Name = "a" },
 		}
 	}
 }
